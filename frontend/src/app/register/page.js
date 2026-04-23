@@ -122,15 +122,13 @@ export default function RegisterPage() {
         border: none; outline: none;
         font-family: 'Share Tech Mono', monospace;
         font-size: 14px; letter-spacing: .08em;
-        color: #ffffff;
-        caret-color: #ffffff;
+        color: #ffffff; caret-color: #ffffff;
         width: 100%; padding: 0;
       }
       .term-input::placeholder { color: rgba(255,255,255,.2); }
       .term-input::selection   { background: rgba(255,255,255,.15); }
 
       .cursor-blink { animation: blink 1s step-end infinite; }
-
       .req-ok  { color: rgba(100,220,120,.9); }
       .req-bad { color: rgba(255,255,255,.25); }
 
@@ -143,10 +141,7 @@ export default function RegisterPage() {
         padding: 4px 14px; cursor: pointer;
         transition: all .2s;
       }
-      .confirm-btn:hover {
-        border-color: rgba(255,255,255,.7);
-        color: #fff;
-      }
+      .confirm-btn:hover { border-color: rgba(255,255,255,.7); color: #fff; }
 
       .moving-scan {
         position:fixed; top:0; left:0; right:0; height:1px;
@@ -176,14 +171,48 @@ export default function RegisterPage() {
   const handleConfirm = async (e) => {
     e.preventDefault();
     if (confirm !== password) { setError("las contraseñas no coinciden"); return; }
-    setError(""); setStep(4);
+    setError("");
+    setStep(4);
 
+    // Animación de progreso
     [{ p:20,d:300 },{ p:45,d:700 },{ p:70,d:1200 },{ p:90,d:1800 },{ p:100,d:2400 }]
       .forEach(({ p, d }) => setTimeout(() => setProgress(p), d));
 
-    setTimeout(() => {
-      setStep(5);
-      // TODO: POST /api/register → router.push("/feed")
+    // Llamada al backend después de la animación
+    setTimeout(async () => {
+      try {
+        const res = await fetch('http://localhost:4000/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            googleId: session?.user?.id  || session?.user?.sub,
+            email:    session?.user?.email,
+            nombre:   session?.user?.name,
+            username,
+            password,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          // Volver al step 3 con el error
+          setStep(3);
+          setProgress(0);
+          setError(data.error || 'Error al registrar');
+          return;
+        }
+
+        // Éxito
+        setStep(5);
+        setTimeout(() => router.push('/feed'), 2000);
+
+      } catch (err) {
+        setStep(3);
+        setProgress(0);
+        setError('No se pudo conectar con el servidor');
+      }
     }, 3000);
   };
 
@@ -194,7 +223,6 @@ export default function RegisterPage() {
     { label: "un número",            ok: /[0-9]/.test(password) },
   ];
 
-  // colores base
   const C  = "rgba(255,255,255,.9)";
   const CD = "rgba(255,255,255,.5)";
   const CF = "rgba(255,255,255,.2)";
@@ -208,7 +236,6 @@ export default function RegisterPage() {
     }}>
       <div className="moving-scan" />
 
-      {/* Marco */}
       <div style={{
         width: "min(640px, 90vw)",
         border: `1px solid ${CB}`,
@@ -219,10 +246,10 @@ export default function RegisterPage() {
 
         {/* Esquinas */}
         {[
-          { top:-1,  left:-1,  borderTop:`1px solid ${CD}`,    borderLeft:`1px solid ${CD}`   },
-          { top:-1,  right:-1, borderTop:`1px solid ${CD}`,    borderRight:`1px solid ${CD}`  },
-          { bottom:-1, left:-1,  borderBottom:`1px solid ${CD}`, borderLeft:`1px solid ${CD}`   },
-          { bottom:-1, right:-1, borderBottom:`1px solid ${CD}`, borderRight:`1px solid ${CD}`  },
+          { top:-1,    left:-1,   borderTop:`1px solid ${CD}`,    borderLeft:`1px solid ${CD}`   },
+          { top:-1,    right:-1,  borderTop:`1px solid ${CD}`,    borderRight:`1px solid ${CD}`  },
+          { bottom:-1, left:-1,   borderBottom:`1px solid ${CD}`, borderLeft:`1px solid ${CD}`   },
+          { bottom:-1, right:-1,  borderBottom:`1px solid ${CD}`, borderRight:`1px solid ${CD}`  },
         ].map((s, i) => (
           <div key={i} style={{ position:"absolute", width:20, height:20, ...s }} />
         ))}
@@ -236,7 +263,7 @@ export default function RegisterPage() {
           <span>NEONDEV · ALPHA</span>
         </div>
 
-        {/* Intro */}
+        {/* Intro typewriter */}
         <div style={{
           fontSize:12, color: CD,
           letterSpacing:".06em", lineHeight:1.9,
@@ -254,7 +281,7 @@ export default function RegisterPage() {
             {step === 1 ? (
               <form onSubmit={handleUsername}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, borderBottom:`1px solid ${CB}`, paddingBottom:6, marginTop:8 }}>
-                  <span style={{ color: CD, fontSize:12 }}>@</span>
+                  <span style={{ color:CD, fontSize:12 }}>@</span>
                   <input
                     ref={inputRef}
                     className="term-input"
@@ -275,7 +302,7 @@ export default function RegisterPage() {
               </form>
             ) : (
               <div style={{ marginTop:8, fontSize:13, color:"rgba(100,220,120,.9)", letterSpacing:".06em" }}>
-                @ {username} <span style={{ color:"rgba(100,220,120,.5)", fontSize:10 }}>✓ registrado</span>
+                @ {username} <span style={{ color:"rgba(100,220,120,.5)", fontSize:10 }}>✓ confirmado</span>
               </div>
             )}
           </div>
@@ -302,8 +329,6 @@ export default function RegisterPage() {
                     autoComplete="new-password"
                   />
                 </div>
-
-                {/* Requisitos */}
                 <div style={{ marginTop:10, display:"grid", gridTemplateColumns:"1fr 1fr", gap:"2px 16px" }}>
                   {pwReqs.map((r, i) => (
                     <div key={i} className={r.ok ? "req-ok" : "req-bad"} style={{ fontSize:10, letterSpacing:".05em" }}>
@@ -311,7 +336,6 @@ export default function RegisterPage() {
                     </div>
                   ))}
                 </div>
-
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:10 }}>
                   <span style={{ fontSize:10, letterSpacing:".06em", color: error ? "rgba(220,80,80,.9)" : CF }}>
                     {error ? `> ERROR: ${error}` : `> ${password.length}/14`}
@@ -366,10 +390,10 @@ export default function RegisterPage() {
         {step === 4 && (
           <div style={{ animation:"fadeIn .3s ease", marginTop:8 }}>
             <div style={{ height:1, background:CB, margin:"16px 0" }} />
-            <TermLine text="> creando perfil..."                    delay={0}    color={CD} />
-            <TermLine text="> cifrando credenciales..."             delay={400}  color={CF} />
-            <TermLine text="> registrando en base de datos..."      delay={900}  color={CF} />
-            <TermLine text="> configurando vlog..."                 delay={1500} color={CF} />
+            <TermLine text="> creando perfil..."                delay={0}    color={CD} />
+            <TermLine text="> cifrando credenciales..."         delay={400}  color={CF} />
+            <TermLine text="> registrando en base de datos..."  delay={900}  color={CF} />
+            <TermLine text="> configurando vlog..."             delay={1500} color={CF} />
             <div style={{ marginTop:16 }}>
               <ProgressBar percent={progress} />
             </div>
