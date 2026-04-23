@@ -1,0 +1,243 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model amistades {
+  id                                   Int              @id @default(autoincrement())
+  solicitanteId                        Int
+  receptorId                           Int
+  estado                               amistades_estado @default(PENDIENTE)
+  creadoEn                             DateTime         @default(now()) @db.DateTime(0)
+  actualizadoEn                        DateTime         @default(now()) @db.DateTime(0)
+  users_amistades_solicitanteIdTousers users            @relation("amistades_solicitanteIdTousers", fields: [solicitanteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "amistades_ibfk_1")
+  users_amistades_receptorIdTousers    users            @relation("amistades_receptorIdTousers", fields: [receptorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "amistades_ibfk_2")
+
+  @@unique([solicitanteId, receptorId], map: "uk_amistad")
+  @@index([estado], map: "idx_amistades_estado")
+  @@index([receptorId], map: "idx_amistades_receptor")
+}
+
+model backgrounds {
+  id         String           @id @db.VarChar(50)
+  nombre     String           @db.VarChar(100)
+  previewUrl String           @db.VarChar(300)
+  tipo       backgrounds_tipo @default(STATIC)
+  tags       String           @default("") @db.VarChar(200)
+  disponible Boolean          @default(true)
+  orden      Int              @default(0)
+  creadoEn   DateTime         @default(now()) @db.DateTime(0)
+}
+
+model comments {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  autorId   Int
+  contenido String   @db.VarChar(500)
+  editado   Boolean  @default(false)
+  creadoEn  DateTime @default(now()) @db.DateTime(0)
+  posts     posts    @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "comments_ibfk_1")
+  users     users    @relation(fields: [autorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "comments_ibfk_2")
+
+  @@index([autorId], map: "autorId")
+  @@index([postId], map: "idx_comments_postId")
+}
+
+model messages {
+  id                               Int       @id @default(autoincrement())
+  emisorId                         Int
+  receptorId                       Int
+  contenido                        String    @db.Text
+  leido                            Boolean   @default(false)
+  leidoEn                          DateTime? @db.DateTime(0)
+  creadoEn                         DateTime  @default(now()) @db.DateTime(0)
+  users_messages_emisorIdTousers   users     @relation("messages_emisorIdTousers", fields: [emisorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "messages_ibfk_1")
+  users_messages_receptorIdTousers users     @relation("messages_receptorIdTousers", fields: [receptorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "messages_ibfk_2")
+
+  @@index([emisorId, receptorId], map: "idx_messages_chat")
+  @@index([receptorId, leido], map: "idx_messages_no_leidos")
+}
+
+model notifications {
+  id                                     Int                @id @default(autoincrement())
+  usuarioId                              Int
+  generadorId                            Int?
+  tipo                                   notifications_tipo
+  leida                                  Boolean            @default(false)
+  leidaEn                                DateTime?          @db.DateTime(0)
+  entidadId                              Int?
+  entidadTipo                            String?            @db.VarChar(30)
+  mensaje                                String?            @db.VarChar(200)
+  creadoEn                               DateTime           @default(now()) @db.DateTime(0)
+  users_notifications_usuarioIdTousers   users              @relation("notifications_usuarioIdTousers", fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "notifications_ibfk_1")
+  users_notifications_generadorIdTousers users?             @relation("notifications_generadorIdTousers", fields: [generadorId], references: [id], onUpdate: NoAction, map: "notifications_ibfk_2")
+
+  @@index([generadorId], map: "generadorId")
+  @@index([creadoEn], map: "idx_notif_creadoEn")
+  @@index([usuarioId, leida], map: "idx_notif_usuario_leida")
+}
+
+model post_images {
+  id       Int      @id @default(autoincrement())
+  postId   Int
+  ruta     String   @db.VarChar(300)
+  orden    Int      @default(0) @db.TinyInt
+  creadoEn DateTime @default(now()) @db.DateTime(0)
+  posts    posts    @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "post_images_ibfk_1")
+
+  @@index([postId], map: "idx_post_images_postId")
+}
+
+model post_likes {
+  id       Int      @id @default(autoincrement())
+  postId   Int
+  userId   Int
+  creadoEn DateTime @default(now()) @db.DateTime(0)
+  posts    posts    @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "post_likes_ibfk_1")
+  users    users    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "post_likes_ibfk_2")
+
+  @@unique([postId, userId], map: "uk_like")
+  @@index([postId], map: "idx_post_likes_postId")
+  @@index([userId], map: "userId")
+}
+
+model posts {
+  id               Int              @id @default(autoincrement())
+  autorId          Int
+  titulo           String?          @db.VarChar(150)
+  contenido        String           @db.Text
+  privacidad       posts_privacidad @default(AMIGOS)
+  totalLikes       Int              @default(0)
+  totalComentarios Int              @default(0)
+  totalVistas      Int              @default(0)
+  editado          Boolean          @default(false)
+  creadoEn         DateTime         @default(now()) @db.DateTime(0)
+  actualizadoEn    DateTime         @default(now()) @db.DateTime(0)
+  comments         comments[]
+  post_images      post_images[]
+  post_likes       post_likes[]
+  users            users            @relation(fields: [autorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "posts_ibfk_1")
+
+  @@index([autorId], map: "idx_posts_autorId")
+  @@index([creadoEn], map: "idx_posts_creadoEn")
+  @@index([privacidad], map: "idx_posts_privacidad")
+}
+
+model profile_visits {
+  id                                      Int      @id @default(autoincrement())
+  perfilId                                Int
+  visitanteId                             Int?
+  creadoEn                                DateTime @default(now()) @db.DateTime(0)
+  users_profile_visits_perfilIdTousers    users    @relation("profile_visits_perfilIdTousers", fields: [perfilId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "profile_visits_ibfk_1")
+  users_profile_visits_visitanteIdTousers users?   @relation("profile_visits_visitanteIdTousers", fields: [visitanteId], references: [id], onUpdate: NoAction, map: "profile_visits_ibfk_2")
+
+  @@index([creadoEn], map: "idx_visits_creadoEn")
+  @@index([perfilId], map: "idx_visits_perfil")
+  @@index([visitanteId], map: "visitanteId")
+}
+
+model spotify_tokens {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @unique(map: "userId")
+  accessToken   String   @db.Text
+  refreshToken  String   @db.Text
+  expiresAt     DateTime @db.DateTime(0)
+  creadoEn      DateTime @default(now()) @db.DateTime(0)
+  actualizadoEn DateTime @default(now()) @db.DateTime(0)
+  users         users    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "spotify_tokens_ibfk_1")
+}
+
+model user_profiles {
+  id                    Int      @id @default(autoincrement())
+  userId                Int      @unique(map: "userId")
+  bgId                  String   @default("bg_default") @db.VarChar(50)
+  accentColor           String   @default("#ffffff") @db.VarChar(7)
+  statusText            String?  @db.VarChar(80)
+  bio                   String?  @db.VarChar(300)
+  linkPersonal          String?  @db.VarChar(200)
+  perfilPublico         Boolean  @default(true)
+  mostrarSpotify        Boolean  @default(true)
+  mostrarUltimaConexion Boolean  @default(true)
+  creadoEn              DateTime @default(now()) @db.DateTime(0)
+  actualizadoEn         DateTime @default(now()) @db.DateTime(0)
+  users                 users    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_profiles_ibfk_1")
+}
+
+model user_stats {
+  id                  Int   @id @default(autoincrement())
+  userId              Int   @unique(map: "userId")
+  totalPosts          Int   @default(0)
+  totalAmigos         Int   @default(0)
+  totalVisitas        Int   @default(0)
+  totalLikesRecibidos Int   @default(0)
+  users               users @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_stats_ibfk_1")
+}
+
+model users {
+  id                                               Int              @id @default(autoincrement())
+  googleId                                         String           @unique(map: "googleId") @db.VarChar(100)
+  email                                            String           @unique(map: "email") @db.VarChar(200)
+  username                                         String           @unique(map: "username") @db.VarChar(30)
+  password                                         String           @db.VarChar(255)
+  nombre                                           String           @db.VarChar(100)
+  rol                                              users_rol        @default(USUARIO)
+  activo                                           Boolean          @default(true)
+  ultimoAcceso                                     DateTime?        @db.DateTime(0)
+  creadoEn                                         DateTime         @default(now()) @db.DateTime(0)
+  actualizadoEn                                    DateTime         @default(now()) @db.DateTime(0)
+  amistades_amistades_solicitanteIdTousers         amistades[]      @relation("amistades_solicitanteIdTousers")
+  amistades_amistades_receptorIdTousers            amistades[]      @relation("amistades_receptorIdTousers")
+  comments                                         comments[]
+  messages_messages_emisorIdTousers                messages[]       @relation("messages_emisorIdTousers")
+  messages_messages_receptorIdTousers              messages[]       @relation("messages_receptorIdTousers")
+  notifications_notifications_usuarioIdTousers     notifications[]  @relation("notifications_usuarioIdTousers")
+  notifications_notifications_generadorIdTousers   notifications[]  @relation("notifications_generadorIdTousers")
+  post_likes                                       post_likes[]
+  posts                                            posts[]
+  profile_visits_profile_visits_perfilIdTousers    profile_visits[] @relation("profile_visits_perfilIdTousers")
+  profile_visits_profile_visits_visitanteIdTousers profile_visits[] @relation("profile_visits_visitanteIdTousers")
+  spotify_tokens                                   spotify_tokens?
+  user_profiles                                    user_profiles?
+  user_stats                                       user_stats?
+
+  @@index([email], map: "idx_users_email")
+  @@index([username], map: "idx_users_username")
+}
+
+enum backgrounds_tipo {
+  STATIC
+  ANIMATED
+  ASCII
+}
+
+enum notifications_tipo {
+  SOLICITUD_AMISTAD
+  AMISTAD_ACEPTADA
+  LIKE_POST
+  COMENTARIO_POST
+  MENSAJE_NUEVO
+  VISITA_PERFIL
+  MENCION
+}
+
+enum amistades_estado {
+  PENDIENTE
+  ACEPTADO
+  RECHAZADO
+  BLOQUEADO
+}
+
+enum posts_privacidad {
+  PUBLICA
+  AMIGOS
+  SOLO_YO
+}
+
+enum users_rol {
+  ADMIN
+  USUARIO
+}
