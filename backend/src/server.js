@@ -1,14 +1,24 @@
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
+const authRoutes = require('./modules/auth/auth.routes');
+
 const app = express();
-app.use(cors());
+
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true,
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 app.get('/api/ping', (req, res) => {
   res.json({ message: 'Backend funcionando ✅' });
 });
+
+app.use('/api/auth', authRoutes);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`Server corriendo en puerto ${PORT}`));
