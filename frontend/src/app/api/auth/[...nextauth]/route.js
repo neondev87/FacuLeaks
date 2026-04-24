@@ -15,8 +15,19 @@ const handler = NextAuth({
     async redirect({ url, baseUrl }) {
       return url.startsWith(baseUrl) ? url : baseUrl;
     },
+    async jwt({ token }) {
+      if (!token.dbId) {
+        try {
+          const res  = await fetch(`http://localhost:4000/api/auth/check/${token.sub}`);
+          const data = await res.json();
+          if (data.exists) token.dbId = data.user.id;
+        } catch {}
+      }
+      return token;
+    },
     async session({ session, token }) {
-      session.user.id = token.sub;
+      session.user.id  = token.sub;
+      session.user.dbId = token.dbId || null;
       return session;
     },
   },
