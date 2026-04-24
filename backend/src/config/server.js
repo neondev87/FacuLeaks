@@ -3,7 +3,8 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
-const authRoutes = require('./modules/auth/auth.routes');
+const authRoutes  = require('../modules/auth/auth.routes');
+const postsRoutes = require('../modules/posts/posts.routes');
 
 const app = express();
 
@@ -18,7 +19,8 @@ app.get('/api/ping', (req, res) => {
   res.json({ message: 'Backend funcionando ✅' });
 });
 
-app.use('/api/auth', authRoutes);
+app.use('/api/auth',  authRoutes);
+app.use('/api/posts', postsRoutes);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`Server corriendo en puerto ${PORT}`));
