@@ -1,32 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Navbar from "@/components/Navbar";
 
-// ── SPOTIFY COMPACTO ──────────────────────────────────────────
-function SpotifyWidgetCompact() {
-  const [prog, setProg] = useState(42);
-  useEffect(() => {
-    const t = setInterval(() => setProg(p => p >= 100 ? 0 : p + 0.1), 300);
-    return () => clearInterval(t);
-  }, []);
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: "#555" }}>
-      <span style={{ color: "#1db954" }}>▶</span>
-      <div>
-        <div style={{ color: "#e8e4d9", fontSize: 11, letterSpacing: ".04em", marginBottom: 2 }}>
-          rotting in digital shadows
-        </div>
-        <div style={{ width: 80, height: 2, background: "rgba(255,255,255,.08)", borderRadius: 1 }}>
-          <div style={{ height: "100%", width: `${prog}%`, background: "#1db954", borderRadius: 1, transition: "width .3s linear" }} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── FORO PAGE ─────────────────────────────────────────────────
 export default function ForoPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -49,11 +27,7 @@ export default function ForoPage() {
     s.textContent = `
       @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Cinzel:wght@400;600;900&display=swap');
 
-      body {
-        background:#000; color:#e8e4d9;
-        font-family:'Space Mono',monospace;
-        font-size:13px; overflow:hidden;
-      }
+      body { background:#000; color:#e8e4d9; font-family:'Space Mono',monospace; font-size:13px; overflow:hidden; }
 
       body::before {
         content:''; position:fixed; inset:0;
@@ -70,25 +44,6 @@ export default function ForoPage() {
       ::-webkit-scrollbar-track { background:#000 }
       ::-webkit-scrollbar-thumb { background:#222 }
 
-      .nav {
-        position:fixed; top:0; left:0; right:0; height:48px;
-        border-bottom:1px solid rgba(255,255,255,.08);
-        background:rgba(0,0,0,.94);
-        display:flex; align-items:center; justify-content:space-between;
-        padding:0 28px; z-index:200; backdrop-filter:blur(4px);
-      }
-      .nav-logo {
-        font-family:'Cinzel',serif; font-size:15px;
-        letter-spacing:.3em; color:#fff; cursor:pointer; opacity:.9;
-      }
-      .nav-logo:hover { opacity:1; }
-      .nav-link {
-        font-size:12px; letter-spacing:.2em; color:#555;
-        cursor:pointer; transition:color .2s; text-transform:uppercase;
-        background:none; border:none; font-family:'Space Mono',monospace;
-      }
-      .nav-link:hover, .nav-link.active { color:#fff; }
-
       .channel-item {
         padding: 7px 16px;
         cursor: pointer;
@@ -96,10 +51,7 @@ export default function ForoPage() {
         transition: all .15s;
       }
       .channel-item:hover { background: rgba(255,255,255,.03); }
-      .channel-item.active {
-        background: rgba(255,255,255,.07);
-        border-left-color: #fff;
-      }
+      .channel-item.active { background: rgba(255,255,255,.07); border-left-color: #fff; }
 
       .msg-input {
         flex: 1;
@@ -144,11 +96,11 @@ export default function ForoPage() {
 
   const msgs = {
     general: [
-      { user: "dead_girl",       time: "04:37", text: "alguien más tiene el sitio lento o soy yo",          color: "#ccc" },
-      { user: "null_entity",     time: "04:39", text: "yo también. igual de vacío que mi alma",             color: "#999" },
-      { user: "_cemetery_code",  time: "04:41", text: "están haciendo deploy supongo",                      color: "#aaa" },
-      { user: "glitch.phantom",  time: "04:45", text: "> void.exe se reinició solo\n> recomiendo esperar", color: "#bbb" },
-      { user: "dead_girl",       time: "04:48", text: "ya volvió para los que pregunten",                   color: "#ccc" },
+      { user: "dead_girl",      time: "04:37", text: "alguien más tiene el sitio lento o soy yo",           color: "#ccc" },
+      { user: "null_entity",    time: "04:39", text: "yo también. igual de vacío que mi alma",              color: "#999" },
+      { user: "_cemetery_code", time: "04:41", text: "están haciendo deploy supongo",                       color: "#aaa" },
+      { user: "glitch.phantom", time: "04:45", text: "> void.exe se reinició solo\n> recomiendo esperar",  color: "#bbb" },
+      { user: "dead_girl",      time: "04:48", text: "ya volvió para los que pregunten",                    color: "#ccc" },
     ],
     aesthetics: [
       { user: "_cemetery_code", time: "03:11", text: "alguien tiene refs de cybersigilism para un proyecto?", color: "#aaa" },
@@ -156,17 +108,13 @@ export default function ForoPage() {
       { user: "null_entity",    time: "03:22", text: "también mira los stickers de Tumblr ca. 2014",          color: "#999" },
     ],
     code: [
-      { user: "glitch.phantom", time: "02:03", text: "¿next.js hydration error en prod pero no en dev?",   color: "#bbb" },
+      { user: "glitch.phantom", time: "02:03", text: "¿next.js hydration error en prod pero no en dev?",        color: "#bbb" },
       { user: "dead_girl",      time: "02:11", text: "probablemente mismatch de SSR. revisa Date o Math.random", color: "#ccc" },
-      { user: "glitch.phantom", time: "02:14", text: "ERA ESO. gracias queen",                             color: "#bbb" },
+      { user: "glitch.phantom", time: "02:14", text: "ERA ESO. gracias queen",                                   color: "#bbb" },
     ],
-    vlogs: [
-      { user: "null_entity", time: "01:00", text: "subí nuevo vlog. está en mi perfil si quieren verlo", color: "#999" },
-    ],
-    "dark-music": [
-      { user: "_cemetery_code", time: "00:12", text: "¿alguien conoce Salem? muy subestimados", color: "#aaa" },
-    ],
-    void: [
+    vlogs:       [{ user: "null_entity",    time: "01:00", text: "subí nuevo vlog. está en mi perfil si quieren verlo", color: "#999" }],
+    "dark-music":[{ user: "_cemetery_code", time: "00:12", text: "¿alguien conoce Salem? muy subestimados",             color: "#aaa" }],
+    void:        [
       { user: "glitch.phantom", time: "03:33", text: "...", color: "#bbb" },
       { user: "dead_girl",      time: "03:34", text: "...", color: "#ccc" },
     ],
@@ -179,50 +127,16 @@ export default function ForoPage() {
 
   return (
     <>
-      {/* ── NAVBAR ── */}
-      <nav className="nav">
-        <span className="nav-logo">† FACULEAKS</span>
-        <div style={{ display: "flex", gap: 28 }}>
-          {[
-            { label: "MURO",   href: "/feed"   },
-            { label: "PERFIL", href: "/perfil" },
-            { label: "FORO",   href: "/foro"   },
-          ].map(({ label, href }) => (
-            <button
-              key={label}
-              className={`nav-link${href === "/foro" ? " active" : ""}`}
-              onClick={() => router.push(href)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-          <SpotifyWidgetCompact />
-          <span style={{ fontSize: 11, color: "#3ddc84", letterSpacing: ".12em" }}>● ONLINE</span>
-          <button
-            onClick={() => signOut({ callbackUrl: "/auth" })}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "#555", fontFamily: "'Space Mono', monospace", fontSize: 11, letterSpacing: ".12em", transition: "color .2s" }}
-            onMouseEnter={e => e.currentTarget.style.color = "#e8e4d9"}
-            onMouseLeave={e => e.currentTarget.style.color = "#555"}
-          >
-            logout
-          </button>
-        </div>
-      </nav>
+      <Navbar />
 
-      {/* ── LAYOUT FORO ── */}
       <div style={{ display: "flex", height: "calc(100vh - 48px)", marginTop: 48 }}>
 
-        {/* ── SIDEBAR DE CANALES ── */}
+        {/* ── SIDEBAR ── */}
         <div style={{ width: 210, borderRight: "1px solid rgba(255,255,255,.07)", background: "rgba(0,0,0,.5)", display: "flex", flexDirection: "column", flexShrink: 0 }}>
-
-          {/* Header sidebar */}
           <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,.07)", fontFamily: "'Cinzel', serif", fontSize: 13, color: ac, letterSpacing: ".2em" }}>
             VOID_CHANNELS
           </div>
 
-          {/* Lista de canales */}
           <div style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
             {channels.map(c => (
               <div
@@ -241,18 +155,15 @@ export default function ForoPage() {
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize: 10, color: "#333", marginTop: 2, letterSpacing: ".03em" }}>
-                  {c.desc}
-                </div>
+                <div style={{ fontSize: 10, color: "#333", marginTop: 2, letterSpacing: ".03em" }}>{c.desc}</div>
               </div>
             ))}
           </div>
 
-          {/* Usuario en sidebar */}
           <div style={{ padding: "10px 14px", borderTop: "1px solid rgba(255,255,255,.07)", display: "flex", gap: 10, alignItems: "center" }}>
             <div style={{ width: 26, height: 26, background: "#0a0a0a", border: `1px solid ${ac}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: `${ac}55`, flexShrink: 0 }}>◈</div>
             <div>
-              <div style={{ fontSize: 12, color: "#e8e4d9" }}>{session?.user?.name?.split(" ")[0] || "dead_girl"}</div>
+              <div style={{ fontSize: 12, color: "#e8e4d9" }}>{session?.user?.name?.split(" ")[0] || "user"}</div>
               <div style={{ fontSize: 10, color: "#3ddc84", display: "flex", alignItems: "center", gap: 4 }}>
                 <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#3ddc84", display: "inline-block" }} />
                 online
@@ -261,17 +172,15 @@ export default function ForoPage() {
           </div>
         </div>
 
-        {/* ── ÁREA DE MENSAJES ── */}
+        {/* ── MENSAJES ── */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
 
-          {/* Header del canal */}
           <div style={{ padding: "12px 24px", borderBottom: "1px solid rgba(255,255,255,.07)", display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
             <span style={{ color: ac, fontFamily: "'Cinzel', serif", fontSize: 15 }}>{currentChannel?.name}</span>
             <span style={{ color: "rgba(255,255,255,.1)" }}>|</span>
             <span style={{ fontSize: 12, color: "#444" }}>{currentChannel?.desc}</span>
           </div>
 
-          {/* Mensajes */}
           <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
             {currentMsgs.map((m, i) => (
               <div key={i} style={{ display: "flex", gap: 12, marginBottom: 18 }}>
@@ -290,29 +199,15 @@ export default function ForoPage() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input de mensaje */}
           <div style={{ padding: "14px 24px", borderTop: "1px solid rgba(255,255,255,.07)", display: "flex", gap: 10, flexShrink: 0 }}>
             <input
               className="msg-input"
               placeholder={`mensaje en ${currentChannel?.name}...`}
               value={input}
               onChange={e => setInput(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === "Enter" && input.trim()) {
-                  // TODO: enviar mensaje al backend
-                  setInput("");
-                }
-              }}
+              onKeyDown={e => { if (e.key === "Enter" && input.trim()) setInput(""); }}
             />
-            <button
-              className="send-btn"
-              onClick={() => {
-                if (input.trim()) {
-                  // TODO: enviar mensaje al backend
-                  setInput("");
-                }
-              }}
-            >
+            <button className="send-btn" onClick={() => { if (input.trim()) setInput(""); }}>
               ENVIAR
             </button>
           </div>
