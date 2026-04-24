@@ -9,6 +9,12 @@ const handler = NextAuth({
     }),
   ],
   callbacks: {
+    async signIn({ user }) {
+      return true;
+    },
+    async redirect({ url, baseUrl }) {
+      return url.startsWith(baseUrl) ? url : baseUrl;
+    },
     async session({ session, token }) {
       session.user.id = token.sub;
       return session;

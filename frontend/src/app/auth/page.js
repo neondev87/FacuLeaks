@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 
-// ── GOTHIC CROSS ──────────────────────────────────────────────
 function GothicCross({ size = 54, opacity = 0.38, style = {} }) {
   return (
     <svg width={size} height={size * 1.78} viewBox="0 0 80 140" fill="none" style={{ opacity, ...style }}>
@@ -35,7 +34,6 @@ function GothicCross({ size = 54, opacity = 0.38, style = {} }) {
   );
 }
 
-// ── NEONDEV MARK ──────────────────────────────────────────────
 function NeonDevMark() {
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5, pointerEvents: "none", userSelect: "none" }}>
@@ -63,21 +61,47 @@ function NeonDevMark() {
   );
 }
 
-// ── MAIN ──────────────────────────────────────────────────────
 export default function AuthPage() {
-  const [white, setWhite] = useState(true);
-  const [ready, setReady] = useState(false);
+  const [white, setWhite]     = useState(true);
+  const [ready, setReady]     = useState(false);
+  const [checking, setChecking] = useState(false);
 
-  const tcD = white ? "rgba(0,0,0,.35)"  : "rgba(232,228,217,.35)";
-  const tcF = white ? "rgba(0,0,0,.18)"  : "rgba(232,228,217,.18)";
-  const bDim = white ? "rgba(0,0,0,.22)" : "rgba(232,228,217,.22)";
+  const tcD  = white ? "rgba(0,0,0,.35)"  : "rgba(232,228,217,.35)";
+  const tcF  = white ? "rgba(0,0,0,.18)"  : "rgba(232,228,217,.18)";
 
+  // ── Al cargar, verificar si ya hay sesión activa ──
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      try {
+        const session = await fetch('/api/auth/session').then(r => r.json());
+        if (!session?.user?.id) return; // No hay sesión, mostrar botón normal
+
+        // Hay sesión — verificar si ya tiene cuenta en la BD
+        setChecking(true);
+        const res = await fetch(`http://localhost:4000/api/auth/check/${session.user.id}`);
+        const data = await res.json();
+
+        if (data.exists) {
+          window.location.href = '/feed';
+        } else {
+          window.location.href = '/register';
+        }
+      } catch {
+        // Error de red o backend caído — mostrar botón normal
+        setChecking(false);
+      }
+    };
+    checkExistingSession();
+  }, []);
+
+  // ── Animación blanco→negro ──
   useEffect(() => {
     const t1 = setTimeout(() => setWhite(false), 1440);
     const t2 = setTimeout(() => setReady(true),  1600);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
+  // ── Estilos ──
   useEffect(() => {
     const s = document.createElement("style");
     s.id = "auth-styles";
@@ -92,10 +116,6 @@ export default function AuthPage() {
         0%,35% { color:#000; }
         80%,100% { color:#e8e4d9; }
       }
-      @keyframes textW2Bd {
-        0%,35% { color:rgba(0,0,0,.35); }
-        80%,100% { color:rgba(232,228,217,.35); }
-      }
       @keyframes fadeUp {
         from { opacity:0; transform:translateY(12px); }
         to   { opacity:1; transform:translateY(0); }
@@ -107,6 +127,10 @@ export default function AuthPage() {
       }
       @keyframes flicker {
         0%,100%{opacity:1} 92%{opacity:1} 93%{opacity:.6} 94%{opacity:1}
+      }
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to   { transform: rotate(360deg); }
       }
 
       body::before {
@@ -150,6 +174,10 @@ export default function AuthPage() {
         background: rgba(232,228,217,.04);
         box-shadow: 0 0 20px rgba(232,228,217,.05);
       }
+      .btn-google:disabled {
+        opacity: .4;
+        cursor: not-allowed;
+      }
 
       .form-wrap { animation: fadeUp .5s ease .4s both; }
 
@@ -161,6 +189,21 @@ export default function AuthPage() {
         mix-blend-mode:lighten; z-index:1;
         animation: girlIn 1.2s ease 1.6s both;
         pointer-events:none; user-select:none;
+      }
+
+      .checking-indicator {
+        font-family:'Space Mono',monospace;
+        font-size:9px; letter-spacing:.2em;
+        color:rgba(232,228,217,.35);
+        display:flex; align-items:center; gap:8px;
+        margin-top:12px;
+      }
+      .spinner {
+        width:10px; height:10px;
+        border:1px solid rgba(232,228,217,.2);
+        border-top-color:rgba(232,228,217,.6);
+        border-radius:50%;
+        animation:spin .8s linear infinite;
       }
     `;
     document.head.appendChild(s);
@@ -207,21 +250,28 @@ export default function AuthPage() {
           </div>
         </div>
 
-        {/* Botón Google */}
+        {/* Botón Google o indicador de checking */}
         {ready && (
           <div className="form-wrap">
-            <button
-              className="btn-google"
-              onClick={() => signIn("google", { callbackUrl: "/register" })}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" opacity=".8"/>
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" opacity=".8"/>
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" opacity=".8"/>
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" opacity=".8"/>
-              </svg>
-              $ continuar con google
-            </button>
+            {checking ? (
+              <div className="checking-indicator">
+                <div className="spinner" />
+                verificando sesión...
+              </div>
+            ) : (
+              <button
+                className="btn-google"
+                onClick={() => signIn("google")}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" opacity=".8"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" opacity=".8"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" opacity=".8"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" opacity=".8"/>
+                </svg>
+                $ continuar con google
+              </button>
+            )}
           </div>
         )}
 
@@ -239,24 +289,20 @@ export default function AuthPage() {
       {/* ══ RIGHT ══ */}
       <div style={{ position: "relative", overflow: "hidden" }}>
 
-        {/* Divisor izquierdo */}
         <div style={{
           position: "absolute", top: "10%", bottom: "10%", left: 0, width: 1,
           background: "linear-gradient(180deg,transparent,rgba(255,255,255,.05) 30%,rgba(255,255,255,.05) 70%,transparent)",
           zIndex: 3,
         }} />
 
-        {/* Cruz gótica */}
         <div style={{ position: "absolute", top: 160, right: 14, zIndex: 3 }}>
           <GothicCross size={54} opacity={0.38} />
         </div>
 
-        {/* NeonDev */}
         <div style={{ position: "absolute", top: 68, right: 20, zIndex: 5 }}>
           <NeonDevMark />
         </div>
 
-        {/* Status */}
         <div style={{
           position: "absolute", top: 24, left: 18, zIndex: 4,
           fontFamily: "'Space Mono', monospace",
@@ -269,10 +315,8 @@ export default function AuthPage() {
           </span>
         </div>
 
-        {/* Anime girl */}
         <img src="/art/girl.png" alt="" className="girl-img" />
 
-        {/* Overlay */}
         <div style={{
           position: "absolute", inset: 0,
           background:
