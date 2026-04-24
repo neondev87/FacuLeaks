@@ -3,28 +3,33 @@
 import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Navbar from "@/components/Navbar";
 
-// ── SPOTIFY COMPACTO (navbar) ─────────────────────────────────
-function SpotifyWidgetCompact() {
-  const [prog, setProg] = useState(42);
+// ── TERMINAL COUNTER ──────────────────────────────────────────
+function TerminalCounter({ label, value, text }) {
+  const [display, setDisplay] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => setProg(p => p >= 100 ? 0 : p + 0.1), 300);
+    if (value === null || value === undefined) return;
+    let start = 0;
+    const step = Math.ceil(value / 40);
+    const t = setInterval(() => {
+      start += step;
+      if (start >= value) { setDisplay(value); clearInterval(t); }
+      else setDisplay(start);
+    }, 30);
     return () => clearInterval(t);
-  }, []);
+  }, [value]);
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: "#555" }}>
-      <span style={{ color: "#1db954" }}>▶</span>
-      <div>
-        <div style={{ color: "#e8e4d9", fontSize: 11, letterSpacing: ".04em", marginBottom: 2 }}>
-          rotting in digital shadows
-        </div>
-        <div style={{ width: 80, height: 2, background: "rgba(255,255,255,.08)", borderRadius: 1 }}>
-          <div style={{ height: "100%", width: `${prog}%`, background: "#1db954", borderRadius: 1, transition: "width .3s linear" }} />
-        </div>
-      </div>
+    <div style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 12, color: "#555", display: "flex", justifyContent: "space-between", padding: "2px 0" }}>
+      <span>{label}:</span>
+      <span style={{ color: "#e8e4d9" }}>
+        {text || display.toLocaleString()}
+        {!text && <span style={{ animation: "blink 1s step-end infinite", color: "#444" }}>_</span>}
+      </span>
     </div>
   );
 }
+
 
 // ── SPOTIFY WIDGET COMPLETO ───────────────────────────────────
 function SpotifyWidget() {
@@ -73,9 +78,10 @@ export default function ProfilePage() {
     const s = document.createElement("style");
     s.id = "profile-styles";
     s.textContent = `
-      @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Cinzel:wght@400;600;900&family=Syne:wght@400;500;700&family=IM+Fell+English:ital@0;1&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Space+Mono:wght@400;700&family=Cinzel:wght@400;600;900&family=Syne:wght@400;500;700&family=IM+Fell+English:ital@0;1&display=swap');
 
       @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+      @keyframes blink  { 0%,100%{opacity:1} 50%{opacity:0} }
 
       body {
         background:#000; color:#e8e4d9;
@@ -105,16 +111,9 @@ export default function ProfilePage() {
         display:flex; align-items:center; justify-content:space-between;
         padding:0 28px; z-index:200; backdrop-filter:blur(4px);
       }
-      .nav-logo {
-        font-family:'Cinzel',serif; font-size:15px;
-        letter-spacing:.3em; color:#fff; cursor:pointer; opacity:.9;
-      }
+      .nav-logo { font-family:'Cinzel',serif; font-size:15px; letter-spacing:.3em; color:#fff; cursor:pointer; opacity:.9; }
       .nav-logo:hover { opacity:1; }
-      .nav-link {
-        font-size:12px; letter-spacing:.2em; color:#555;
-        cursor:pointer; transition:color .2s; text-transform:uppercase;
-        background:none; border:none; font-family:'Space Mono',monospace;
-      }
+      .nav-link { font-size:12px; letter-spacing:.2em; color:#555; cursor:pointer; transition:color .2s; text-transform:uppercase; background:none; border:none; font-family:'Space Mono',monospace; }
       .nav-link:hover, .nav-link.active { color:#fff; }
 
       .profile-wrap {
@@ -141,7 +140,7 @@ export default function ProfilePage() {
       }
 
       .about-item {
-        display: flex; gap: 10; margin-bottom: 7px;
+        display: flex; gap: 10px; margin-bottom: 7px;
         font-size: 13px; color: rgba(232,228,217,.75); line-height: 1.5;
       }
 
@@ -160,48 +159,16 @@ export default function ProfilePage() {
   return (
     <>
       {/* ── NAVBAR ── */}
-      <nav className="nav">
-        <span className="nav-logo">† FACULEAKS</span>
-        <div style={{ display: "flex", gap: 28 }}>
-          {[
-            { label: "MURO",   href: "/feed"   },
-            { label: "PERFIL", href: "/perfil" },
-            { label: "FORO",   href: "/foro"   },
-          ].map(({ label, href }) => (
-            <button
-              key={label}
-              className={`nav-link${href === "/perfil" ? " active" : ""}`}
-              onClick={() => router.push(href)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-          <SpotifyWidgetCompact />
-          <span style={{ fontSize: 11, color: "#3ddc84", letterSpacing: ".12em" }}>● ONLINE</span>
-          <button
-            onClick={() => signOut({ callbackUrl: "/auth" })}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "#555", fontFamily: "'Space Mono', monospace", fontSize: 11, letterSpacing: ".12em", transition: "color .2s" }}
-            onMouseEnter={e => e.currentTarget.style.color = "#e8e4d9"}
-            onMouseLeave={e => e.currentTarget.style.color = "#555"}
-          >
-            logout
-          </button>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* ── PERFIL ── */}
       <div className="profile-wrap">
 
-        {/* ── HEADER DEL PERFIL ── */}
+        {/* ── HEADER ── */}
         <div style={{ borderBottom: `1px solid ${ac}33`, paddingBottom: 18, marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <div style={{ fontFamily: "'Cinzel', serif", fontSize: 34, color: "#e8e4d9", letterSpacing: ".1em" }}>
               {session?.user?.name || "dead_girl"}
-            </div>
-            <div style={{ fontFamily: "'IM Fell English', serif", fontStyle: "italic", color: `${ac}66`, fontSize: 15, marginTop: 4 }}>
-              rotting away online
             </div>
           </div>
           <div style={{ fontSize: 12, color: "rgba(232,228,217,.5)", display: "flex", gap: 14, alignItems: "center" }}>
@@ -212,7 +179,7 @@ export default function ProfilePage() {
               style={{ cursor: "pointer", color: `${ac}66`, transition: "color .2s" }}
               onMouseEnter={e => e.currentTarget.style.color = "#e8e4d9"}
               onMouseLeave={e => e.currentTarget.style.color = `${ac}66`}
-              onClick={() => signOut({ callbackUrl: "/auth" })}
+              onClick={() => router.push("/auth")}
             >
               logout
             </span>
@@ -235,16 +202,16 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Spotify widget completo */}
+            {/* Spotify */}
             <SpotifyWidget />
 
-            {/* Stats */}
-            <div style={{ border, padding: "10px 12px", fontSize: 12, color: "#555", lineHeight: 2 }}>
-              <div style={{ color: ac, marginBottom: 6, letterSpacing: ".15em", fontSize: 13 }}>† STATS</div>
-              <div>visitas: <span style={{ color: "#e8e4d9" }}>1.337</span></div>
-              <div>vlogs: <span style={{ color: "#e8e4d9" }}>12</span></div>
-              <div>amigos: <span style={{ color: "#e8e4d9" }}>48</span></div>
-              <div>desde: <span style={{ color: "#e8e4d9" }}>II.MMXXIV</span></div>
+            {/* Stats con contador terminal */}
+            <div style={{ border, padding: "10px 12px" }}>
+              <div style={{ color: ac, marginBottom: 8, letterSpacing: ".15em", fontSize: 13, fontFamily: "'Cinzel', serif" }}>† STATS</div>
+              <TerminalCounter label="visitas" value={1337} />
+              <TerminalCounter label="vlogs"   value={12}   />
+              <TerminalCounter label="amigos"  value={48}   />
+              <TerminalCounter label="desde"   value={null} text="II.MMXXIV" />
             </div>
           </div>
 
@@ -288,8 +255,8 @@ export default function ProfilePage() {
             <div style={{ border, padding: 14 }}>
               <div className="section-title" style={{ color: ac }}>† Latest Posts:</div>
               {[
-                { title: "rotting in digital shadows", date: "Apr 22", views: 88 },
-                { title: "an empty screaming void",    date: "Apr 20", views: 44 },
+                { title: "rotting in digital shadows", date: "Apr 22", views: 88  },
+                { title: "an empty screaming void",    date: "Apr 20", views: 44  },
                 { title: "void.exe",                   date: "Apr 18", views: 120 },
               ].map((p, i) => (
                 <div key={i} className="post-row">
@@ -311,9 +278,7 @@ export default function ProfilePage() {
               <div className="section-title" style={{ color: ac }}>† Pictures:</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
                 {[0, 1, 2, 3, 4, 5].map(i => (
-                  <div
-                    key={i}
-                    className="pic-cell"
+                  <div key={i} className="pic-cell"
                     onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(255,255,255,.25)"}
                     onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,.06)"}
                   >

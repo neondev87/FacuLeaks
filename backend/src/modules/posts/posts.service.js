@@ -4,30 +4,32 @@ const prisma = require('../../config/db');
 const getFeedRecientes = async (userId, page = 1, limit = 20) => {
   const skip = (page - 1) * limit;
 
+  // Obtener IDs de usuarios que sigo
+  const follows = await prisma.follows.findMany({
+    where: { seguidorId: userId },
+    select: { seguidoId: true }
+  });
+  const seguidoIds = follows.map(f => f.seguidoId);
+  if (seguidoIds.length === 0) return [];
+
   const posts = await prisma.posts.findMany({
     where: {
-      autor: {
-        seguidores: {
-          some: { seguidorId: userId }
-        }
-      },
+      autorId: { in: seguidoIds },
       privacidad: { in: ['PUBLICA', 'AMIGOS'] }
     },
     include: {
-      autor: {
-        select: { id: true, username: true, nombre: true }
-      },
-      _count: { select: { likes: true, comentarios: true } }
+      users: { select: { id: true, username: true, nombre: true } },
+      _count: { select: { post_likes: true, comments: true } }
     },
     orderBy: { creadoEn: 'desc' },
     skip,
     take: limit,
   });
 
-  return posts;
+  return posts.map(p => ({ ...p, autor: p.users }));
 };
 
-// ── TRENDING: todos los posts, score por popularidad (últimas 72h) ──
+// ── TRENDING ──
 const getFeedTrending = async (page = 1, limit = 20) => {
   const skip = (page - 1) * limit;
   const hace72h = new Date(Date.now() - 72 * 60 * 60 * 1000);
@@ -38,10 +40,8 @@ const getFeedTrending = async (page = 1, limit = 20) => {
       creadoEn: { gte: hace72h }
     },
     include: {
-      autor: {
-        select: { id: true, username: true, nombre: true }
-      },
-      _count: { select: { likes: true, comentarios: true } }
+      users: { select: { id: true, username: true, nombre: true } },
+      _count: { select: { post_likes: true, comments: true } }
     },
     orderBy: [
       { totalLikes: 'desc' },
@@ -53,21 +53,17 @@ const getFeedTrending = async (page = 1, limit = 20) => {
     take: limit,
   });
 
-  return posts;
+  return posts.map(p => ({ ...p, autor: p.users }));
 };
 
-// ── SIGUIENDO: posts de amigos mutuos (amistad ACEPTADA) ──
+// ── SIGUIENDO: amigos mutuos ──
 const getFeedSiguiendo = async (userId, page = 1, limit = 20) => {
   const skip = (page - 1) * limit;
 
-  // Obtener IDs de amigos mutuos
   const amistades = await prisma.amistades.findMany({
     where: {
       estado: 'ACEPTADO',
-      OR: [
-        { solicitanteId: userId },
-        { receptorId: userId },
-      ]
+      OR: [{ solicitanteId: userId }, { receptorId: userId }]
     },
     select: { solicitanteId: true, receptorId: true }
   });
@@ -75,7 +71,6 @@ const getFeedSiguiendo = async (userId, page = 1, limit = 20) => {
   const amigoIds = amistades.map(a =>
     a.solicitanteId === userId ? a.receptorId : a.solicitanteId
   );
-
   if (amigoIds.length === 0) return [];
 
   const posts = await prisma.posts.findMany({
@@ -84,17 +79,15 @@ const getFeedSiguiendo = async (userId, page = 1, limit = 20) => {
       privacidad: { in: ['PUBLICA', 'AMIGOS'] }
     },
     include: {
-      autor: {
-        select: { id: true, username: true, nombre: true }
-      },
-      _count: { select: { likes: true, comentarios: true } }
+      users: { select: { id: true, username: true, nombre: true } },
+      _count: { select: { post_likes: true, comments: true } }
     },
     orderBy: { creadoEn: 'desc' },
     skip,
     take: limit,
   });
 
-  return posts;
+  return posts.map(p => ({ ...p, autor: p.users }));
 };
 
 // ── CREAR POST ──
@@ -102,10 +95,10 @@ const createPost = async (autorId, { titulo, contenido, privacidad = 'AMIGOS' })
   const post = await prisma.posts.create({
     data: { autorId, titulo, contenido, privacidad },
     include: {
-      autor: { select: { id: true, username: true, nombre: true } }
+      users: { select: { id: true, username: true, nombre: true } }
     }
   });
-  return post;
+  return { ...post, autor: post.users };
 };
 
 module.exports = { getFeedRecientes, getFeedTrending, getFeedSiguiendo, createPost };
