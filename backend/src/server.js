@@ -32,14 +32,12 @@ const prisma = require('./config/db');
 
 io.on('connection', (socket) => {
 
-  // Usuario se conecta
   socket.on('user:connect', (userId) => {
     onlineUsers.set(String(userId), socket.id);
     socket.userId = String(userId);
     io.emit('users:online', Array.from(onlineUsers.keys()));
   });
 
-  // Enviar mensaje
   socket.on('message:send', async (data) => {
     const { receptorId, contenido, emisorId } = data;
     try {
@@ -54,19 +52,15 @@ io.on('connection', (socket) => {
         }
       });
 
-      // Normalizar para el frontend
       const msgNorm = {
         ...msg,
         emisor: msg.users_messages_emisorIdTousers,
       };
 
-      // Emitir al receptor si está online
       const receptorSocket = onlineUsers.get(String(receptorId));
       if (receptorSocket) {
         io.to(receptorSocket).emit('message:receive', msgNorm);
       }
-
-      // Confirmar al emisor
       socket.emit('message:sent', msgNorm);
 
     } catch (err) {
@@ -74,7 +68,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Marcar mensajes como leídos
   socket.on('messages:read', async ({ emisorId, receptorId }) => {
     try {
       await prisma.messages.updateMany({
@@ -92,9 +85,30 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Desconexión
+  socket.on('typing:start', ({ receptorId }) => {
+    const receptorSocket = onlineUsers.get(String(receptorId));
+    if (receptorSocket) {
+      io.to(receptorSocket).emit('typing:start', { userId: socket.userId });
+    }
+  });
+
+  socket.on('typing:stop', ({ receptorId }) => {
+    const receptorSocket = onlineUsers.get(String(receptorId));
+    if (receptorSocket) {
+      io.to(receptorSocket).emit('typing:stop', { userId: socket.userId });
+    }
+  });
+
+  // ── Al desconectar: notificar typing:stop a cualquiera que lo tenga activo ──
   socket.on('disconnect', () => {
     if (socket.userId) {
+      // Avisar a todos los usuarios online que este dejó de escribir
+      onlineUsers.forEach((socketId, userId) => {
+        if (userId !== socket.userId) {
+          io.to(socketId).emit('typing:stop', { userId: socket.userId });
+        }
+      });
+
       onlineUsers.delete(socket.userId);
       io.emit('users:online', Array.from(onlineUsers.keys()));
     }
