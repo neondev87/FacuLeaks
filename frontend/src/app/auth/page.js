@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
+
+const API = "http://localhost:4000";
 
 function GothicCross({ size = 54, opacity = 0.38, style = {} }) {
   return (
@@ -62,37 +64,13 @@ function NeonDevMark() {
 }
 
 export default function AuthPage() {
-  const [white, setWhite]     = useState(true);
-  const [ready, setReady]     = useState(false);
+  const { data: session, status } = useSession();
+  const [white,    setWhite]    = useState(true);
+  const [ready,    setReady]    = useState(false);
   const [checking, setChecking] = useState(false);
 
-  const tcD  = white ? "rgba(0,0,0,.35)"  : "rgba(232,228,217,.35)";
-  const tcF  = white ? "rgba(0,0,0,.18)"  : "rgba(232,228,217,.18)";
-
-  // ── Al cargar, verificar si ya hay sesión activa ──
-  useEffect(() => {
-    const checkExistingSession = async () => {
-      try {
-        const session = await fetch('/api/auth/session').then(r => r.json());
-        if (!session?.user?.id) return; // No hay sesión, mostrar botón normal
-
-        // Hay sesión — verificar si ya tiene cuenta en la BD
-        setChecking(true);
-        const res = await fetch(`http://localhost:4000/api/auth/check/${session.user.id}`);
-        const data = await res.json();
-
-        if (data.exists) {
-          window.location.href = '/feed';
-        } else {
-          window.location.href = '/register';
-        }
-      } catch {
-        // Error de red o backend caído — mostrar botón normal
-        setChecking(false);
-      }
-    };
-    checkExistingSession();
-  }, []);
+  const tcD = white ? "rgba(0,0,0,.35)"  : "rgba(232,228,217,.35)";
+  const tcF = white ? "rgba(0,0,0,.18)"  : "rgba(232,228,217,.18)";
 
   // ── Animación blanco→negro ──
   useEffect(() => {
@@ -100,6 +78,49 @@ export default function AuthPage() {
     const t2 = setTimeout(() => setReady(true),  1600);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
+
+  // ── Cuando NextAuth tiene sesión → setear cookie backend → redirigir ──
+  useEffect(() => {
+    if (status !== "authenticated" || !session?.user) return;
+
+    const googleId = session.user.googleId || session.user.id;
+    if (!googleId) return;
+
+    setChecking(true);
+
+    const doLogin = async () => {
+      try {
+        // 1. Verificar si existe en BD
+        const checkRes  = await fetch(`${API}/api/auth/check/${googleId}`);
+        const checkData = await checkRes.json();
+
+        if (!checkData.exists) {
+          // Usuario nuevo → registro
+          window.location.href = "/register";
+          return;
+        }
+
+        // 2. Setear cookie JWT del backend
+        const loginRes = await fetch(`${API}/api/auth/login`, {
+          method:      "POST",
+          credentials: "include",   // ← para que la cookie se guarde en el browser
+          headers:     { "Content-Type": "application/json" },
+          body:        JSON.stringify({ googleId }),
+        });
+
+        if (!loginRes.ok) throw new Error("login backend falló");
+
+        // 3. Redirigir al feed
+        window.location.href = "/feed";
+
+      } catch (err) {
+        console.error("Error en login:", err);
+        setChecking(false);
+      }
+    };
+
+    doLogin();
+  }, [status, session]);
 
   // ── Estilos ──
   useEffect(() => {
@@ -250,13 +271,18 @@ export default function AuthPage() {
           </div>
         </div>
 
-        {/* Botón Google o indicador de checking */}
+        {/* Botón o spinner */}
         {ready && (
           <div className="form-wrap">
-            {checking ? (
+            {checking || status === "loading" ? (
               <div className="checking-indicator">
                 <div className="spinner" />
-                verificando sesión...
+                {checking ? "iniciando sesión..." : "verificando..."}
+              </div>
+            ) : status === "authenticated" ? (
+              <div className="checking-indicator">
+                <div className="spinner" />
+                redirigiendo...
               </div>
             ) : (
               <button

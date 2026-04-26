@@ -9,29 +9,45 @@ const handler = NextAuth({
     }),
   ],
   callbacks: {
-    async signIn({ user }) {
+    async signIn({ user, account, profile }) {
       return true;
     },
     async redirect({ url, baseUrl }) {
       return url.startsWith(baseUrl) ? url : baseUrl;
     },
-    async jwt({ token }) {
-      if (!token.dbId) {
+    async jwt({ token, account, profile }) {
+      if (account && profile) {
+        // Primer login — guardar googleId y verificar BD
+        const googleId = profile.sub;
+        token.googleId = googleId;
         try {
-          const res  = await fetch(`http://localhost:4000/api/auth/check/${token.sub}`);
-          const data = await res.json();
-          if (data.exists) {
-            token.dbId  = data.user.id;
-            token.imagen = data.user.imagen || null;
-          }
+          const checkRes  = await fetch(`http://localhost:4000/api/auth/check/${googleId}`);
+          const checkData = await checkRes.json();
+          token.dbId          = checkData.exists ? checkData.user.id    : null;
+          token.imagen        = checkData.exists ? checkData.user.imagen : null;
+          token.needsRegister = !checkData.exists;
+        } catch {
+          token.dbId = null;
+          token.needsRegister = true;
+        }
+      } else if (!token.dbId && token.googleId) {
+        // Token existente sin dbId (registro recién completado o token viejo)
+        try {
+          const checkRes  = await fetch(`http://localhost:4000/api/auth/check/${token.googleId}`);
+          const checkData = await checkRes.json();
+          token.dbId          = checkData.exists ? checkData.user.id    : null;
+          token.imagen        = checkData.exists ? checkData.user.imagen : null;
+          token.needsRegister = !checkData.exists;
         } catch {}
       }
       return token;
     },
     async session({ session, token }) {
-      session.user.id    = token.sub;
-      session.user.dbId  = token.dbId  || null;
-      session.user.imagen = token.imagen || null;
+      session.user.id             = token.sub;
+      session.user.dbId           = token.dbId   || null;
+      session.user.imagen         = token.imagen || null;
+      session.user.needsRegister  = token.needsRegister || false;
+      session.user.googleId       = token.googleId || token.sub;
       return session;
     },
   },
