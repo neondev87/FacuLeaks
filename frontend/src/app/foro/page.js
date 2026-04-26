@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import BgCross from "@/components/BgCross";
 
 export default function ForoPage() {
   const { data: session, status } = useSession();
@@ -128,6 +129,7 @@ export default function ForoPage() {
   return (
     <>
       <Navbar />
+      <BgCross />
 
       <div style={{ display: "flex", height: "calc(100vh - 48px)", marginTop: 48 }}>
 

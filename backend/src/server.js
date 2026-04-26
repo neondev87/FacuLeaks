@@ -9,6 +9,7 @@ const authRoutes   = require('./modules/auth/auth.routes');
 const postsRoutes  = require('./modules/posts/posts.routes');
 const chatRoutes   = require('./modules/chat/chat.routes');
 const amigosRoutes = require('./modules/amigos/amigos.routes');
+const uploadRoutes = require('./modules/upload/upload.routes'); 
 
 const app    = express();
 const server = http.createServer(app);
@@ -20,6 +21,14 @@ app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 
+// ── Inyectar io en req para usarlo en controllers ──
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
+app.use('/uploads', express.static('uploads')); // servir archivos
+app.use('/api/upload', uploadRoutes);
 app.get('/api/ping', (req, res) => res.json({ message: 'Backend funcionando' }));
 app.use('/api/auth',   authRoutes);
 app.use('/api/posts',  postsRoutes);
@@ -99,16 +108,13 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ── Al desconectar: notificar typing:stop a cualquiera que lo tenga activo ──
   socket.on('disconnect', () => {
     if (socket.userId) {
-      // Avisar a todos los usuarios online que este dejó de escribir
       onlineUsers.forEach((socketId, userId) => {
         if (userId !== socket.userId) {
           io.to(socketId).emit('typing:stop', { userId: socket.userId });
         }
       });
-
       onlineUsers.delete(socket.userId);
       io.emit('users:online', Array.from(onlineUsers.keys()));
     }
