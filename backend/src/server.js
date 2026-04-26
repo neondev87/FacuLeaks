@@ -10,6 +10,7 @@ const postsRoutes  = require('./modules/posts/posts.routes');
 const chatRoutes   = require('./modules/chat/chat.routes');
 const amigosRoutes = require('./modules/amigos/amigos.routes');
 const uploadRoutes = require('./modules/upload/upload.routes'); 
+const spotifyRoutes = require('./modules/spotify/spotify.routes');
 
 const app    = express();
 const server = http.createServer(app);
@@ -34,6 +35,7 @@ app.use('/api/auth',   authRoutes);
 app.use('/api/posts',  postsRoutes);
 app.use('/api/chat',   chatRoutes);
 app.use('/api/amigos', amigosRoutes);
+app.use('/api/spotify', spotifyRoutes);
 
 // ── SOCKET.IO ──
 const onlineUsers = new Map();
