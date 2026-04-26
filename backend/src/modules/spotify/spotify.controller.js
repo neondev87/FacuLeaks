@@ -160,5 +160,40 @@ const disconnect = async (req, res) => {
     res.json({ ok: true });
   }
 };
+// ── 5. Últimas 5 canciones ──
+const recentlyPlayed = async (req, res) => {
+  const userId = parseInt(req.params.userId);
+  try {
+    const tokenRecord = await prisma.spotify_tokens.findUnique({ where: { userId } });
+    if (!tokenRecord) return res.json({ connected: false, tracks: [] });
 
-module.exports = { spotifyAuth, spotifyCallback, nowPlaying, disconnect };
+    let accessToken = tokenRecord.accessToken;
+    if (new Date() >= tokenRecord.expiresAt) {
+      accessToken = await refreshToken(tokenRecord);
+    }
+
+    const r    = await fetch('https://api.spotify.com/v1/me/player/recently-played?limit=5', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const data = await r.json();
+
+    const tracks = (data.items || []).map(item => ({
+      track:      item.track.name,
+      artist:     item.track.artists.map(a => a.name).join(', '),
+      album:      item.track.album.name,
+      albumArt:   item.track.album.images[0]?.url || null,
+      spotifyUrl: item.track.external_urls.spotify,
+      playedAt:   item.played_at,
+    }));
+
+    res.json({ connected: true, tracks });
+  } catch (err) {
+    console.error('recentlyPlayed error:', err.message);
+    res.json({ connected: false, tracks: [] });
+  }
+};
+
+module.exports = { spotifyAuth, spotifyCallback, nowPlaying, recentlyPlayed, disconnect };
+
+
+

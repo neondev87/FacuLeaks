@@ -21,7 +21,7 @@ const registerUser = async ({ googleId, email, nombre, username, password }) => 
 const findUserByGoogleId = async (googleId) => {
   return await prisma.users.findUnique({
     where: { googleId },
-    select: { id: true, username: true, email: true, nombre: true, rol: true }
+    select: { id: true, username: true, email: true, nombre: true, imagen: true, rol: true }
   });
 };
 
