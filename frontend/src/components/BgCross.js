@@ -7,7 +7,7 @@ export default function BgCross() {
       width: "40vw",
       maxWidth: 600,
       height: "100vh",
-      backgroundImage: "url('/art/bg-cross.png')",
+      
       backgroundRepeat: "no-repeat",
       backgroundPosition: "right center",
       backgroundSize: "contain",
