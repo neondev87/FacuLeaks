@@ -1,6 +1,23 @@
 const { registerUser, findUserByGoogleId } = require('./auth.service');
 const jwt = require('jsonwebtoken');
 
+// Helper para setear la cookie JWT
+const setAuthCookie = (res, user) => {
+  const token = jwt.sign(
+    { id: user.id, username: user.username },
+    process.env.JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+  return token;
+};
+
+// POST /api/auth/register
 const register = async (req, res) => {
   try {
     const { googleId, email, nombre, username, password } = req.body;
@@ -8,20 +25,7 @@ const register = async (req, res) => {
       return res.status(400).json({ error: 'Faltan campos requeridos' });
 
     const user = await registerUser({ googleId, email, nombre, username, password });
-
-    const token = jwt.sign(
-      { id: user.id, username: user.username },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
+    setAuthCookie(res, user);
     return res.status(201).json({ user });
   } catch (error) {
     if (error.message === 'USERNAME_TAKEN')
@@ -33,6 +37,7 @@ const register = async (req, res) => {
   }
 };
 
+// GET /api/auth/check/:googleId
 const checkUser = async (req, res) => {
   try {
     const { googleId } = req.params;
@@ -45,4 +50,23 @@ const checkUser = async (req, res) => {
   }
 };
 
-module.exports = { register, checkUser };
+// POST /api/auth/login  — llamado desde NextAuth después del OAuth
+// Body: { googleId }
+// Setea la cookie JWT del backend
+const login = async (req, res) => {
+  try {
+    const { googleId } = req.body;
+    if (!googleId) return res.status(400).json({ error: 'Falta googleId' });
+
+    const user = await findUserByGoogleId(googleId);
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    setAuthCookie(res, user);
+    return res.json({ ok: true, user: { id: user.id, username: user.username } });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+module.exports = { register, checkUser, login };

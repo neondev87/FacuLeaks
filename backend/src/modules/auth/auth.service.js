@@ -1,6 +1,14 @@
 const prisma = require('../../config/db');
 const bcrypt = require('bcryptjs');
 
+const findUserByGoogleId = async (googleId) => {
+  console.log('googleId recibido:', googleId, 'length:', googleId.length);
+  return prisma.users.findFirst({
+    where: { googleId },
+    select: { id: true, username: true, email: true, nombre: true, imagen: true, rol: true }
+  });
+};
+
 const registerUser = async ({ googleId, email, nombre, username, password }) => {
   const existingUsername = await prisma.users.findUnique({ where: { username } });
   if (existingUsername) throw new Error('USERNAME_TAKEN');
@@ -16,13 +24,6 @@ const registerUser = async ({ googleId, email, nombre, username, password }) => 
   });
 
   return user;
-};
-
-const findUserByGoogleId = async (googleId) => {
-  return await prisma.users.findUnique({
-    where: { googleId },
-    select: { id: true, username: true, email: true, nombre: true, imagen: true, rol: true }
-  });
 };
 
 module.exports = { registerUser, findUserByGoogleId };

@@ -44,8 +44,7 @@ function TermLine({ text, color = "rgba(255,255,255,.9)", delay = 0, style = {} 
     <div style={{
       fontFamily: "'Share Tech Mono', monospace",
       fontSize: 12, letterSpacing: ".06em",
-      color, lineHeight: 1.7,
-      ...style,
+      color, lineHeight: 1.7, ...style,
     }}>
       {text}
     </div>
@@ -63,9 +62,10 @@ function ProgressBar({ percent }) {
 }
 
 export default function RegisterPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
+  const [checking, setChecking] = useState(true);
   const [step,     setStep]     = useState(0);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -73,6 +73,33 @@ export default function RegisterPage() {
   const [error,    setError]    = useState("");
   const [progress, setProgress] = useState(0);
   const inputRef = useRef(null);
+
+  // ── Si ya tiene dbId en sesión → directo al feed ──
+  useEffect(() => {
+    if (status === "loading") return;
+    if (status === "unauthenticated") { router.push("/auth"); return; }
+
+    // dbId viene del route.js — si existe, ya está registrado
+    if (session?.user?.dbId) {
+      router.push("/feed");
+      return;
+    }
+
+    // No tiene dbId — verificar con el backend por si el token no se actualizó
+    const googleId = session?.user?.id;
+    if (!googleId) { setChecking(false); return; }
+
+    fetch(`http://localhost:4000/api/auth/check/${googleId}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.exists) {
+          router.push("/feed");
+        } else {
+          setChecking(false);
+        }
+      })
+      .catch(() => setChecking(false));
+  }, [status, session, router]);
 
   const introText = useTypewriter(
     session?.user?.name
@@ -82,11 +109,12 @@ export default function RegisterPage() {
   );
 
   useEffect(() => {
+    if (checking) return;
     if (step === 0) {
       const t = setTimeout(() => setStep(1), session?.user?.name ? 2800 : 2200);
       return () => clearTimeout(t);
     }
-  }, [step, session]);
+  }, [step, session, checking]);
 
   useEffect(() => {
     if (step >= 1 && step <= 3) {
@@ -99,13 +127,10 @@ export default function RegisterPage() {
     s.id = "register-styles";
     s.textContent = `
       @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-
-      @keyframes blink   { 0%,100%{opacity:1} 50%{opacity:0} }
-      @keyframes fadeIn  { from{opacity:0} to{opacity:1} }
+      @keyframes blink    { 0%,100%{opacity:1} 50%{opacity:0} }
+      @keyframes fadeIn   { from{opacity:0} to{opacity:1} }
       @keyframes scanline { from{transform:translateY(-100%)} to{transform:translateY(100vh)} }
-
       body { background:#000; overflow:hidden; }
-
       body::before {
         content:''; position:fixed; inset:0;
         background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
@@ -116,33 +141,23 @@ export default function RegisterPage() {
         background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.12) 2px,rgba(0,0,0,.12) 4px);
         pointer-events:none; z-index:9999;
       }
-
       .term-input {
-        background: transparent;
-        border: none; outline: none;
-        font-family: 'Share Tech Mono', monospace;
-        font-size: 14px; letter-spacing: .08em;
-        color: #ffffff; caret-color: #ffffff;
-        width: 100%; padding: 0;
+        background:transparent; border:none; outline:none;
+        font-family:'Share Tech Mono',monospace;
+        font-size:14px; letter-spacing:.08em;
+        color:#ffffff; caret-color:#ffffff; width:100%; padding:0;
       }
-      .term-input::placeholder { color: rgba(255,255,255,.2); }
-      .term-input::selection   { background: rgba(255,255,255,.15); }
-
-      .cursor-blink { animation: blink 1s step-end infinite; }
-      .req-ok  { color: rgba(100,220,120,.9); }
-      .req-bad { color: rgba(255,255,255,.25); }
-
+      .term-input::placeholder { color:rgba(255,255,255,.2); }
+      .cursor-blink { animation:blink 1s step-end infinite; }
+      .req-ok  { color:rgba(100,220,120,.9); }
+      .req-bad { color:rgba(255,255,255,.25); }
       .confirm-btn {
-        background: transparent;
-        border: 1px solid rgba(255,255,255,.2);
-        color: rgba(255,255,255,.55);
-        font-family: 'Share Tech Mono', monospace;
-        font-size: 10px; letter-spacing: .2em;
-        padding: 4px 14px; cursor: pointer;
-        transition: all .2s;
+        background:transparent; border:1px solid rgba(255,255,255,.2);
+        color:rgba(255,255,255,.55); font-family:'Share Tech Mono',monospace;
+        font-size:10px; letter-spacing:.2em; padding:4px 14px;
+        cursor:pointer; transition:all .2s;
       }
-      .confirm-btn:hover { border-color: rgba(255,255,255,.7); color: #fff; }
-
+      .confirm-btn:hover { border-color:rgba(255,255,255,.7); color:#fff; }
       .moving-scan {
         position:fixed; top:0; left:0; right:0; height:1px;
         background:rgba(255,255,255,.03);
@@ -174,11 +189,9 @@ export default function RegisterPage() {
     setError("");
     setStep(4);
 
-    // Animación de progreso
     [{ p:20,d:300 },{ p:45,d:700 },{ p:70,d:1200 },{ p:90,d:1800 },{ p:100,d:2400 }]
       .forEach(({ p, d }) => setTimeout(() => setProgress(p), d));
 
-    // Llamada al backend después de la animación
     setTimeout(async () => {
       try {
         const res = await fetch('http://localhost:4000/api/auth/register', {
@@ -186,7 +199,7 @@ export default function RegisterPage() {
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
-            googleId: session?.user?.id  || session?.user?.sub,
+            googleId: session?.user?.id,
             email:    session?.user?.email,
             nombre:   session?.user?.name,
             username,
@@ -197,18 +210,16 @@ export default function RegisterPage() {
         const data = await res.json();
 
         if (!res.ok) {
-          // Volver al step 3 con el error
           setStep(3);
           setProgress(0);
           setError(data.error || 'Error al registrar');
           return;
         }
 
-        // Éxito
         setStep(5);
-        setTimeout(() => router.push('/feed'), 2000);
+        setTimeout(() => { window.location.href = '/feed'; }, 2000);
 
-      } catch (err) {
+      } catch {
         setStep(3);
         setProgress(0);
         setError('No se pudo conectar con el servidor');
@@ -223,75 +234,49 @@ export default function RegisterPage() {
     { label: "un número",            ok: /[0-9]/.test(password) },
   ];
 
-  const C  = "rgba(255,255,255,.9)";
   const CD = "rgba(255,255,255,.5)";
   const CF = "rgba(255,255,255,.2)";
   const CB = "rgba(255,255,255,.15)";
 
+  if (status === "loading" || checking) return null;
+
   return (
     <div style={{
-      position: "fixed", inset: 0, background: "#000",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontFamily: "'Share Tech Mono', monospace",
+      position:"fixed", inset:0, background:"#000",
+      display:"flex", alignItems:"center", justifyContent:"center",
+      fontFamily:"'Share Tech Mono',monospace",
     }}>
       <div className="moving-scan" />
-
       <div style={{
-        width: "min(640px, 90vw)",
-        border: `1px solid ${CB}`,
-        padding: "40px 48px 36px",
-        position: "relative",
-        animation: "fadeIn .4s ease",
+        width:"min(640px, 90vw)", border:`1px solid ${CB}`,
+        padding:"40px 48px 36px", position:"relative", animation:"fadeIn .4s ease",
       }}>
-
-        {/* Esquinas */}
         {[
           { top:-1,    left:-1,   borderTop:`1px solid ${CD}`,    borderLeft:`1px solid ${CD}`   },
           { top:-1,    right:-1,  borderTop:`1px solid ${CD}`,    borderRight:`1px solid ${CD}`  },
           { bottom:-1, left:-1,   borderBottom:`1px solid ${CD}`, borderLeft:`1px solid ${CD}`   },
           { bottom:-1, right:-1,  borderBottom:`1px solid ${CD}`, borderRight:`1px solid ${CD}`  },
-        ].map((s, i) => (
-          <div key={i} style={{ position:"absolute", width:20, height:20, ...s }} />
-        ))}
+        ].map((s, i) => <div key={i} style={{ position:"absolute", width:20, height:20, ...s }} />)}
 
-        {/* Header */}
-        <div style={{
-          fontSize:9, letterSpacing:".25em", color: CF,
-          marginBottom:32, display:"flex", justifyContent:"space-between",
-        }}>
-          <span>FACULEAKS · REGISTRO</span>
-          <span>NEONDEV · ALPHA</span>
+        <div style={{ fontSize:9, letterSpacing:".25em", color:CF, marginBottom:32, display:"flex", justifyContent:"space-between" }}>
+          <span>FACULEAKS · REGISTRO</span><span>NEONDEV · ALPHA</span>
         </div>
 
-        {/* Intro typewriter */}
-        <div style={{
-          fontSize:12, color: CD,
-          letterSpacing:".06em", lineHeight:1.9,
-          marginBottom:28, whiteSpace:"pre-line", minHeight:58,
-        }}>
+        <div style={{ fontSize:12, color:CD, letterSpacing:".06em", lineHeight:1.9, marginBottom:28, whiteSpace:"pre-line", minHeight:58 }}>
           {introText}
         </div>
 
-        {/* ── STEP 1: USERNAME ── */}
         {step >= 1 && step < 4 && (
           <div style={{ marginBottom:20, animation:"fadeIn .3s ease" }}>
             <TermLine text="> elige tu identificador público" color={CD} />
             <TermLine text="> será tu nombre en el vlog y tu login" delay={120} color={CF} style={{ fontSize:10, marginBottom:10 }} />
-
             {step === 1 ? (
               <form onSubmit={handleUsername}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, borderBottom:`1px solid ${CB}`, paddingBottom:6, marginTop:8 }}>
                   <span style={{ color:CD, fontSize:12 }}>@</span>
-                  <input
-                    ref={inputRef}
-                    className="term-input"
-                    value={username}
+                  <input ref={inputRef} className="term-input" value={username}
                     onChange={e => { setUsername(e.target.value); setError(""); }}
-                    placeholder="tu_nombre"
-                    maxLength={20}
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
+                    placeholder="tu_nombre" maxLength={20} autoComplete="off" spellCheck={false} />
                 </div>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:8 }}>
                   <span style={{ fontSize:10, letterSpacing:".06em", color: error ? "rgba(220,80,80,.9)" : CF }}>
@@ -308,26 +293,17 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* ── STEP 2: PASSWORD ── */}
         {step >= 2 && step < 4 && (
           <div style={{ marginBottom:20, animation:"fadeIn .3s ease" }}>
             <div style={{ height:1, background:CB, margin:"16px 0" }} />
             <TermLine text="> define tu clave de acceso" color={CD} />
-
             {step === 2 ? (
               <form onSubmit={handlePassword}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, borderBottom:`1px solid ${CB}`, paddingBottom:6, marginTop:8 }}>
                   <span style={{ color:CD, fontSize:12 }}>$</span>
-                  <input
-                    ref={inputRef}
-                    className="term-input"
-                    type="password"
-                    value={password}
+                  <input ref={inputRef} className="term-input" type="password" value={password}
                     onChange={e => { setPassword(e.target.value); setError(""); }}
-                    placeholder="••••••••"
-                    maxLength={14}
-                    autoComplete="new-password"
-                  />
+                    placeholder="••••••••" maxLength={14} autoComplete="new-password" />
                 </div>
                 <div style={{ marginTop:10, display:"grid", gridTemplateColumns:"1fr 1fr", gap:"2px 16px" }}>
                   {pwReqs.map((r, i) => (
@@ -351,7 +327,6 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* ── STEP 3: CONFIRM ── */}
         {step === 3 && (
           <div style={{ marginBottom:20, animation:"fadeIn .3s ease" }}>
             <div style={{ height:1, background:CB, margin:"16px 0" }} />
@@ -359,16 +334,9 @@ export default function RegisterPage() {
             <form onSubmit={handleConfirm}>
               <div style={{ display:"flex", alignItems:"center", gap:8, borderBottom:`1px solid ${CB}`, paddingBottom:6, marginTop:8 }}>
                 <span style={{ color:CD, fontSize:12 }}>$</span>
-                <input
-                  ref={inputRef}
-                  className="term-input"
-                  type="password"
-                  value={confirm}
+                <input ref={inputRef} className="term-input" type="password" value={confirm}
                   onChange={e => { setConfirm(e.target.value); setError(""); }}
-                  placeholder="••••••••"
-                  maxLength={14}
-                  autoComplete="new-password"
-                />
+                  placeholder="••••••••" maxLength={14} autoComplete="new-password" />
               </div>
               {confirm.length > 0 && (
                 <div style={{ fontSize:10, marginTop:6, letterSpacing:".05em",
@@ -386,21 +354,17 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* ── STEP 4: LOADING ── */}
         {step === 4 && (
           <div style={{ animation:"fadeIn .3s ease", marginTop:8 }}>
             <div style={{ height:1, background:CB, margin:"16px 0" }} />
-            <TermLine text="> creando perfil..."                delay={0}    color={CD} />
-            <TermLine text="> cifrando credenciales..."         delay={400}  color={CF} />
-            <TermLine text="> registrando en base de datos..."  delay={900}  color={CF} />
-            <TermLine text="> configurando vlog..."             delay={1500} color={CF} />
-            <div style={{ marginTop:16 }}>
-              <ProgressBar percent={progress} />
-            </div>
+            <TermLine text="> creando perfil..."               delay={0}    color={CD} />
+            <TermLine text="> cifrando credenciales..."        delay={400}  color={CF} />
+            <TermLine text="> registrando en base de datos..." delay={900}  color={CF} />
+            <TermLine text="> configurando vlog..."            delay={1500} color={CF} />
+            <div style={{ marginTop:16 }}><ProgressBar percent={progress} /></div>
           </div>
         )}
 
-        {/* ── STEP 5: SUCCESS ── */}
         {step === 5 && (
           <div style={{ animation:"fadeIn .4s ease", marginTop:8 }}>
             <div style={{ height:1, background:CB, margin:"16px 0" }} />
@@ -414,18 +378,10 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* Cursor idle */}
-        {step === 0 && (
-          <span className="cursor-blink" style={{ color:CD, fontSize:12 }}>_</span>
-        )}
+        {step === 0 && <span className="cursor-blink" style={{ color:CD, fontSize:12 }}>_</span>}
 
-        {/* Footer */}
-        <div style={{
-          marginTop:36, fontSize:8, color:CF,
-          letterSpacing:".2em", display:"flex", justifyContent:"space-between",
-        }}>
-          <span>FACULEAKS · ALPHA</span>
-          <span>NEONDEV STUDIO</span>
+        <div style={{ marginTop:36, fontSize:8, color:CF, letterSpacing:".2em", display:"flex", justifyContent:"space-between" }}>
+          <span>FACULEAKS · ALPHA</span><span>NEONDEV STUDIO</span>
         </div>
       </div>
     </div>
