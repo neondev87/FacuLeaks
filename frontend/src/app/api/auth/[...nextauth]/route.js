@@ -20,14 +20,18 @@ const handler = NextAuth({
         try {
           const res  = await fetch(`http://localhost:4000/api/auth/check/${token.sub}`);
           const data = await res.json();
-          if (data.exists) token.dbId = data.user.id;
+          if (data.exists) {
+            token.dbId  = data.user.id;
+            token.imagen = data.user.imagen || null;
+          }
         } catch {}
       }
       return token;
     },
     async session({ session, token }) {
-      session.user.id  = token.sub;
-      session.user.dbId = token.dbId || null;
+      session.user.id    = token.sub;
+      session.user.dbId  = token.dbId  || null;
+      session.user.imagen = token.imagen || null;
       return session;
     },
   },

@@ -160,6 +160,8 @@ model user_profiles {
   statusText            String?  @db.VarChar(80)
   bio                   String?  @db.VarChar(300)
   linkPersonal          String?  @db.VarChar(200)
+  intereses             Json?
+  links                 Json?
   perfilPublico         Boolean  @default(true)
   mostrarSpotify        Boolean  @default(true)
   mostrarUltimaConexion Boolean  @default(true)
@@ -185,6 +187,7 @@ model users {
   username                                         String           @unique(map: "username") @db.VarChar(30)
   password                                         String           @db.VarChar(255)
   nombre                                           String           @db.VarChar(100)
+  imagen                                           String?          @db.VarChar(300)
   rol                                              users_rol        @default(USUARIO)
   activo                                           Boolean          @default(true)
   ultimoAcceso                                     DateTime?        @db.DateTime(0)
