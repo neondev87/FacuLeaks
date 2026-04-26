@@ -38,9 +38,15 @@ const feedSiguiendo = async (req, res) => {
 const nuevoPost = async (req, res) => {
   try {
     const userId = req.userId;
-    const { titulo, contenido, privacidad } = req.body;
-    if (!contenido) return res.status(400).json({ error: 'El contenido es requerido' });
-    const post = await createPost(userId, { titulo, contenido, privacidad });
+    const { titulo, contenido, privacidad, imagen } = req.body;
+
+    // Permitir post solo con imagen, solo con texto, o ambos
+    if (!contenido && !imagen) {
+      return res.status(400).json({ error: 'Se requiere contenido o imagen' });
+    }
+
+    const post = await createPost(userId, { titulo, contenido, privacidad, imagen });
+    req.io.emit('post:new', post);
     res.status(201).json({ post });
   } catch (err) {
     console.error(err);

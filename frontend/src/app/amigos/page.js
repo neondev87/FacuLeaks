@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-
+import BgCross from "@/components/BgCross";
 
 // ── AMIGOS PAGE ───────────────────────────────────────────────
 export default function AmigosPage() {
@@ -237,6 +237,7 @@ export default function AmigosPage() {
     <>
       {/* ── NAVBAR ── */}
         <Navbar />
+        <BgCross />
 
       <div className="page-wrap">
 

@@ -5,72 +5,105 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { io } from "socket.io-client";
 import Navbar from "@/components/Navbar";
+import BgCross from "@/components/BgCross";
 
 let socket = null;
 
-// ── TYPING INDICATOR ──
+// ── PIXEL FLAME ──
+const FLAME_MAP = [
+  [0,0,0,0,1,1,0,0,0,0],
+  [0,0,0,1,2,2,1,0,0,0],
+  [0,0,0,1,3,2,1,1,0,0],
+  [0,0,1,2,4,3,2,1,0,0],
+  [0,1,2,3,5,4,3,1,0,0],
+  [0,1,3,4,5,5,4,2,1,0],
+  [1,2,4,5,5,5,4,3,1,0],
+  [1,3,4,5,5,5,5,4,2,1],
+  [1,2,3,4,5,5,4,3,1,0],
+  [0,1,2,3,4,4,3,2,1,0],
+  [0,0,1,2,3,3,2,1,0,0],
+  [0,0,0,1,2,2,1,0,0,0],
+  [0,0,0,0,1,1,0,0,0,0],
+];
+const FC_HOT  = { 1:"#7a0000", 2:"#c41800", 3:"#ff5500", 4:"#ffaa00", 5:"#ffe566" };
+const FC_COLD = { 1:"#2a2a2a", 2:"#3a3a3a", 3:"#4a4a4a", 4:"#5a5a5a", 5:"#6a6a6a" };
+
+function PixelFlame({ s=3, dying=false }) {
+  const C = dying ? FC_COLD : FC_HOT;
+  return (
+    <svg width={10*s} height={13*s} viewBox={`0 0 ${10*s} ${13*s}`}
+      style={{ display:"block", animation: !dying ? "flicker 1.6s ease-in-out infinite" : "none" }}>
+      {FLAME_MAP.map((row, r) => row.map((cell, c) =>
+        cell ? <rect key={`${r}-${c}`} x={c*s} y={r*s} width={s} height={s} fill={C[cell]} /> : null
+      ))}
+    </svg>
+  );
+}
+
+function StreakC({ dying=false, count=1, progress=1.0 }) {
+  return (
+    <div style={{
+      display:"flex", flexDirection:"column", gap:5,
+      padding:"7px 10px",
+      background:"rgba(255,255,255,.03)",
+      border:"1px solid rgba(255,255,255,.06)",
+      borderRadius:3, width:90, flexShrink:0
+    }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <PixelFlame s={3} dying={dying} />
+        <span style={{
+          fontSize:18, fontWeight:500,
+          color: dying ? "#404040" : "#ffaa00",
+          letterSpacing:"-.04em", transition:"color .4s",
+          fontFamily:"'IBM Plex Mono',monospace"
+        }}>{count}</span>
+      </div>
+      <div style={{ height:2, background: dying ? "rgba(255,255,255,.05)" : "rgba(255,140,0,.12)", borderRadius:1, overflow:"hidden" }}>
+        <div style={{
+          height:"100%", width:`${progress*100}%`,
+          background: dying ? "#333" : "#ff6600",
+          borderRadius:1, transition:"width .4s, background .4s",
+          animation: dying ? "pulse 2s ease-in-out infinite" : "none"
+        }}/>
+      </div>
+      <div style={{
+        fontSize:7, letterSpacing:".1em", transition:"color .4s",
+        fontFamily:"'IBM Plex Mono',monospace",
+        color: dying ? "#333" : "rgba(255,140,0,.4)"
+      }}>
+        {dying ? "12H · EXPIRA" : "24H · ACTIVO"}
+      </div>
+    </div>
+  );
+}
+
 function TypingIndicator({ username }) {
   const frames = ["_", "._", ".._", "..._"];
   const [frame, setFrame] = useState(0);
-
   useEffect(() => {
     const t = setInterval(() => setFrame(f => (f + 1) % frames.length), 380);
     return () => clearInterval(t);
   }, []);
-
   return (
-    <div style={{
-      display: "flex", gap: 10, alignItems: "flex-end",
-      marginBottom: 10, animation: "fadeUp .18s ease"
-    }}>
+    <div style={{ display:"flex", gap:10, alignItems:"flex-end", marginBottom:10, animation:"fadeUp .18s ease" }}>
       <div className="avatar-sm">◈</div>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-        <div style={{
-          fontSize: 9, fontFamily: "'IBM Plex Mono',monospace",
-          color: "rgba(255,255,255,.28)", marginBottom: 3,
-          letterSpacing: ".08em"
-        }}>
+      <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-start" }}>
+        <div style={{ fontSize:9, fontFamily:"'IBM Plex Mono',monospace", color:"rgba(255,255,255,.28)", marginBottom:3, letterSpacing:".08em" }}>
           {username}
         </div>
-        <div style={{
-          background: "#0d0d0d", borderRadius: 3,
-          padding: "8px 14px",
-          border: "1px solid rgba(255,255,255,.08)",
-          boxShadow: "0 2px 14px rgba(0,0,0,.5)",
-          display: "flex", alignItems: "center", gap: 6
-        }}>
-          <span style={{
-            fontFamily: "'IBM Plex Mono',monospace",
-            fontSize: 11, color: "rgba(255,255,255,.25)",
-            letterSpacing: ".04em"
-          }}>
-            escribiendo
-          </span>
-          <span style={{
-            fontFamily: "'IBM Plex Mono',monospace",
-            fontSize: 11, color: "rgba(255,255,255,.55)",
-            letterSpacing: ".04em", minWidth: 28,
-            display: "inline-block"
-          }}>
-            {frames[frame]}
-          </span>
-          <span style={{
-            display: "inline-block", width: 7, height: 13,
-            background: "rgba(255,255,255,.45)",
-            animation: "blink 1s step-end infinite",
-            verticalAlign: "middle", marginLeft: 1
-          }} />
+        <div style={{ background:"#0d0d0d", borderRadius:3, padding:"8px 14px", border:"1px solid rgba(255,255,255,.08)", boxShadow:"0 2px 14px rgba(0,0,0,.5)", display:"flex", alignItems:"center", gap:6 }}>
+          <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:"rgba(255,255,255,.25)", letterSpacing:".04em" }}>escribiendo</span>
+          <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:"rgba(255,255,255,.55)", letterSpacing:".04em", minWidth:28, display:"inline-block" }}>{frames[frame]}</span>
+          <span style={{ display:"inline-block", width:7, height:13, background:"rgba(255,255,255,.45)", animation:"blink 1s step-end infinite", verticalAlign:"middle", marginLeft:1 }} />
         </div>
       </div>
     </div>
   );
 }
 
-// ── BUBBLE ──
 function Bubble({ msg, esPropio, replyMsg, onReply }) {
   const [hov, setHov] = useState(false);
-  const formatTime = (d) => d ? new Date(d).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" }) : "";
-
+  const formatTime = (d) => d ? new Date(d).toLocaleTimeString("es-MX", { hour:"2-digit", minute:"2-digit" }) : "";
   return (
     <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
       style={{ display:"flex", flexDirection:"column", alignItems: esPropio ? "flex-end" : "flex-start", gap:3 }}>
@@ -80,7 +113,7 @@ function Bubble({ msg, esPropio, replyMsg, onReply }) {
             <div style={{ width:2.5, borderRadius:2, background: esPropio ? "rgba(0,0,0,.22)" : "rgba(255,255,255,.28)", alignSelf:"stretch", flexShrink:0 }} />
             <div style={{ minWidth:0 }}>
               <div style={{ fontSize:8, fontFamily:"'IBM Plex Mono',monospace", color: esPropio ? "rgba(0,0,0,.6)" : "rgba(255,255,255,.58)", marginBottom:1, letterSpacing:".04em" }}>
-                {replyMsg.emisor?.username || "Tú"}
+                {replyMsg.emisor?.username || replyMsg.emisorUsername || "Tú"}
               </div>
               <div style={{ fontSize:10, fontFamily:"'IBM Plex Sans',sans-serif", color: esPropio ? "rgba(0,0,0,.42)" : "rgba(255,255,255,.36)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:240 }}>
                 {replyMsg.contenido}
@@ -93,10 +126,29 @@ function Bubble({ msg, esPropio, replyMsg, onReply }) {
           <div className={esPropio ? "bubble-time-me" : "bubble-time-other"}>{formatTime(msg.creadoEn)}</div>
         </div>
       </div>
-      {hov && (
-        <div className="reply-btn" onClick={() => onReply(msg)}>↩ responder</div>
-      )}
+      {hov && <div className="reply-btn" onClick={() => onReply(msg)}>↩ responder</div>}
     </div>
+  );
+}
+
+function IconBtn({ onClick, title, children, disabled }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        background:"none", border:"none", cursor: disabled ? "not-allowed" : "pointer",
+        padding:"0 4px",
+        transition:"opacity .15s", display:"flex", alignItems:"center", justifyContent:"center",
+        opacity: disabled ? .3 : hov ? 1 : .5,
+      }}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -120,214 +172,92 @@ export default function ChatPage() {
 
   const messagesEndRef = useRef(null);
   const inputRef       = useRef(null);
-  const activeChatRef  = useRef(null);
   const typingTimer    = useRef(null);
+  const fileInputRef   = useRef(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth");
   }, [status, router]);
 
-  // Sincronizar ref con estado
-  useEffect(() => {
-  activeChatRef.current = activeChat;
-  // Resetear typing al cambiar de chat
-  setIsTyping(false);
-}, [activeChat]);
-  // ── Estilos ──
+  useEffect(() => { setIsTyping(false); }, [activeChat]);
+
   useEffect(() => {
     const s = document.createElement("style");
     s.id = "chat-styles";
     s.textContent = `
       @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap');
-      @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-      @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-      @keyframes fadeUp { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
-      @keyframes blink  { 0%,100%{opacity:1} 50%{opacity:0} }
-
-      body {
-        background:#000; color:#e8e4d9;
-        font-family:'IBM Plex Mono', monospace;
-        font-size:13px; overflow:hidden;
-      }
-      body::before {
-        content:''; position:fixed; inset:0;
-        background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-        opacity:.04; pointer-events:none; z-index:9998;
-      }
-      body::after {
-        content:''; position:fixed; inset:0;
-        background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.12) 2px,rgba(0,0,0,.12) 4px);
-        pointer-events:none; z-index:9999;
-      }
-      ::-webkit-scrollbar{width:3px}
-      ::-webkit-scrollbar-track{background:transparent}
-      ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
-
-      .conv-item {
-        padding:9px 15px; cursor:pointer;
-        border-left:2px solid transparent;
-        transition:all .12s;
-        display:flex; gap:10px; align-items:center;
-      }
+      @keyframes spin     { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+      @keyframes fadeIn   { from{opacity:0} to{opacity:1} }
+      @keyframes fadeUp   { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+      @keyframes blink    { 0%,100%{opacity:1} 50%{opacity:0} }
+      @keyframes flicker  { 0%,100%{opacity:1;transform:scaleY(1)} 33%{opacity:.92;transform:scaleY(.97) scaleX(1.02)} 66%{opacity:.96;transform:scaleY(1.02) scaleX(.98)} }
+      @keyframes pulse    { 0%,100%{opacity:.35} 50%{opacity:.55} }
+      body { background:#000; color:#e8e4d9; font-family:'IBM Plex Mono',monospace; font-size:13px; overflow:hidden; }
+      body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E"); opacity:.04; pointer-events:none; z-index:9998; }
+      body::after { content:''; position:fixed; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.12) 2px,rgba(0,0,0,.12) 4px); pointer-events:none; z-index:9999; }
+      ::-webkit-scrollbar{width:3px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+      .conv-item { padding:9px 15px; cursor:pointer; border-left:2px solid transparent; transition:all .12s; display:flex; gap:10px; align-items:center; }
       .conv-item:hover { background:rgba(255,255,255,.03); }
       .conv-item.active { background:rgba(255,255,255,.06); border-left-color:rgba(255,255,255,.6); }
-
-      .avatar {
-        width:32px; height:32px; border-radius:50%;
-        background:#1a1a1a; border:1.5px solid rgba(255,255,255,.1);
-        display:flex; align-items:center; justify-content:center;
-        font-size:11px; color:rgba(255,255,255,.22);
-        flex-shrink:0; position:relative;
-      }
-      .avatar-sm {
-        width:28px; height:28px; border-radius:50%;
-        background:#1a1a1a; border:1.5px solid rgba(255,255,255,.08);
-        display:flex; align-items:center; justify-content:center;
-        font-size:9px; color:rgba(255,255,255,.2);
-        flex-shrink:0; font-family:'IBM Plex Mono',monospace;
-      }
-      .status-dot {
-        position:absolute; bottom:1px; right:1px;
-        width:8px; height:8px; border-radius:50%; border:2px solid #050505;
-      }
-      .status-dot-hdr {
-        position:absolute; bottom:1px; right:1px;
-        width:9px; height:9px; border-radius:50%; border:2px solid #000;
-      }
-
-      .bubble-me {
-        background:#fff; border-radius:3px;
-        box-shadow:0 2px 14px rgba(0,0,0,.45);
-        overflow:hidden; max-width:60%;
-        animation:fadeUp .15s ease;
-      }
-      .bubble-other {
-        background:#141414; border-radius:3px;
-        box-shadow:0 2px 14px rgba(0,0,0,.45);
-        overflow:hidden; max-width:60%;
-        animation:fadeUp .15s ease;
-      }
+      .avatar { width:32px; height:32px; border-radius:50%; background:#1a1a1a; border:1.5px solid rgba(255,255,255,.1); display:flex; align-items:center; justify-content:center; font-size:11px; color:rgba(255,255,255,.22); flex-shrink:0; position:relative; }
+      .avatar-sm { width:28px; height:28px; border-radius:50%; background:#1a1a1a; border:1.5px solid rgba(255,255,255,.08); display:flex; align-items:center; justify-content:center; font-size:9px; color:rgba(255,255,255,.2); flex-shrink:0; font-family:'IBM Plex Mono',monospace; }
+      .status-dot { position:absolute; bottom:1px; right:1px; width:8px; height:8px; border-radius:50%; border:2px solid #050505; }
+      .status-dot-hdr { position:absolute; bottom:1px; right:1px; width:9px; height:9px; border-radius:50%; border:2px solid #000; }
+      .bubble-me { background:#fff; border-radius:3px; box-shadow:0 2px 14px rgba(0,0,0,.45); overflow:hidden; max-width:60%; animation:fadeUp .15s ease; }
+      .bubble-other { background:#141414; border-radius:3px; box-shadow:0 2px 14px rgba(0,0,0,.45); overflow:hidden; max-width:60%; animation:fadeUp .15s ease; }
       .bubble-text-me    { font-family:'IBM Plex Sans',sans-serif; font-size:13px; color:#000; line-height:1.55; letter-spacing:.01em; }
       .bubble-text-other { font-family:'IBM Plex Sans',sans-serif; font-size:13px; color:#e8e4d9; line-height:1.55; letter-spacing:.01em; }
       .bubble-time-me    { font-size:8px; color:rgba(0,0,0,.28); white-space:nowrap; flex-shrink:0; font-family:'IBM Plex Mono',monospace; letter-spacing:.05em; margin-top:auto; }
       .bubble-time-other { font-size:8px; color:rgba(255,255,255,.2); white-space:nowrap; flex-shrink:0; font-family:'IBM Plex Mono',monospace; letter-spacing:.05em; margin-top:auto; }
-
       .reply-bar-me    { padding:7px 12px 6px; background:rgba(0,0,0,.07); border-bottom:1px solid rgba(0,0,0,.07); display:flex; gap:8px; }
       .reply-bar-other { padding:7px 12px 6px; background:rgba(255,255,255,.05); border-bottom:1px solid rgba(255,255,255,.06); display:flex; gap:8px; }
-
-      .reply-btn {
-        padding:2px 10px; background:rgba(255,255,255,.05);
-        border-radius:999px; border:1px solid rgba(255,255,255,.08);
-        font-size:9px; font-family:'IBM Plex Mono',monospace;
-        color:rgba(255,255,255,.38); cursor:pointer;
-        display:inline-flex; gap:4px; align-items:center;
-        animation:fadeIn .1s ease; letter-spacing:.06em; transition:all .15s;
-      }
+      .reply-btn { padding:2px 10px; background:rgba(255,255,255,.05); border-radius:999px; border:1px solid rgba(255,255,255,.08); font-size:9px; font-family:'IBM Plex Mono',monospace; color:rgba(255,255,255,.38); cursor:pointer; display:inline-flex; gap:4px; align-items:center; animation:fadeIn .1s ease; letter-spacing:.06em; transition:all .15s; }
       .reply-btn:hover { background:rgba(255,255,255,.1); color:#fff; }
-
-      .chat-input {
-        flex:1; background:transparent; border:none;
-        color:#e8e4d9; font-family:'IBM Plex Sans',sans-serif;
-        font-size:12px; padding:11px 16px; outline:none; letter-spacing:.02em;
-      }
+      .chat-input { flex:1; background:transparent; border:none; color:#e8e4d9; font-family:'IBM Plex Sans',sans-serif; font-size:12px; padding:11px 16px; outline:none; letter-spacing:.02em; }
       .chat-input::placeholder { color:rgba(255,255,255,.22); }
-
-      .input-wrap {
-        flex:1; display:flex; background:rgba(255,255,255,.04);
-        border-radius:2px; overflow:hidden;
-        border:1px solid rgba(255,255,255,.08); transition:border-color .2s;
-      }
+      .input-wrap { flex:1; display:flex; background:rgba(255,255,255,.04); border-radius:2px; overflow:hidden; border:1px solid rgba(255,255,255,.08); transition:border-color .2s; align-items:center; }
       .input-wrap:focus-within { border-color:rgba(255,255,255,.25); }
-
-      .send-arrow {
-        background:transparent; border:none;
-        border-left:1px solid rgba(255,255,255,.07);
-        padding:0 16px; color:rgba(255,255,255,.3);
-        font-size:16px; cursor:pointer; transition:color .2s;
-      }
+      .send-arrow { background:transparent; border:none; border-left:1px solid rgba(255,255,255,.07); padding:0 16px; color:rgba(255,255,255,.3); font-size:16px; cursor:pointer; transition:color .2s; height:100%; }
       .send-arrow:hover { color:rgba(255,255,255,.8); }
       .send-arrow:disabled { opacity:.2; cursor:not-allowed; }
-
-      .buscar-input {
-        width:100%; box-sizing:border-box;
-        background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12);
-        color:#fff; font-family:'IBM Plex Mono',monospace;
-        font-size:11px; padding:8px 12px; outline:none;
-        transition:border-color .2s; border-radius:2px;
-      }
+      .buscar-input { width:100%; box-sizing:border-box; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12); color:#fff; font-family:'IBM Plex Mono',monospace; font-size:11px; padding:8px 12px; outline:none; transition:border-color .2s; border-radius:2px; }
       .buscar-input:focus { border-color:rgba(255,255,255,.3); }
       .buscar-input::placeholder { color:rgba(255,255,255,.25); }
-
-      .resultado-item {
-        display:flex; align-items:center; justify-content:space-between;
-        padding:8px 12px; cursor:pointer;
-        border-bottom:1px solid rgba(255,255,255,.04); transition:background .12s;
-      }
+      .resultado-item { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.04); transition:background .12s; }
       .resultado-item:hover { background:rgba(255,255,255,.06); }
-
-      .spinner {
-        width:10px; height:10px;
-        border:1px solid rgba(255,255,255,.15); border-top-color:#fff;
-        border-radius:50%; animation:spin .7s linear infinite; display:inline-block;
-      }
-
-      .date-pill {
-        display:flex; align-items:center; gap:12px; margin:16px 0 14px;
-      }
+      .spinner { width:10px; height:10px; border:1px solid rgba(255,255,255,.15); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; display:inline-block; }
+      .date-pill { display:flex; align-items:center; gap:12px; margin:16px 0 14px; }
       .date-pill::before,.date-pill::after { content:''; flex:1; height:1px; background:rgba(255,255,255,.05); }
-      .date-pill span {
-        font-size:8px; font-family:'IBM Plex Mono',monospace;
-        color:rgba(255,255,255,.22); background:rgba(255,255,255,.04);
-        padding:3px 12px; border-radius:999px; letter-spacing:.12em;
-      }
+      .date-pill span { font-size:8px; font-family:'IBM Plex Mono',monospace; color:rgba(255,255,255,.22); background:rgba(255,255,255,.04); padding:3px 12px; border-radius:999px; letter-spacing:.12em; }
     `;
     document.head.appendChild(s);
     return () => document.getElementById("chat-styles")?.remove();
   }, []);
 
-// ── Socket.io ──
-useEffect(() => {
-  if (status !== "authenticated" || !session?.user?.dbId) return;
-  socket = io("http://localhost:4000");
-  socket.emit("user:connect", session.user.dbId);
-
-  socket.on("users:online", (users) => setOnlineUsers(users));
-
-  socket.on("message:receive", (msg) => {
-    setMensajes(prev => [...prev, msg]);
-    loadConversaciones();
-  });
-
-  socket.on("message:sent", (msg) => {
-    setMensajes(prev => [...prev, msg]);
-  });
-
-  socket.on("typing:start", ({ userId }) => {
-    console.log("typing:start recibido — userId:", userId, "activeChatRef:", activeChatRef.current?.userId);
-    setIsTyping(prev => {
-      if (String(userId) === String(activeChatRef.current?.userId)) return true;
-      return prev;
+  useEffect(() => {
+    if (status !== "authenticated" || !session?.user?.dbId) return;
+    socket = io("http://localhost:4000");
+    socket.emit("user:connect", session.user.dbId);
+    socket.on("users:online", (users) => setOnlineUsers(users));
+    socket.on("message:receive", (msg) => {
+      setMensajes(prev => [...prev, msg]);
+      loadConversaciones();
     });
-  });
-
-  socket.on("typing:stop", ({ userId }) => {
-    setIsTyping(prev => {
-      if (String(userId) === String(activeChatRef.current?.userId)) return false;
-      return prev;
+    socket.on("message:sent", (msg) => {
+      setMensajes(prev => [...prev, msg]);
     });
-  });
-
-  return () => { socket?.disconnect(); socket = null; };
-}, [status, session]);
-
+    socket.on("typing:start", ({ userId }) => setIsTyping(String(userId)));
+    socket.on("typing:stop",  ({ userId }) => setIsTyping(prev => prev === String(userId) ? false : prev));
+    return () => { socket?.disconnect(); socket = null; };
+  }, [status, session]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior:"smooth" });
   }, [mensajes, isTyping]);
 
   const loadConversaciones = useCallback(async () => {
     try {
-      const res  = await fetch("http://localhost:4000/api/chat/conversaciones", { credentials: "include" });
+      const res  = await fetch("http://localhost:4000/api/chat/conversaciones", { credentials:"include" });
       const data = await res.json();
       setRecientes(data.recientes || []);
       setAmigos(data.amigos       || []);
@@ -343,7 +273,7 @@ useEffect(() => {
     const t = setTimeout(async () => {
       setBuscando(true);
       try {
-        const res  = await fetch(`http://localhost:4000/api/amigos/buscar?q=${busqueda}`, { credentials: "include" });
+        const res  = await fetch(`http://localhost:4000/api/amigos/buscar?q=${busqueda}`, { credentials:"include" });
         const data = await res.json();
         setResultados(data.usuarios || []);
       } catch {}
@@ -354,12 +284,12 @@ useEffect(() => {
 
   const openChat = async (user) => {
     setShowBuscar(false); setBusqueda(""); setResultados([]);
-    setIsTyping(false); // resetear typing al cambiar de chat
+    setIsTyping(false);
     const chatUser = { userId: user.userId || user.id, username: user.username };
     setActiveChat(chatUser);
     setLoading(true); setMensajes([]); setReplyingTo(null);
     try {
-      const res  = await fetch(`http://localhost:4000/api/chat/${chatUser.userId}`, { credentials: "include" });
+      const res  = await fetch(`http://localhost:4000/api/chat/${chatUser.userId}`, { credentials:"include" });
       const data = await res.json();
       setMensajes(data.mensajes || []);
       if (socket && session?.user?.dbId)
@@ -381,7 +311,6 @@ useEffect(() => {
 
   const sendMessage = () => {
     if (!input.trim() || !activeChat || !socket || !session?.user?.dbId) return;
-    // Detener typing al enviar
     clearTimeout(typingTimer.current);
     socket.emit("typing:stop", { receptorId: activeChat.userId });
     socket.emit("message:send", {
@@ -403,7 +332,7 @@ useEffect(() => {
     const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
     if (date.toDateString() === today.toDateString()) return "HOY";
     if (date.toDateString() === yesterday.toDateString()) return "AYER";
-    return date.toLocaleDateString("es-MX", { day: "numeric", month: "long" }).toUpperCase();
+    return date.toLocaleDateString("es-MX", { day:"numeric", month:"long" }).toUpperCase();
   };
 
   if (status === "loading") return null;
@@ -411,11 +340,11 @@ useEffect(() => {
   return (
     <>
       <Navbar />
+      <BgCross />
       <div style={{ display:"flex", height:"calc(100vh - 48px)", marginTop:48 }}>
 
         {/* ── SIDEBAR ── */}
         <div style={{ width:220, borderRight:"1px solid rgba(255,255,255,.07)", display:"flex", flexDirection:"column", background:"#050505", flexShrink:0 }}>
-
           <div style={{ padding:"16px 18px 14px", borderBottom:"1px solid rgba(255,255,255,.06)" }}>
             <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:16, color:"#fff", letterSpacing:".02em" }}>Mensajes</div>
             <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:8, color:"rgba(255,255,255,.25)", letterSpacing:".18em", marginTop:3 }}>// FacuLeaks</div>
@@ -454,10 +383,7 @@ useEffect(() => {
                 <div style={{ fontSize:8, letterSpacing:".2em", color:"rgba(255,255,255,.22)", padding:"8px 15px 3px", fontFamily:"'IBM Plex Mono',monospace" }}>RECIENTES</div>
                 {recientes.map(c => (
                   <div key={c.userId} className={`conv-item${isActive(c.userId) ? " active" : ""}`} onClick={() => openChat(c)}>
-                    <div className="avatar">
-                      ◈
-                      <div className="status-dot" style={{ background: isOnline(c.userId) ? "#3ddc84" : "#2a2a2a" }} />
-                    </div>
+                    <div className="avatar">◈<div className="status-dot" style={{ background: isOnline(c.userId) ? "#3ddc84" : "#2a2a2a" }} /></div>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
                         <span style={{ fontSize:10, fontFamily:"'IBM Plex Sans',sans-serif", color: isActive(c.userId) ? "#fff" : "rgba(255,255,255,.65)" }}>{c.username}</span>
@@ -469,16 +395,12 @@ useEffect(() => {
                 ))}
               </>
             )}
-
             {amigos.length > 0 && (
               <>
                 <div style={{ fontSize:8, letterSpacing:".2em", color:"rgba(255,255,255,.22)", padding:"8px 15px 3px", marginTop: recientes.length > 0 ? 4 : 0, fontFamily:"'IBM Plex Mono',monospace" }}>AMIGOS</div>
                 {amigos.map(a => (
                   <div key={a.userId} className={`conv-item${isActive(a.userId) ? " active" : ""}`} onClick={() => openChat(a)}>
-                    <div className="avatar">
-                      ◈
-                      <div className="status-dot" style={{ background: isOnline(a.userId) ? "#3ddc84" : "#2a2a2a" }} />
-                    </div>
+                    <div className="avatar">◈<div className="status-dot" style={{ background: isOnline(a.userId) ? "#3ddc84" : "#2a2a2a" }} /></div>
                     <div style={{ flex:1, minWidth:0 }}>
                       <span style={{ fontSize:10, fontFamily:"'IBM Plex Sans',sans-serif", color: isActive(a.userId) ? "#fff" : "rgba(255,255,255,.65)" }}>{a.username}</span>
                     </div>
@@ -486,13 +408,10 @@ useEffect(() => {
                 ))}
               </>
             )}
-
             {amigos.length === 0 && recientes.length === 0 && (
               <div style={{ padding:"14px 15px", fontSize:10, color:"rgba(255,255,255,.25)", fontFamily:"'IBM Plex Mono',monospace", lineHeight:1.7 }}>
                 sin amigos aún —{" "}
-                <span style={{ color:"rgba(255,255,255,.6)", cursor:"pointer", textDecoration:"underline" }} onClick={() => router.push("/amigos")}>
-                  ir a amigos
-                </span>
+                <span style={{ color:"rgba(255,255,255,.6)", cursor:"pointer", textDecoration:"underline" }} onClick={() => router.push("/amigos")}>ir a amigos</span>
               </div>
             )}
           </div>
@@ -513,8 +432,7 @@ useEffect(() => {
 
             <div style={{ padding:"12px 22px", background:"#000", borderBottom:"1px solid rgba(255,255,255,.07)", display:"flex", alignItems:"center", gap:14 }}>
               <div className="avatar" style={{ width:36, height:36 }}>
-                ◈
-                <div className="status-dot-hdr" style={{ background: isOnline(activeChat.userId) ? "#3ddc84" : "#2a2a2a" }} />
+                ◈<div className="status-dot-hdr" style={{ background: isOnline(activeChat.userId) ? "#3ddc84" : "#2a2a2a" }} />
               </div>
               <div style={{ flex:1 }}>
                 <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:17, color:"#fff", lineHeight:1 }}>{activeChat.username}</div>
@@ -522,6 +440,7 @@ useEffect(() => {
                   {isOnline(activeChat.userId) ? "en línea ahora" : "desconectado"}
                 </div>
               </div>
+              <StreakC count={1} dying={false} progress={1.0} />
             </div>
 
             <div style={{ flex:1, overflowY:"auto", padding:"18px 22px", display:"flex", flexDirection:"column" }}>
@@ -538,16 +457,13 @@ useEffect(() => {
                   const prevMsg  = mensajes[i - 1];
                   const showDate = !prevMsg || formatDate(msg.creadoEn) !== formatDate(prevMsg.creadoEn);
                   const prevSame = prevMsg && prevMsg.emisorId === msg.emisorId && (new Date(msg.creadoEn) - new Date(prevMsg.creadoEn)) < 60000;
-
+                  const replyMsg = msg.replyToId ? mensajes.find(m => m.id === msg.replyToId) || null : null;
                   return (
                     <div key={msg.id || i} style={{ marginBottom: prevSame ? 3 : 14 }}>
                       {showDate && <div className="date-pill"><span>{formatDate(msg.creadoEn)}</span></div>}
                       <div style={{ display:"flex", gap:8, flexDirection: esPropio ? "row-reverse" : "row", alignItems:"flex-end" }}>
                         <div style={{ width:30, flexShrink:0 }}>
-                          {!prevSame
-                            ? <div className="avatar-sm">{esPropio ? "◎" : "◈"}</div>
-                            : <div style={{ width:30 }} />
-                          }
+                          {!prevSame ? <div className="avatar-sm">{esPropio ? "◎" : "◈"}</div> : <div style={{ width:30 }} />}
                         </div>
                         <div style={{ display:"flex", flexDirection:"column", alignItems: esPropio ? "flex-end" : "flex-start", maxWidth:"60%" }}>
                           {!prevSame && (
@@ -555,21 +471,17 @@ useEffect(() => {
                               {esPropio ? "Tú" : msg.emisor?.username}
                             </div>
                           )}
-                          <Bubble
-                            msg={msg}
-                            esPropio={esPropio}
-                            replyMsg={null}
-                            onReply={(m) => { setReplyingTo(m); inputRef.current?.focus(); }}
-                          />
+                          <Bubble msg={msg} esPropio={esPropio} replyMsg={replyMsg}
+                            onReply={(m) => { setReplyingTo(m); inputRef.current?.focus(); }} />
                         </div>
                       </div>
                     </div>
                   );
                 })
               )}
-
-              {/* ── TYPING INDICATOR ── */}
-              {isTyping && <TypingIndicator username={activeChat.username} />}
+              {isTyping && String(isTyping) === String(activeChat.userId) && (
+                <TypingIndicator username={activeChat.username} />
+              )}
               <div ref={messagesEndRef} />
             </div>
 
@@ -595,7 +507,40 @@ useEffect(() => {
               </div>
             )}
 
-            <div style={{ padding:"10px 18px 14px", background:"#000", borderTop:"1px solid rgba(255,255,255,.07)", display:"flex", gap:10, alignItems:"center" }}>
+            {/* ── INPUT AREA ── */}
+            <div style={{ padding:"10px 18px 14px", background:"#000", borderTop:"1px solid rgba(255,255,255,.07)", display:"flex", gap:5, alignItems:"center" }}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,.pdf,.doc,.docx"
+                style={{ display:"none" }}
+                onChange={e => console.log("archivo:", e.target.files?.[0]?.name)}
+              />
+
+              {/* + exacto del sketch */}
+              <IconBtn title="Adjuntar archivo" onClick={() => fileInputRef.current?.click()} disabled={!activeChat}>
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <rect x="8.3" y="2" width="1.4" height="14" rx=".7" fill="rgba(255,255,255,.6)"/>
+                  <rect x="2" y="8.3" width="14" height="1.4" rx=".7" fill="rgba(255,255,255,.6)"/>
+                  <rect x="8.1" y="8.1" width="1.8" height="1.8" rx=".4" fill="rgba(255,255,255,.6)" transform="rotate(45 9 9)"/>
+                  <rect x="3.8" y="3.2" width="1" height="3.2" rx=".5" fill="rgba(255,255,255,.6)" opacity=".35" transform="rotate(45 4.3 4.8)"/>
+                  <rect x="13.2" y="3.2" width="1" height="3.2" rx=".5" fill="rgba(255,255,255,.6)" opacity=".35" transform="rotate(-45 13.7 4.8)"/>
+                  <rect x="3.8" y="11.6" width="1" height="3.2" rx=".5" fill="rgba(255,255,255,.6)" opacity=".35" transform="rotate(-45 4.3 13.2)"/>
+                  <rect x="13.2" y="11.6" width="1" height="3.2" rx=".5" fill="rgba(255,255,255,.6)" opacity=".35" transform="rotate(45 13.7 13.2)"/>
+                </svg>
+              </IconBtn>
+
+              {/* sticker exacto del sketch */}
+              <IconBtn title="Stickers (próximamente)" onClick={() => {}} disabled={!activeChat}>
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path d="M2.5 3.5 Q2.5 2 4 2 L11.2 2 L16 6.8 L16 14.5 Q16 16 14.5 16 L4 16 Q2.5 16 2.5 14.5 Z" stroke="rgba(255,255,255,.6)" strokeWidth="1.1" fill="none"/>
+                  <path d="M11.2 2 L11.2 6.8 L16 6.8" stroke="rgba(255,255,255,.28)" strokeWidth="1" fill="none"/>
+                  <circle cx="7.2" cy="10" r=".85" fill="rgba(255,255,255,.6)"/>
+                  <circle cx="10.8" cy="10" r=".85" fill="rgba(255,255,255,.6)"/>
+                  <path d="M6.8 12.4 Q9 13.8 11.2 12.4" stroke="rgba(255,255,255,.6)" strokeWidth=".9" strokeLinecap="round" fill="none"/>
+                </svg>
+              </IconBtn>
+
               <div className="input-wrap">
                 <input
                   ref={inputRef}

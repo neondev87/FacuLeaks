@@ -111,6 +111,7 @@ model posts {
   titulo           String?          @db.VarChar(150)
   contenido        String           @db.Text
   privacidad       posts_privacidad @default(AMIGOS)
+  imagen           String?          @db.VarChar(300)
   totalLikes       Int              @default(0)
   totalComentarios Int              @default(0)
   totalVistas      Int              @default(0)
