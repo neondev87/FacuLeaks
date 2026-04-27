@@ -6,6 +6,14 @@ const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const REDIRECT_URI  = process.env.SPOTIFY_REDIRECT_URI;
 const SCOPES        = 'user-read-currently-playing user-read-recently-played';
 
+// ── Helper: parsear respuesta de Spotify de forma segura ──
+const safeJson = async (response) => {
+  if (response.status === 204 || response.status === 202) return null;
+  const text = await response.text();
+  if (!text || !text.trim().startsWith('{') && !text.trim().startsWith('[')) return null;
+  try { return JSON.parse(text); } catch { return null; }
+};
+
 // ── 1. Iniciar OAuth ──
 const spotifyAuth = (req, res) => {
   const params = new URLSearchParams({
@@ -18,7 +26,7 @@ const spotifyAuth = (req, res) => {
   res.redirect(`https://accounts.spotify.com/authorize?${params}`);
 };
 
-// ── 2. Callback — intercambiar code por tokens ──
+// ── 2. Callback ──
 const spotifyCallback = async (req, res) => {
   const { code, state } = req.query;
   if (!code || !state) return res.redirect('http://localhost:3000/perfil?spotify=error');
@@ -41,8 +49,8 @@ const spotifyCallback = async (req, res) => {
       body: body.toString(),
     });
 
-    const data = await response.json();
-    if (!data.access_token) throw new Error('No access token');
+    const data = await safeJson(response);
+    if (!data?.access_token) throw new Error('No access token');
 
     const expiresAt = new Date(Date.now() + data.expires_in * 1000);
 
@@ -75,14 +83,14 @@ const refreshToken = async (tokenRecord) => {
     body: body.toString(),
   });
 
-  const data = await response.json();
-  if (!data.access_token) throw new Error('Refresh failed');
+  const data = await safeJson(response);
+  if (!data?.access_token) throw new Error('Refresh failed');
 
   const expiresAt = new Date(Date.now() + data.expires_in * 1000);
 
   await prisma.spotify_tokens.update({
-    where:  { userId: tokenRecord.userId },
-    data:   { accessToken: data.access_token, expiresAt, actualizadoEn: new Date() },
+    where: { userId: tokenRecord.userId },
+    data:  { accessToken: data.access_token, expiresAt, actualizadoEn: new Date() },
   });
 
   return data.access_token;
@@ -98,7 +106,11 @@ const nowPlaying = async (req, res) => {
 
     let accessToken = tokenRecord.accessToken;
     if (new Date() >= tokenRecord.expiresAt) {
-      accessToken = await refreshToken(tokenRecord);
+      try {
+        accessToken = await refreshToken(tokenRecord);
+      } catch {
+        return res.json({ connected: false });
+      }
     }
 
     // Intentar canción actual
@@ -107,7 +119,7 @@ const nowPlaying = async (req, res) => {
     });
 
     if (currentRes.status === 200) {
-      const current = await currentRes.json();
+      const current = await safeJson(currentRes);
       if (current?.item) {
         return res.json({
           connected:  true,
@@ -127,7 +139,7 @@ const nowPlaying = async (req, res) => {
     const recentRes = await fetch('https://api.spotify.com/v1/me/player/recently-played?limit=1', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    const recent = await recentRes.json();
+    const recent = await safeJson(recentRes);
     const last   = recent?.items?.[0]?.track;
 
     if (last) {
@@ -160,6 +172,7 @@ const disconnect = async (req, res) => {
     res.json({ ok: true });
   }
 };
+
 // ── 5. Últimas 5 canciones ──
 const recentlyPlayed = async (req, res) => {
   const userId = parseInt(req.params.userId);
@@ -169,15 +182,19 @@ const recentlyPlayed = async (req, res) => {
 
     let accessToken = tokenRecord.accessToken;
     if (new Date() >= tokenRecord.expiresAt) {
-      accessToken = await refreshToken(tokenRecord);
+      try {
+        accessToken = await refreshToken(tokenRecord);
+      } catch {
+        return res.json({ connected: false, tracks: [] });
+      }
     }
 
     const r    = await fetch('https://api.spotify.com/v1/me/player/recently-played?limit=5', {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
-    const data = await r.json();
+    const data = await safeJson(r);
 
-    const tracks = (data.items || []).map(item => ({
+    const tracks = (data?.items || []).map(item => ({
       track:      item.track.name,
       artist:     item.track.artists.map(a => a.name).join(', '),
       album:      item.track.album.name,
@@ -194,6 +211,3 @@ const recentlyPlayed = async (req, res) => {
 };
 
 module.exports = { spotifyAuth, spotifyCallback, nowPlaying, recentlyPlayed, disconnect };
-
-
-
