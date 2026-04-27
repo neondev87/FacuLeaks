@@ -2,7 +2,7 @@ const prisma = require('../../config/db');
 const bcrypt = require('bcryptjs');
 
 const findUserByGoogleId = async (googleId) => {
-  console.log('googleId recibido:', googleId, 'length:', googleId.length);
+  if (!googleId || typeof googleId !== 'string') return null;
   return prisma.users.findFirst({
     where: { googleId },
     select: { id: true, username: true, email: true, nombre: true, imagen: true, rol: true }

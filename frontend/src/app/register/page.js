@@ -86,7 +86,7 @@ export default function RegisterPage() {
     }
 
     // No tiene dbId — verificar con el backend por si el token no se actualizó
-    const googleId = session?.user?.id;
+    const googleId = session?.user?.googleId || session?.user?.id;
     if (!googleId) { setChecking(false); return; }
 
     fetch(`http://localhost:4000/api/auth/check/${googleId}`)
@@ -199,7 +199,7 @@ export default function RegisterPage() {
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
-            googleId: session?.user?.id,
+            googleId: session?.user?.googleId || session?.user?.id,
             email:    session?.user?.email,
             nombre:   session?.user?.name,
             username,
