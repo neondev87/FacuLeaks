@@ -150,9 +150,9 @@ function HeartIcon({ count = 0, reaction, setReaction }) {
     if (reaction === "skull") return; // bloqueado
     setReaction("heart");
     setPhase("white");
-    setTimeout(() => setPhase("dead"), 150);
-    setTimeout(() => setPhase("gone"), 350);
-    resetRef.current = setTimeout(() => setPhase("idle"), 900);
+    setTimeout(() => setPhase("dead"), 280);
+    setTimeout(() => setPhase("gone"), 620);
+    resetRef.current = setTimeout(() => setPhase("idle"), 1800);
   };
 
   useEffect(() => () => clearTimeout(resetRef.current), []);
@@ -193,8 +193,8 @@ function SkullIcon({ count = 0, reaction, setReaction }) {
     if (reaction === "heart") return; // bloqueado
     setReaction("skull");
     setPhase("dead");
-    setTimeout(() => setPhase("gone"), 220);
-    resetRef.current = setTimeout(() => setPhase("idle"), 900);
+    setTimeout(() => setPhase("gone"), 420);
+    resetRef.current = setTimeout(() => setPhase("idle"), 1800);
   };
 
   useEffect(() => () => clearTimeout(resetRef.current), []);
@@ -494,7 +494,6 @@ export default function FeedPage() {
       @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
       body { background:#000; color:#e8e4d9; font-family:'Inter',sans-serif; font-size:13px; overflow-x:hidden; }
       body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E"); opacity:.04; pointer-events:none; z-index:9998; }
-      body::after { content:''; position:fixed; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.12) 2px,rgba(0,0,0,.12) 4px); pointer-events:none; z-index:9999; }
       ::-webkit-scrollbar { width:4px } ::-webkit-scrollbar-track { background:#000 } ::-webkit-scrollbar-thumb { background:#222 }
       .feed-wrap { padding:68px 28px 48px; max-width:860px; margin:0 auto; animation:fadeIn .5s ease; }
       .post-title-input { width:100%; background:transparent; border:none; outline:none; font-family:'Inter',sans-serif; font-size:14px; font-weight:500; color:rgba(232,228,217,.5); padding:4px 0; margin-bottom:6px; border-bottom:1px solid rgba(255,255,255,.04); }

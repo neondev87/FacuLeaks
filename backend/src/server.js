@@ -5,13 +5,13 @@ const http = require('http');
 const { Server } = require('socket.io');
 require('dotenv').config();
 
-const authRoutes   = require('./modules/auth/auth.routes');
-const postsRoutes  = require('./modules/posts/posts.routes');
-const chatRoutes   = require('./modules/chat/chat.routes');
-const amigosRoutes = require('./modules/amigos/amigos.routes');
-const uploadRoutes = require('./modules/upload/upload.routes'); 
+const authRoutes    = require('./modules/auth/auth.routes');
+const postsRoutes   = require('./modules/posts/posts.routes');
+const chatRoutes    = require('./modules/chat/chat.routes');
+const amigosRoutes  = require('./modules/amigos/amigos.routes');
+const uploadRoutes  = require('./modules/upload/upload.routes');
 const spotifyRoutes = require('./modules/spotify/spotify.routes');
-const perfilRoutes = require('./modules/perfil/perfil.routes');
+const perfilRoutes  = require('./modules/perfil/perfil.routes');
 
 const app    = express();
 const server = http.createServer(app);
@@ -23,23 +23,18 @@ app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 
-// ── Inyectar io en req para usarlo en controllers ──
-app.use((req, res, next) => {
-  req.io = io;
-  next();
-});
+app.use((req, res, next) => { req.io = io; next(); });
 
-app.use('/uploads', express.static('uploads')); // servir archivos
-app.use('/api/upload', uploadRoutes);
-app.get('/api/ping', (req, res) => res.json({ message: 'Backend funcionando' }));
-app.use('/api/auth',   authRoutes);
-app.use('/api/posts',  postsRoutes);
-app.use('/api/chat',   chatRoutes);
-app.use('/api/amigos', amigosRoutes);
+app.use('/uploads', express.static('uploads'));
+app.use('/api/upload',  uploadRoutes);
+app.get('/api/ping',    (req, res) => res.json({ message: 'Backend funcionando' }));
+app.use('/api/auth',    authRoutes);
+app.use('/api/posts',   postsRoutes);
+app.use('/api/chat',    chatRoutes);
+app.use('/api/amigos',  amigosRoutes);
 app.use('/api/spotify', spotifyRoutes);
-app.use('/api/perfil', perfilRoutes);
+app.use('/api/perfil',  perfilRoutes);
 
-// ── SOCKET.IO ──
 const onlineUsers = new Map();
 const prisma = require('./config/db');
 
@@ -51,44 +46,36 @@ io.on('connection', (socket) => {
     io.emit('users:online', Array.from(onlineUsers.keys()));
   });
 
-    socket.on('audio:start', ({ receptorId }) => {
+  socket.on('audio:start', ({ receptorId }) => {
     const receptorSocket = onlineUsers.get(String(receptorId));
-    if (receptorSocket) {
-      io.to(receptorSocket).emit('audio:start', { userId: socket.userId });
-    }
+    if (receptorSocket) io.to(receptorSocket).emit('audio:start', { userId: socket.userId });
   });
 
-   socket.on('audio:stop', ({ receptorId }) => {
+  socket.on('audio:stop', ({ receptorId }) => {
     const receptorSocket = onlineUsers.get(String(receptorId));
-    if (receptorSocket) {
-      io.to(receptorSocket).emit('audio:stop', { userId: socket.userId });
-    }
+    if (receptorSocket) io.to(receptorSocket).emit('audio:stop', { userId: socket.userId });
   });
- 
 
+  // ── message:send (único, con replyToId) ──
   socket.on('message:send', async (data) => {
-    const { receptorId, contenido, emisorId } = data;
+    const { receptorId, contenido, emisorId, replyToId } = data;
     try {
       const msg = await prisma.messages.create({
         data: {
           emisorId:   parseInt(emisorId),
           receptorId: parseInt(receptorId),
           contenido,
+          ...(replyToId ? { replyToId: parseInt(replyToId) } : {}),
         },
         include: {
           users_messages_emisorIdTousers: { select: { id: true, username: true } }
         }
       });
 
-      const msgNorm = {
-        ...msg,
-        emisor: msg.users_messages_emisorIdTousers,
-      };
+      const msgNorm = { ...msg, emisor: msg.users_messages_emisorIdTousers };
 
       const receptorSocket = onlineUsers.get(String(receptorId));
-      if (receptorSocket) {
-        io.to(receptorSocket).emit('message:receive', msgNorm);
-      }
+      if (receptorSocket) io.to(receptorSocket).emit('message:receive', msgNorm);
       socket.emit('message:sent', msgNorm);
 
     } catch (err) {
@@ -99,12 +86,8 @@ io.on('connection', (socket) => {
   socket.on('messages:read', async ({ emisorId, receptorId }) => {
     try {
       await prisma.messages.updateMany({
-        where: {
-          emisorId:   parseInt(emisorId),
-          receptorId: parseInt(receptorId),
-          leido: false
-        },
-        data: { leido: true, leidoEn: new Date() }
+        where: { emisorId: parseInt(emisorId), receptorId: parseInt(receptorId), leido: false },
+        data:  { leido: true, leidoEn: new Date() }
       });
       const emisorSocket = onlineUsers.get(String(emisorId));
       if (emisorSocket) io.to(emisorSocket).emit('messages:read:confirm', { receptorId });
@@ -115,16 +98,12 @@ io.on('connection', (socket) => {
 
   socket.on('typing:start', ({ receptorId }) => {
     const receptorSocket = onlineUsers.get(String(receptorId));
-    if (receptorSocket) {
-      io.to(receptorSocket).emit('typing:start', { userId: socket.userId });
-    }
+    if (receptorSocket) io.to(receptorSocket).emit('typing:start', { userId: socket.userId });
   });
 
   socket.on('typing:stop', ({ receptorId }) => {
     const receptorSocket = onlineUsers.get(String(receptorId));
-    if (receptorSocket) {
-      io.to(receptorSocket).emit('typing:stop', { userId: socket.userId });
-    }
+    if (receptorSocket) io.to(receptorSocket).emit('typing:stop', { userId: socket.userId });
   });
 
   socket.on('disconnect', () => {
