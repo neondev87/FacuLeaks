@@ -7,9 +7,10 @@ import { io } from "socket.io-client";
 import Navbar from "@/components/Navbar";
 import BgCross from "@/components/BgCross";
 
+const API = "http://localhost:4000";
 let socket = null;
 
-// ── PIXEL FLAME ──
+// ── PIXEL FLAME (StreakC) ──
 const FLAME_MAP = [
   [0,0,0,0,1,1,0,0,0,0],
   [0,0,0,1,2,2,1,0,0,0],
@@ -44,18 +45,16 @@ function StreakC({ dying=false, count=1, progress=1.0 }) {
   return (
     <div style={{
       display:"flex", flexDirection:"column", gap:5,
-      padding:"7px 10px",
-      background:"rgba(255,255,255,.03)",
-      border:"1px solid rgba(255,255,255,.06)",
-      borderRadius:3, width:90, flexShrink:0
+      padding:"7px 10px", background:"rgba(255,255,255,.03)",
+      border:"1px solid rgba(255,255,255,.06)", borderRadius:3,
+      width:90, flexShrink:0,
     }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <PixelFlame s={3} dying={dying} />
         <span style={{
-          fontSize:18, fontWeight:500,
+          fontSize:18, fontWeight:500, fontFamily:"'IBM Plex Mono',monospace",
           color: dying ? "#404040" : "#ffaa00",
           letterSpacing:"-.04em", transition:"color .4s",
-          fontFamily:"'IBM Plex Mono',monospace"
         }}>{count}</span>
       </div>
       <div style={{ height:2, background: dying ? "rgba(255,255,255,.05)" : "rgba(255,140,0,.12)", borderRadius:1, overflow:"hidden" }}>
@@ -63,13 +62,12 @@ function StreakC({ dying=false, count=1, progress=1.0 }) {
           height:"100%", width:`${progress*100}%`,
           background: dying ? "#333" : "#ff6600",
           borderRadius:1, transition:"width .4s, background .4s",
-          animation: dying ? "pulse 2s ease-in-out infinite" : "none"
+          animation: dying ? "pulse 2s ease-in-out infinite" : "none",
         }}/>
       </div>
       <div style={{
-        fontSize:7, letterSpacing:".1em", transition:"color .4s",
-        fontFamily:"'IBM Plex Mono',monospace",
-        color: dying ? "#333" : "rgba(255,140,0,.4)"
+        fontSize:7, letterSpacing:".1em", fontFamily:"'IBM Plex Mono',monospace",
+        color: dying ? "#333" : "rgba(255,140,0,.4)", transition:"color .4s",
       }}>
         {dying ? "12H · EXPIRA" : "24H · ACTIVO"}
       </div>
@@ -77,6 +75,49 @@ function StreakC({ dying=false, count=1, progress=1.0 }) {
   );
 }
 
+// ── MIC SVG (del sketch Icono_Microfono_-_Standalone.html) ──
+function MicIcon({ size = 18, recording = false }) {
+  const col = recording ? "#3ddc84" : "rgba(255,255,255,.6)";
+  const scale = size / 18;
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" style={{ display:"block" }}>
+      <rect x="6.5" y="2" width="5" height="8" rx="2.5" stroke={col} strokeWidth=".8" fill="none"/>
+      <path d="M3.5 9.5 C3.5 13 14.5 13 14.5 9.5" stroke={col} strokeWidth=".8" strokeLinecap="round" fill="none"/>
+      <line x1="9" y1="13.2" x2="9" y2="15.5" stroke={col} strokeWidth=".8" strokeLinecap="round"/>
+      <line x1="6.5" y1="15.5" x2="11.5" y2="15.5" stroke={col} strokeWidth=".8" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+// ── WAVEFORM INDICATOR (Typing C del sketch) ──
+const BARS = [0.3, 0.8, 0.5, 1, 0.6, 0.9, 0.4, 0.7, 0.5, 0.8, 0.4, 1, 0.6];
+
+function AudioIndicator({ username, label = "mandando audio" }) {
+  return (
+    <div style={{ display:"flex", gap:10, alignItems:"flex-end", marginBottom:10, animation:"fadeUp .18s ease" }}>
+      <div className="avatar-sm">◈</div>
+      <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-start" }}>
+        <div style={{ fontSize:9, fontFamily:"'IBM Plex Mono',monospace", color:"rgba(255,255,255,.28)", marginBottom:3, letterSpacing:".08em" }}>
+          {username}
+        </div>
+        <div style={{ background:"#0d0d0d", borderRadius:3, padding:"10px 14px", border:"1px solid rgba(255,255,255,.08)", boxShadow:"0 2px 14px rgba(0,0,0,.5)", display:"flex", alignItems:"center", gap:6 }}>
+          <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:"rgba(255,255,255,.35)", letterSpacing:".08em", marginRight:4 }}>{label}</span>
+          {BARS.map((h, i) => (
+            <div key={i} style={{
+              width: 2.5, borderRadius: 2,
+              background: label === "mandando audio" ? "rgba(61,220,132,.7)" : "rgba(255,255,255,.55)",
+              height: `${h * 16}px`,
+              animation: `wave 0.9s ease ${i * 0.06}s infinite`,
+              transformOrigin: "center",
+            }}/>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── TYPING INDICATOR (texto) ──
 function TypingIndicator({ username }) {
   const frames = ["_", "._", ".._", "..._"];
   const [frame, setFrame] = useState(0);
@@ -101,13 +142,58 @@ function TypingIndicator({ username }) {
   );
 }
 
+function AudioPlayer({ src, esPropio }) {
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const audioRef = useRef(null);
+
+  const toggle = () => {
+    if (!audioRef.current) return;
+    if (playing) { audioRef.current.pause(); setPlaying(false); }
+    else { audioRef.current.play(); setPlaying(true); }
+  };
+
+  const fmt = s => `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,"0")}`;
+
+  const textCol = esPropio ? "rgba(0,0,0,.7)" : "rgba(255,255,255,.7)";
+  const barBg   = esPropio ? "rgba(0,0,0,.15)" : "rgba(255,255,255,.15)";
+  const barFill = esPropio ? "rgba(0,0,0,.8)" : "rgba(255,255,255,.8)";
+
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap:10, width:"100%" }}>
+      <audio ref={audioRef} src={src} style={{ display:"none" }}
+        onTimeUpdate={e => setProgress(e.target.currentTime)}
+        onLoadedMetadata={e => setDuration(e.target.duration)}
+        onEnded={() => { setPlaying(false); setProgress(0); }} />
+      <button onClick={toggle} style={{ background:"none", border:"none", cursor:"pointer", padding:0, color: textCol, fontSize:14, flexShrink:0, lineHeight:1 }}>
+        {playing ? "⏸" : "▶"}
+      </button>
+      <div style={{ flex:1, height:2, background: barBg, borderRadius:1, cursor:"pointer", position:"relative" }}
+        onClick={e => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const pct  = (e.clientX - rect.left) / rect.width;
+          if (audioRef.current) { audioRef.current.currentTime = pct * duration; setProgress(pct * duration); }
+        }}>
+        <div style={{ height:"100%", width: duration ? `${(progress/duration)*100}%` : "0%", background: barFill, borderRadius:1, transition:"width .1s linear" }} />
+      </div>
+      <span style={{ fontSize:9, fontFamily:"'IBM Plex Mono',monospace", color: textCol, flexShrink:0 }}>
+        {fmt(progress)} / {fmt(duration)}
+      </span>
+    </div>
+  );
+}
+
 function Bubble({ msg, esPropio, replyMsg, onReply }) {
   const [hov, setHov] = useState(false);
   const formatTime = (d) => d ? new Date(d).toLocaleTimeString("es-MX", { hour:"2-digit", minute:"2-digit" }) : "";
+
+  const isAudioMsg = msg.tipo === "audio" && msg.audioUrl;
+
   return (
     <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
       style={{ display:"flex", flexDirection:"column", alignItems: esPropio ? "flex-end" : "flex-start", gap:3 }}>
-      <div className={esPropio ? "bubble-me" : "bubble-other"}>
+      <div className={esPropio ? "bubble-me" : "bubble-other"} style={ isAudioMsg ? { background: esPropio ? "#fff" : "#141414" } : {} }>
         {replyMsg && (
           <div className={esPropio ? "reply-bar-me" : "reply-bar-other"}>
             <div style={{ width:2.5, borderRadius:2, background: esPropio ? "rgba(0,0,0,.22)" : "rgba(255,255,255,.28)", alignSelf:"stretch", flexShrink:0 }} />
@@ -121,10 +207,25 @@ function Bubble({ msg, esPropio, replyMsg, onReply }) {
             </div>
           </div>
         )}
-        <div style={{ padding:"9px 14px", display:"flex", alignItems:"flex-end", gap:10 }}>
-          <div className={esPropio ? "bubble-text-me" : "bubble-text-other"}>{msg.contenido}</div>
-          <div className={esPropio ? "bubble-time-me" : "bubble-time-other"}>{formatTime(msg.creadoEn)}</div>
-        </div>
+        {isAudioMsg ? (
+          <div style={{ padding:"10px 14px", display:"flex", flexDirection:"column", gap:6, width:320 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:2 }}>
+              <MicIcon size={12} recording={false} />
+              <span style={{ fontFamily:"'IBM Plex Sans',sans-serif", fontSize:10, color:"rgba(255,255,255,.4)", letterSpacing:".04em" }}>
+                mensaje de voz
+              </span>
+            </div>
+            <AudioPlayer src={`${API}${msg.audioUrl}`} esPropio={esPropio} />
+            <div className={esPropio ? "bubble-time-me" : "bubble-time-other"} style={{ alignSelf:"flex-end", marginTop:2 }}>
+              {formatTime(msg.creadoEn)}
+            </div>
+          </div>
+        ) : (
+          <div style={{ padding:"9px 14px", display:"flex", alignItems:"flex-end", gap:10 }}>
+            <div className={esPropio ? "bubble-text-me" : "bubble-text-other"}>{msg.contenido}</div>
+            <div className={esPropio ? "bubble-time-me" : "bubble-time-other"}>{formatTime(msg.creadoEn)}</div>
+          </div>
+        )}
       </div>
       {hov && <div className="reply-btn" onClick={() => onReply(msg)}>↩ responder</div>}
     </div>
@@ -134,19 +235,9 @@ function Bubble({ msg, esPropio, replyMsg, onReply }) {
 function IconBtn({ onClick, title, children, disabled }) {
   const [hov, setHov] = useState(false);
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        background:"none", border:"none", cursor: disabled ? "not-allowed" : "pointer",
-        padding:"0 4px",
-        transition:"opacity .15s", display:"flex", alignItems:"center", justifyContent:"center",
-        opacity: disabled ? .3 : hov ? 1 : .5,
-      }}
-    >
+    <button onClick={onClick} disabled={disabled} title={title}
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ background:"none", border:"none", cursor: disabled ? "not-allowed" : "pointer", padding:"0 4px", transition:"opacity .15s", display:"flex", alignItems:"center", justifyContent:"center", opacity: disabled ? .3 : hov ? 1 : .5 }}>
       {children}
     </button>
   );
@@ -168,18 +259,40 @@ export default function ChatPage() {
   const [resultados,  setResultados]  = useState([]);
   const [buscando,    setBuscando]    = useState(false);
   const [replyingTo,  setReplyingTo]  = useState(null);
-  const [isTyping,    setIsTyping]    = useState(false);
+  const [isTyping,    setIsTyping]    = useState(false);   // userId o false
+  const [isAudio,     setIsAudio]     = useState(false);   // userId o false — mandando audio
+  const [recording,   setRecording]   = useState(false);   // yo estoy grabando
+  const [streak,      setStreak]      = useState({ count:0, dying:false, progress:1.0, loaded:false });
 
   const messagesEndRef = useRef(null);
   const inputRef       = useRef(null);
   const typingTimer    = useRef(null);
+  const audioTimer     = useRef(null);
   const fileInputRef   = useRef(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth");
   }, [status, router]);
 
-  useEffect(() => { setIsTyping(false); }, [activeChat]);
+  useEffect(() => { setIsTyping(false); setIsAudio(false); }, [activeChat]);
+
+  // ── Cargar streak cuando cambia el chat activo ──
+  const loadStreak = useCallback(async (userId) => {
+    if (!userId) return;
+    try {
+      const res  = await fetch(`${API}/api/chat/streak/${userId}`, { credentials:"include" });
+      if (!res.ok) return;
+      const data = await res.json();
+      setStreak({ count: data.count ?? 0, dying: data.dying ?? false, progress: data.progress ?? 1.0, loaded: true });
+    } catch {
+      // streak no implementado aún — usar defaults
+      setStreak({ count: 0, dying: false, progress: 1.0, loaded: true });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeChat?.userId) loadStreak(activeChat.userId);
+  }, [activeChat, loadStreak]);
 
   useEffect(() => {
     const s = document.createElement("style");
@@ -192,9 +305,11 @@ export default function ChatPage() {
       @keyframes blink    { 0%,100%{opacity:1} 50%{opacity:0} }
       @keyframes flicker  { 0%,100%{opacity:1;transform:scaleY(1)} 33%{opacity:.92;transform:scaleY(.97) scaleX(1.02)} 66%{opacity:.96;transform:scaleY(1.02) scaleX(.98)} }
       @keyframes pulse    { 0%,100%{opacity:.35} 50%{opacity:.55} }
+      @keyframes wave     { 0%,100%{transform:scaleY(0.3)} 50%{transform:scaleY(1)} }
+      @keyframes micPulse { 0%,100%{opacity:.6;transform:scale(1)} 50%{opacity:1;transform:scale(1.08)} }
       body { background:#000; color:#e8e4d9; font-family:'IBM Plex Mono',monospace; font-size:13px; overflow:hidden; }
       body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E"); opacity:.04; pointer-events:none; z-index:9998; }
-      body::after { content:''; position:fixed; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.12) 2px,rgba(0,0,0,.12) 4px); pointer-events:none; z-index:9999; }
+      body::after { content:''; position:fixed; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.12) 2px,rgba(0,0,0,.12) 4px); pointer-events:none; z-index:0; }
       ::-webkit-scrollbar{width:3px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
       .conv-item { padding:9px 15px; cursor:pointer; border-left:2px solid transparent; transition:all .12s; display:flex; gap:10px; align-items:center; }
       .conv-item:hover { background:rgba(255,255,255,.03); }
@@ -203,8 +318,8 @@ export default function ChatPage() {
       .avatar-sm { width:28px; height:28px; border-radius:50%; background:#1a1a1a; border:1.5px solid rgba(255,255,255,.08); display:flex; align-items:center; justify-content:center; font-size:9px; color:rgba(255,255,255,.2); flex-shrink:0; font-family:'IBM Plex Mono',monospace; }
       .status-dot { position:absolute; bottom:1px; right:1px; width:8px; height:8px; border-radius:50%; border:2px solid #050505; }
       .status-dot-hdr { position:absolute; bottom:1px; right:1px; width:9px; height:9px; border-radius:50%; border:2px solid #000; }
-      .bubble-me { background:#fff; border-radius:3px; box-shadow:0 2px 14px rgba(0,0,0,.45); overflow:hidden; max-width:60%; animation:fadeUp .15s ease; }
-      .bubble-other { background:#141414; border-radius:3px; box-shadow:0 2px 14px rgba(0,0,0,.45); overflow:hidden; max-width:60%; animation:fadeUp .15s ease; }
+      .bubble-me { background:#fff; border-radius:3px; box-shadow:0 2px 14px rgba(0,0,0,.45); overflow:hidden; animation:fadeUp .15s ease; position:relative; z-index:1; }
+      .bubble-other { background:#141414; border-radius:3px; box-shadow:0 2px 14px rgba(0,0,0,.45); overflow:hidden; animation:fadeUp .15s ease; position:relative; z-index:1; }
       .bubble-text-me    { font-family:'IBM Plex Sans',sans-serif; font-size:13px; color:#000; line-height:1.55; letter-spacing:.01em; }
       .bubble-text-other { font-family:'IBM Plex Sans',sans-serif; font-size:13px; color:#e8e4d9; line-height:1.55; letter-spacing:.01em; }
       .bubble-time-me    { font-size:8px; color:rgba(0,0,0,.28); white-space:nowrap; flex-shrink:0; font-family:'IBM Plex Mono',monospace; letter-spacing:.05em; margin-top:auto; }
@@ -229,6 +344,7 @@ export default function ChatPage() {
       .date-pill { display:flex; align-items:center; gap:12px; margin:16px 0 14px; }
       .date-pill::before,.date-pill::after { content:''; flex:1; height:1px; background:rgba(255,255,255,.05); }
       .date-pill span { font-size:8px; font-family:'IBM Plex Mono',monospace; color:rgba(255,255,255,.22); background:rgba(255,255,255,.04); padding:3px 12px; border-radius:999px; letter-spacing:.12em; }
+      .mic-recording { animation:micPulse 1s ease-in-out infinite; }
     `;
     document.head.appendChild(s);
     return () => document.getElementById("chat-styles")?.remove();
@@ -236,28 +352,32 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (status !== "authenticated" || !session?.user?.dbId) return;
-    socket = io("http://localhost:4000");
+    socket = io(API);
     socket.emit("user:connect", session.user.dbId);
-    socket.on("users:online", (users) => setOnlineUsers(users));
-    socket.on("message:receive", (msg) => {
-      setMensajes(prev => [...prev, msg]);
+    socket.on("users:online",    (users) => setOnlineUsers(users));
+    socket.on("message:receive", (msg)   => { setMensajes(prev => [...prev, msg]); loadConversaciones(); });
+    socket.on("message:sent",    (msg)   => { setMensajes(prev => [...prev, msg]); });
+    socket.on("typing:start",    ({ userId }) => { setIsTyping(String(userId)); setIsAudio(false); });
+    socket.on("typing:stop",     ({ userId }) => { setIsTyping(prev => prev === String(userId) ? false : prev); });
+    socket.on("audio:start",     ({ userId }) => { setIsAudio(String(userId)); setIsTyping(false); });
+    socket.on("audio:stop",      ({ userId }) => { setIsAudio(prev => prev === String(userId) ? false : prev); });
+    socket.on("message:receive:audio", (msg) => {
+      setMensajes(prev => {
+        const exists = prev.some(m => m.id === msg.id);
+        return exists ? prev : [...prev, msg];
+      });
       loadConversaciones();
     });
-    socket.on("message:sent", (msg) => {
-      setMensajes(prev => [...prev, msg]);
-    });
-    socket.on("typing:start", ({ userId }) => setIsTyping(String(userId)));
-    socket.on("typing:stop",  ({ userId }) => setIsTyping(prev => prev === String(userId) ? false : prev));
     return () => { socket?.disconnect(); socket = null; };
   }, [status, session]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior:"smooth" });
-  }, [mensajes, isTyping]);
+  }, [mensajes, isTyping, isAudio]);
 
   const loadConversaciones = useCallback(async () => {
     try {
-      const res  = await fetch("http://localhost:4000/api/chat/conversaciones", { credentials:"include" });
+      const res  = await fetch(`${API}/api/chat/conversaciones`, { credentials:"include" });
       const data = await res.json();
       setRecientes(data.recientes || []);
       setAmigos(data.amigos       || []);
@@ -273,7 +393,7 @@ export default function ChatPage() {
     const t = setTimeout(async () => {
       setBuscando(true);
       try {
-        const res  = await fetch(`http://localhost:4000/api/amigos/buscar?q=${busqueda}`, { credentials:"include" });
+        const res  = await fetch(`${API}/api/amigos/buscar?q=${busqueda}`, { credentials:"include" });
         const data = await res.json();
         setResultados(data.usuarios || []);
       } catch {}
@@ -284,14 +404,16 @@ export default function ChatPage() {
 
   const openChat = async (user) => {
     setShowBuscar(false); setBusqueda(""); setResultados([]);
-    setIsTyping(false);
+    setIsTyping(false); setIsAudio(false);
     const chatUser = { userId: user.userId || user.id, username: user.username };
     setActiveChat(chatUser);
     setLoading(true); setMensajes([]); setReplyingTo(null);
     try {
-      const res  = await fetch(`http://localhost:4000/api/chat/${chatUser.userId}`, { credentials:"include" });
+      const res  = await fetch(`${API}/api/chat/${chatUser.userId}`, { credentials:"include" });
       const data = await res.json();
-      setMensajes(data.mensajes || []);
+      const msgs = data.mensajes || [];
+      const unique = msgs.filter((m, i, arr) => arr.findIndex(x => x.id === m.id) === i);
+      setMensajes(unique);
       if (socket && session?.user?.dbId)
         socket.emit("messages:read", { emisorId: chatUser.userId, receptorId: session.user.dbId });
     } catch {}
@@ -309,15 +431,73 @@ export default function ChatPage() {
     }, 1500);
   };
 
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef   = useRef([]);
+
+  // ── Mic: pedir permiso real y grabar ──
+  const handleMicClick = async () => {
+    if (!activeChat || !socket) return;
+    if (!recording) {
+      try {
+        const stream   = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        audioChunksRef.current = [];
+        recorder.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+        recorder.start();
+        mediaRecorderRef.current = recorder;
+        setRecording(true);
+        socket.emit("audio:start", { receptorId: activeChat.userId });
+        audioTimer.current = setTimeout(() => stopRecording(false), 60000);
+      } catch (err) {
+        console.error("Permiso de micrófono denegado:", err.message);
+      }
+    } else {
+      stopRecording(false);
+    }
+  };
+
+  const stopRecording = (send = false) => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state === "inactive") {
+      setRecording(false);
+      return;
+    }
+    recorder.onstop = async () => {
+      recorder.stream?.getTracks().forEach(t => t.stop());
+      if (send && audioChunksRef.current.length > 0) {
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const fd   = new FormData();
+        fd.append("audio", blob, "audio.webm");
+        const url = `${API}/api/chat/audio/${activeChat.userId}`;
+        console.log("[AUDIO] enviando a:", url, "blob size:", blob.size, "activeChat:", activeChat);
+        try {
+          const res  = await fetch(url, { method: "POST", credentials: "include", body: fd });
+          console.log("[AUDIO] status:", res.status, res.headers.get("content-type"));
+          const text = await res.text();
+          console.log("[AUDIO] respuesta:", text.slice(0, 200));
+          const data = JSON.parse(text);
+          if (data.ok) setMensajes(prev => {
+            const exists = prev.some(m => m.id === data.msg.id);
+            return exists ? prev : [...prev, data.msg];
+          });
+        } catch (err) {
+          console.error("Error enviando audio:", err.message);
+        }
+      }
+      audioChunksRef.current = [];
+      mediaRecorderRef.current = null;
+    };
+    recorder.stop();
+    setRecording(false);
+    clearTimeout(audioTimer.current);
+    if (socket && activeChat) socket.emit("audio:stop", { receptorId: activeChat.userId });
+  };
+
   const sendMessage = () => {
     if (!input.trim() || !activeChat || !socket || !session?.user?.dbId) return;
     clearTimeout(typingTimer.current);
-    socket.emit("typing:stop", { receptorId: activeChat.userId });
-    socket.emit("message:send", {
-      emisorId:   session.user.dbId,
-      receptorId: activeChat.userId,
-      contenido:  input.trim(),
-    });
+    socket.emit("typing:stop",  { receptorId: activeChat.userId });
+    socket.emit("message:send", { emisorId: session.user.dbId, receptorId: activeChat.userId, contenido: input.trim() });
     setInput("");
     setReplyingTo(null);
   };
@@ -334,6 +514,10 @@ export default function ChatPage() {
     if (date.toDateString() === yesterday.toDateString()) return "AYER";
     return date.toLocaleDateString("es-MX", { day:"numeric", month:"long" }).toUpperCase();
   };
+
+  // Indicador activo para el receptor
+  const showTypingIndicator = isTyping && String(isTyping) === String(activeChat?.userId);
+  const showAudioIndicator  = isAudio  && String(isAudio)  === String(activeChat?.userId);
 
   if (status === "loading") return null;
 
@@ -419,8 +603,7 @@ export default function ChatPage() {
           <div onClick={() => setShowBuscar(!showBuscar)}
             style={{ padding:"10px 15px", borderTop:"1px solid rgba(255,255,255,.05)", display:"flex", gap:8, alignItems:"center", cursor:"pointer", transition:"background .15s" }}
             onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.02)"}
-            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-          >
+            onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
             <div style={{ width:22, height:22, borderRadius:"50%", background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.1)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, color:"rgba(255,255,255,.3)", lineHeight:1 }}>+</div>
             <span style={{ fontSize:9, color:"rgba(255,255,255,.28)", fontFamily:"'IBM Plex Mono',monospace", letterSpacing:".06em" }}>nueva conversación</span>
           </div>
@@ -430,6 +613,7 @@ export default function ChatPage() {
         {activeChat ? (
           <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, background:"#000" }}>
 
+            {/* Header */}
             <div style={{ padding:"12px 22px", background:"#000", borderBottom:"1px solid rgba(255,255,255,.07)", display:"flex", alignItems:"center", gap:14 }}>
               <div className="avatar" style={{ width:36, height:36 }}>
                 ◈<div className="status-dot-hdr" style={{ background: isOnline(activeChat.userId) ? "#3ddc84" : "#2a2a2a" }} />
@@ -440,9 +624,13 @@ export default function ChatPage() {
                   {isOnline(activeChat.userId) ? "en línea ahora" : "desconectado"}
                 </div>
               </div>
-              <StreakC count={1} dying={false} progress={1.0} />
+              {/* StreakC — real si cargó, 0 si no hay endpoint aún */}
+              {streak.loaded && (
+                <StreakC count={streak.count} dying={streak.dying} progress={streak.progress} />
+              )}
             </div>
 
+            {/* Mensajes */}
             <div style={{ flex:1, overflowY:"auto", padding:"18px 22px", display:"flex", flexDirection:"column" }}>
               {loading ? (
                 <div style={{ textAlign:"center", paddingTop:60 }}><span className="spinner" /></div>
@@ -465,7 +653,7 @@ export default function ChatPage() {
                         <div style={{ width:30, flexShrink:0 }}>
                           {!prevSame ? <div className="avatar-sm">{esPropio ? "◎" : "◈"}</div> : <div style={{ width:30 }} />}
                         </div>
-                        <div style={{ display:"flex", flexDirection:"column", alignItems: esPropio ? "flex-end" : "flex-start", maxWidth:"60%" }}>
+                        <div style={{ display:"flex", flexDirection:"column", alignItems: esPropio ? "flex-end" : "flex-start", maxWidth: msg.tipo === "audio" ? "520px" : "60%" }}>
                           {!prevSame && (
                             <div style={{ fontSize:11, fontFamily:"'DM Serif Display',serif", color:"rgba(255,255,255,.48)", marginBottom:4, paddingLeft: esPropio ? 0 : 2, paddingRight: esPropio ? 2 : 0 }}>
                               {esPropio ? "Tú" : msg.emisor?.username}
@@ -479,12 +667,15 @@ export default function ChatPage() {
                   );
                 })
               )}
-              {isTyping && String(isTyping) === String(activeChat.userId) && (
-                <TypingIndicator username={activeChat.username} />
-              )}
+
+              {/* Indicadores de actividad del receptor */}
+              {showAudioIndicator && <AudioIndicator username={activeChat.username} label="mandando audio" />}
+              {showTypingIndicator && !showAudioIndicator && <TypingIndicator username={activeChat.username} />}
+
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Reply bar */}
             {replyingTo && (
               <div style={{ padding:"8px 20px", background:"rgba(255,255,255,.03)", borderTop:"1px solid rgba(255,255,255,.06)", display:"flex", alignItems:"center", gap:10 }}>
                 <div style={{ width:3, borderRadius:2, height:28, background:"rgba(255,255,255,.45)", flexShrink:0 }} />
@@ -507,17 +698,12 @@ export default function ChatPage() {
               </div>
             )}
 
-            {/* ── INPUT AREA ── */}
+            {/* Input area */}
             <div style={{ padding:"10px 18px 14px", background:"#000", borderTop:"1px solid rgba(255,255,255,.07)", display:"flex", gap:5, alignItems:"center" }}>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*,.pdf,.doc,.docx"
-                style={{ display:"none" }}
-                onChange={e => console.log("archivo:", e.target.files?.[0]?.name)}
-              />
+              <input ref={fileInputRef} type="file" accept="image/*,.pdf,.doc,.docx" style={{ display:"none" }}
+                onChange={e => console.log("archivo:", e.target.files?.[0]?.name)} />
 
-              {/* + exacto del sketch */}
+              {/* + adjuntar */}
               <IconBtn title="Adjuntar archivo" onClick={() => fileInputRef.current?.click()} disabled={!activeChat}>
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                   <rect x="8.3" y="2" width="1.4" height="14" rx=".7" fill="rgba(255,255,255,.6)"/>
@@ -530,8 +716,8 @@ export default function ChatPage() {
                 </svg>
               </IconBtn>
 
-              {/* sticker exacto del sketch */}
-              <IconBtn title="Stickers (próximamente)" onClick={() => {}} disabled={!activeChat}>
+              {/* sticker */}
+              <IconBtn title="Stickers" onClick={() => {}} disabled={!activeChat}>
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                   <path d="M2.5 3.5 Q2.5 2 4 2 L11.2 2 L16 6.8 L16 14.5 Q16 16 14.5 16 L4 16 Q2.5 16 2.5 14.5 Z" stroke="rgba(255,255,255,.6)" strokeWidth="1.1" fill="none"/>
                   <path d="M11.2 2 L11.2 6.8 L16 6.8" stroke="rgba(255,255,255,.28)" strokeWidth="1" fill="none"/>
@@ -541,17 +727,47 @@ export default function ChatPage() {
                 </svg>
               </IconBtn>
 
-              <div className="input-wrap">
-                <input
-                  ref={inputRef}
-                  className="chat-input"
-                  placeholder={replyingTo ? "↩ responder..." : "Escribe un mensaje..."}
-                  value={input}
-                  onChange={handleInputChange}
-                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-                />
-                <button className="send-arrow" onClick={sendMessage} disabled={!input.trim()}>↑</button>
-              </div>
+              {/* ── MIC ── */}
+              <IconBtn title={recording ? "Detener audio" : "Grabar audio"} onClick={handleMicClick} disabled={!activeChat}>
+                <div className={recording ? "mic-recording" : ""}>
+                  <MicIcon size={18} recording={recording} />
+                </div>
+              </IconBtn>
+
+              {/* Input de texto — si grabando, mostrar waveform en su lugar */}
+              {recording ? (
+                <div style={{ flex:1, background:"rgba(61,220,132,.04)", border:"1px solid rgba(61,220,132,.2)", borderRadius:2, padding:"0 14px", display:"flex", alignItems:"center", gap:8, height:40 }}>
+                  <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:"rgba(61,220,132,.7)", letterSpacing:".1em" }}>grabando</span>
+                  {BARS.map((h, i) => (
+                    <div key={i} style={{ width:2, borderRadius:2, background:"rgba(61,220,132,.7)", height:`${h*14}px`, animation:`wave 0.9s ease ${i*0.06}s infinite`, transformOrigin:"center" }}/>
+                  ))}
+                  <div style={{ marginLeft:"auto", display:"flex", gap:6 }}>
+                    {/* Cancelar */}
+                    <button onClick={() => stopRecording(false)}
+                      style={{ background:"none", border:"1px solid rgba(255,80,80,.3)", color:"rgba(255,80,80,.6)", fontFamily:"'IBM Plex Mono',monospace", fontSize:8, padding:"3px 10px", cursor:"pointer", letterSpacing:".1em", transition:"all .15s" }}
+                      onMouseEnter={e => { e.currentTarget.style.background="rgba(255,80,80,.1)"; e.currentTarget.style.color="#ff5050"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background="none"; e.currentTarget.style.color="rgba(255,80,80,.6)"; }}>
+                      ✕
+                    </button>
+                    {/* Enviar */}
+                    <button onClick={() => stopRecording(true)}
+                      style={{ background:"rgba(61,220,132,.15)", border:"1px solid rgba(61,220,132,.4)", color:"#3ddc84", fontFamily:"'IBM Plex Mono',monospace", fontSize:8, padding:"3px 12px", cursor:"pointer", letterSpacing:".1em", transition:"all .15s" }}
+                      onMouseEnter={e => { e.currentTarget.style.background="rgba(61,220,132,.25)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background="rgba(61,220,132,.15)"; }}>
+                      ↑ enviar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="input-wrap">
+                  <input ref={inputRef} className="chat-input"
+                    placeholder={replyingTo ? "↩ responder..." : "Escribe un mensaje..."}
+                    value={input} onChange={handleInputChange}
+                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                  />
+                  <button className="send-arrow" onClick={sendMessage} disabled={!input.trim()}>↑</button>
+                </div>
+              )}
             </div>
           </div>
         ) : (
@@ -561,8 +777,7 @@ export default function ChatPage() {
             <button onClick={() => setShowBuscar(true)}
               style={{ marginTop:6, background:"transparent", border:"1px solid rgba(255,255,255,.15)", color:"rgba(255,255,255,.5)", fontFamily:"'IBM Plex Mono',monospace", fontSize:9, letterSpacing:".2em", padding:"9px 22px", cursor:"pointer", transition:"all .2s", borderRadius:2 }}
               onMouseEnter={e => { e.currentTarget.style.borderColor="rgba(255,255,255,.4)"; e.currentTarget.style.color="#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor="rgba(255,255,255,.15)"; e.currentTarget.style.color="rgba(255,255,255,.5)"; }}
-            >
+              onMouseLeave={e => { e.currentTarget.style.borderColor="rgba(255,255,255,.15)"; e.currentTarget.style.color="rgba(255,255,255,.5)"; }}>
               + nueva conversación
             </button>
           </div>

@@ -55,6 +55,8 @@ model messages {
   leido                            Boolean   @default(false)
   leidoEn                          DateTime? @db.DateTime(0)
   creadoEn                         DateTime  @default(now()) @db.DateTime(0)
+  tipo                             String    @default("texto") @db.VarChar(20)
+  audioUrl                         String?   @db.VarChar(300)
   users_messages_emisorIdTousers   users     @relation("messages_emisorIdTousers", fields: [emisorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "messages_ibfk_1")
   users_messages_receptorIdTousers users     @relation("messages_receptorIdTousers", fields: [receptorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "messages_ibfk_2")
 
@@ -111,13 +113,13 @@ model posts {
   titulo           String?          @db.VarChar(150)
   contenido        String           @db.Text
   privacidad       posts_privacidad @default(AMIGOS)
-  imagen           String?          @db.VarChar(300)
   totalLikes       Int              @default(0)
   totalComentarios Int              @default(0)
   totalVistas      Int              @default(0)
   editado          Boolean          @default(false)
   creadoEn         DateTime         @default(now()) @db.DateTime(0)
   actualizadoEn    DateTime         @default(now()) @db.DateTime(0)
+  imagen           String?          @db.VarChar(300)
   comments         comments[]
   post_images      post_images[]
   post_likes       post_likes[]
@@ -160,13 +162,13 @@ model user_profiles {
   statusText            String?  @db.VarChar(80)
   bio                   String?  @db.VarChar(300)
   linkPersonal          String?  @db.VarChar(200)
-  intereses             Json?
-  links                 Json?
   perfilPublico         Boolean  @default(true)
   mostrarSpotify        Boolean  @default(true)
   mostrarUltimaConexion Boolean  @default(true)
   creadoEn              DateTime @default(now()) @db.DateTime(0)
   actualizadoEn         DateTime @default(now()) @db.DateTime(0)
+  intereses             Json?
+  links                 Json?
   users                 users    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_profiles_ibfk_1")
 }
 
@@ -187,12 +189,12 @@ model users {
   username                                         String           @unique(map: "username") @db.VarChar(30)
   password                                         String           @db.VarChar(255)
   nombre                                           String           @db.VarChar(100)
-  imagen                                           String?          @db.VarChar(300)
   rol                                              users_rol        @default(USUARIO)
   activo                                           Boolean          @default(true)
   ultimoAcceso                                     DateTime?        @db.DateTime(0)
   creadoEn                                         DateTime         @default(now()) @db.DateTime(0)
   actualizadoEn                                    DateTime         @default(now()) @db.DateTime(0)
+  imagen                                           String?          @db.VarChar(300)
   amistades_amistades_solicitanteIdTousers         amistades[]      @relation("amistades_solicitanteIdTousers")
   amistades_amistades_receptorIdTousers            amistades[]      @relation("amistades_receptorIdTousers")
   comments                                         comments[]

@@ -139,28 +139,31 @@ function TrashIcon({ onDelete }) {
 }
 
 // ── HEART ICON ──
-function HeartIcon({ count = 0 }) {
-  const [phase,  setPhase]  = useState("idle");
-  const [liked,  setLiked]  = useState(false);
+function HeartIcon({ count = 0, reaction, setReaction }) {
+  const liked = reaction === "heart";
+  const [phase, setPhase] = useState("idle");
   const resetRef = useRef();
 
   const trigger = () => {
     clearTimeout(resetRef.current);
-    if (liked) { setLiked(false); setPhase("idle"); return; }
-    setLiked(true);
+    if (liked) { setReaction(null); setPhase("idle"); return; }
+    if (reaction === "skull") return; // bloqueado
+    setReaction("heart");
     setPhase("white");
-    setTimeout(() => setPhase("dead"), 280);
-    setTimeout(() => setPhase("gone"), 620);
-    resetRef.current = setTimeout(() => setPhase("idle"), 1800);
+    setTimeout(() => setPhase("dead"), 150);
+    setTimeout(() => setPhase("gone"), 350);
+    resetRef.current = setTimeout(() => setPhase("idle"), 900);
   };
 
   useEffect(() => () => clearTimeout(resetRef.current), []);
 
+  const disabled = reaction === "skull";
+
   return (
-    <button onClick={trigger}
-      style={{ background:"none", border:"none", cursor:"pointer", padding:"4px 6px", display:"flex", alignItems:"center", gap:6, borderRadius:2, transition:"background .15s", outline:"none" }}
-      onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.04)"}
-      onMouseLeave={e => e.currentTarget.style.background = "none"}
+    <button onClick={trigger} disabled={disabled}
+      style={{ background:"none", border:"none", cursor: disabled ? "default" : "pointer", padding:"4px 6px", display:"flex", alignItems:"center", gap:6, borderRadius:2, transition:"background .15s, opacity .2s", outline:"none", opacity: disabled ? .2 : 1 }}
+      onMouseEnter={e => { if (!disabled) e.currentTarget.style.background = "rgba(255,255,255,.04)"; }}
+      onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
     >
       <div style={{
         display:"inline-block",
@@ -179,27 +182,30 @@ function HeartIcon({ count = 0 }) {
 }
 
 // ── SKULL ICON ──
-function SkullIcon({ count = 0 }) {
+function SkullIcon({ count = 0, reaction, setReaction }) {
+  const disliked = reaction === "skull";
   const [phase, setPhase] = useState("idle");
-  const [disliked, setDisliked] = useState(false);
   const resetRef = useRef();
 
   const trigger = () => {
     clearTimeout(resetRef.current);
-    if (disliked) { setDisliked(false); setPhase("idle"); return; }
-    setDisliked(true);
+    if (disliked) { setReaction(null); setPhase("idle"); return; }
+    if (reaction === "heart") return; // bloqueado
+    setReaction("skull");
     setPhase("dead");
-    setTimeout(() => setPhase("gone"), 420);
-    resetRef.current = setTimeout(() => setPhase("idle"), 1800);
+    setTimeout(() => setPhase("gone"), 220);
+    resetRef.current = setTimeout(() => setPhase("idle"), 900);
   };
 
   useEffect(() => () => clearTimeout(resetRef.current), []);
 
+  const disabled = reaction === "heart";
+
   return (
-    <button onClick={trigger}
-      style={{ background:"none", border:"none", cursor:"pointer", padding:"4px 6px", display:"flex", alignItems:"center", gap:6, borderRadius:2, transition:"background .15s", outline:"none" }}
-      onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.04)"}
-      onMouseLeave={e => e.currentTarget.style.background = "none"}
+    <button onClick={trigger} disabled={disabled}
+      style={{ background:"none", border:"none", cursor: disabled ? "default" : "pointer", padding:"4px 6px", display:"flex", alignItems:"center", gap:6, borderRadius:2, transition:"background .15s, opacity .2s", outline:"none", opacity: disabled ? .2 : 1 }}
+      onMouseEnter={e => { if (!disabled) e.currentTarget.style.background = "rgba(255,255,255,.04)"; }}
+      onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
     >
       <div style={{
         display:"inline-block",
@@ -253,6 +259,7 @@ function LinkPreview({ data, onRemove }) {
 function PostCard({ post, currentUserId, onDelete, accent = "#ffffff" }) {
   const [lightbox, setLightbox] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [reaction, setReaction] = useState(null); // "heart" | "skull" | null
   const ac = accent;
 
   const username = post.autor?.username || post.user || "unknown";
@@ -333,8 +340,8 @@ function PostCard({ post, currentUserId, onDelete, accent = "#ffffff" }) {
         {/* Footer */}
         <div style={{ padding:"8px 14px", borderTop:"1px solid rgba(255,255,255,.04)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div style={{ display:"flex", gap:4, alignItems:"center" }}>
-            <HeartIcon count={likes} />
-            <SkullIcon count={0} />
+            <HeartIcon count={likes} reaction={reaction} setReaction={setReaction} />
+            <SkullIcon count={0} reaction={reaction} setReaction={setReaction} />
             <span style={{ cursor:"pointer", letterSpacing:".1em", color:`${ac}66`, fontSize:11, marginLeft:8, fontFamily:"'Space Mono',monospace" }}>† {comments} replies</span>
           </div>
           <span style={{ color:"rgba(255,255,255,.2)", fontSize:11, fontFamily:"'Inter',sans-serif" }}>{vistas}v</span>

@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const prisma = require('../../config/db');
 const { verificarMagicBytes } = require('../upload/upload.security');
 
-// GET /api/perfil  — datos propios
+// GET /api/perfil
 const getPerfil = async (req, res) => {
   try {
     const user = await prisma.users.findUnique({
@@ -17,7 +17,6 @@ const getPerfil = async (req, res) => {
       where: { userId: req.userId }
     });
 
-    // Contar amigos aceptados
     const amigos = await prisma.amistades.count({
       where: {
         estado: 'ACEPTADO',
@@ -25,21 +24,19 @@ const getPerfil = async (req, res) => {
       }
     });
 
-    // Contar posts
     const vlogs = await prisma.posts.count({ where: { autorId: req.userId } });
 
-    // Últimos 5 posts
     const posts = await prisma.posts.findMany({
       where:   { autorId: req.userId },
       orderBy: { creadoEn: 'desc' },
       take:    5,
-      select:  { id:true, titulo:true, contenido:true, creadoEn:true, totalVistas:true }
+      select:  { id:true, titulo:true, contenido:true, imagen:true, creadoEn:true, totalVistas:true }
     });
 
     res.json({
       user,
       profile: profile || {},
-      stats: { amigos, vlogs, visitas: user ? 0 : 0 },
+      stats: { amigos, vlogs, visitas: 0 },
       posts
     });
   } catch (err) {
@@ -48,15 +45,24 @@ const getPerfil = async (req, res) => {
   }
 };
 
-// PUT /api/perfil  — actualizar bio, intereses, links, status
+// PUT /api/perfil
 const updatePerfil = async (req, res) => {
-  const { bio, status, intereses, links } = req.body;
+  const { bio, statusText, intereses, links, nombre } = req.body;
   try {
     const profile = await prisma.user_profiles.upsert({
       where:  { userId: req.userId },
-      update: { bio, status, intereses, links },
-      create: { userId: req.userId, bio, status, intereses, links }
+      update: { bio, statusText, intereses, links },
+      create: { userId: req.userId, bio, statusText, intereses, links }
     });
+
+    // Actualizar nombre si viene
+    if (nombre) {
+      await prisma.users.update({
+        where: { id: req.userId },
+        data:  { nombre }
+      });
+    }
+
     res.json({ ok: true, profile });
   } catch (err) {
     console.error('updatePerfil error:', err.message);
@@ -64,7 +70,7 @@ const updatePerfil = async (req, res) => {
   }
 };
 
-// PUT /api/perfil/avatar  — subir foto de perfil
+// PUT /api/perfil/avatar
 const updateAvatar = async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No se recibió archivo' });
   const tmpPath = req.file.path;

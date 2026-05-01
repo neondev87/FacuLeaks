@@ -1,3 +1,5 @@
+const fs    = require('fs');
+const path  = require('path');
 const prisma = require('../../config/db');
 
 const getConversaciones = async (req, res) => {
@@ -26,9 +28,7 @@ const getConversaciones = async (req, res) => {
     }));
 
     const mensajes = await prisma.messages.findMany({
-      where: {
-        OR: [{ emisorId: userId }, { receptorId: userId }]
-      },
+      where: { OR: [{ emisorId: userId }, { receptorId: userId }] },
       include: {
         users_messages_emisorIdTousers:   { select: { id: true, username: true } },
         users_messages_receptorIdTousers: { select: { id: true, username: true } },
@@ -46,7 +46,7 @@ const getConversaciones = async (req, res) => {
         convMap.set(otherId, {
           userId:   otherId,
           username: otherUser?.username || 'unknown',
-          lastMsg:  msg.contenido,
+          lastMsg:  msg.tipo === 'audio' ? '🎤 Audio' : msg.contenido,
           lastTime: msg.creadoEn,
           unread:   msg.receptorId === userId && !msg.leido ? 1 : 0,
         });
@@ -98,4 +98,50 @@ const getMensajes = async (req, res) => {
   }
 };
 
-module.exports = { getConversaciones, getMensajes };
+// POST /api/chat/audio/:receptorId — guardar audio y notificar por socket
+const sendAudio = async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No se recibió audio' });
+
+  const emisorId   = req.userId;
+  const receptorId = parseInt(req.params.receptorId);
+
+  // Asegurar que existe la carpeta
+  const dir = path.join('uploads', 'audios');
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+  const audioUrl = `/uploads/audios/${req.file.filename}`;
+
+  try {
+    const msg = await prisma.messages.create({
+      data: {
+        emisorId,
+        receptorId,
+        contenido: '🎤 Audio',
+        tipo:      'audio',
+        audioUrl,
+      },
+      include: {
+        users_messages_emisorIdTousers: { select: { id: true, username: true } }
+      }
+    });
+
+    const msgNorm = { ...msg, emisor: msg.users_messages_emisorIdTousers };
+
+    // Notificar al receptor por socket si está conectado
+    const io = req.io;
+    if (io) {
+      // Buscar socket del receptor — el server.js expone onlineUsers en req.io
+      // Emitir a todos y el cliente filtra por emisorId/receptorId
+      io.emit('message:receive:audio', msgNorm);
+    }
+
+    res.json({ ok: true, msg: msgNorm });
+  } catch (err) {
+    // Limpiar archivo si falla la BD
+    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    console.error('sendAudio error:', err.message);
+    res.status(500).json({ error: 'Error al guardar audio' });
+  }
+};
+
+module.exports = { getConversaciones, getMensajes, sendAudio };

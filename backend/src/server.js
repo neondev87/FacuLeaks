@@ -51,6 +51,21 @@ io.on('connection', (socket) => {
     io.emit('users:online', Array.from(onlineUsers.keys()));
   });
 
+    socket.on('audio:start', ({ receptorId }) => {
+    const receptorSocket = onlineUsers.get(String(receptorId));
+    if (receptorSocket) {
+      io.to(receptorSocket).emit('audio:start', { userId: socket.userId });
+    }
+  });
+
+   socket.on('audio:stop', ({ receptorId }) => {
+    const receptorSocket = onlineUsers.get(String(receptorId));
+    if (receptorSocket) {
+      io.to(receptorSocket).emit('audio:stop', { userId: socket.userId });
+    }
+  });
+ 
+
   socket.on('message:send', async (data) => {
     const { receptorId, contenido, emisorId } = data;
     try {
