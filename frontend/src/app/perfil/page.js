@@ -8,6 +8,22 @@ import SpotifyWidget from "@/components/SpotifyWidget";
 
 const API = "http://localhost:4000";
 
+function Lightbox({ src, onClose }) {
+  useEffect(() => {
+    const h = e => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onClose]);
+  return (
+    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.95)", zIndex:99999, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+      <img src={src.startsWith("http") ? src : `${API}${src}`} alt="full"
+        onClick={e => e.stopPropagation()}
+        style={{ maxWidth:"92vw", maxHeight:"92vh", objectFit:"contain", cursor:"default", border:"1px solid rgba(255,255,255,.1)" }} />
+      <div style={{ position:"absolute", top:20, right:24, color:"rgba(255,255,255,.4)", fontSize:22, cursor:"pointer" }} onClick={onClose}>✕</div>
+    </div>
+  );
+}
+
 function TerminalCounter({ label, value, text }) {
   const [display, setDisplay] = useState(0);
   useEffect(() => {
@@ -231,6 +247,7 @@ export default function ProfilePage() {
   const [saveMsg,         setSaveMsg]         = useState("");
   const [pictures,        setPictures]        = useState([null,null,null,null,null,null]);
   const [localPosts,      setLocalPosts]      = useState(null);
+  const [lightboxSrc,     setLightboxSrc]     = useState(null);
 
   const border = "1px solid rgba(255,255,255,.07)";
   const card   = { border, padding: 16, background: "#050505" };
@@ -370,6 +387,8 @@ export default function ProfilePage() {
 
       {showEdit && <EditModal profile={profile} user={user} onClose={() => setShowEdit(false)} onSave={handleSave} />}
 
+      {lightboxSrc && <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
+
       {saveMsg && (
         <div style={{ position:"fixed", bottom:28, left:"50%", transform:"translateX(-50%)", background:"#fff", color:"#000", padding:"8px 20px", fontFamily:"'Inter',sans-serif", fontSize:12, fontWeight:500, zIndex:2000, animation:"savePop 2.5s ease forwards", borderRadius:4 }}>
           {saveMsg}
@@ -379,27 +398,15 @@ export default function ProfilePage() {
       <div className="profile-wrap">
 
         {/* Header */}
-        <div style={{ borderBottom:"1px solid rgba(255,255,255,.06)", paddingBottom:18, marginBottom:24, display:"flex", justifyContent:"space-between", alignItems:"flex-end" }}>
-          <div>
-            <div style={{ fontFamily:"'Cinzel',serif", fontSize:30, color:"#e8e4d9", letterSpacing:".06em", lineHeight:1.1 }}>
-              {user.nombre || user.username}
-            </div>
-            {profile.statusText && (
-              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:12, color:"#555", marginTop:5, fontStyle:"italic" }}>
-                {profile.statusText}
-              </div>
-            )}
+        <div style={{ borderBottom:"1px solid rgba(255,255,255,.06)", paddingBottom:18, marginBottom:24 }}>
+          <div style={{ fontFamily:"'Cinzel',serif", fontSize:30, color:"#e8e4d9", letterSpacing:".06em", lineHeight:1.1 }}>
+            {user.nombre || user.username}
           </div>
-          <button onClick={() => setShowEdit(true)} style={{
-            background:"none", border:"1px solid rgba(255,255,255,.08)",
-            color:"rgba(255,255,255,.3)", fontFamily:"'Inter',sans-serif",
-            fontSize:11, padding:"6px 14px", cursor:"pointer",
-            transition:"all .2s", borderRadius:4,
-          }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor="rgba(255,255,255,.25)"; e.currentTarget.style.color="#e8e4d9"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor="rgba(255,255,255,.08)"; e.currentTarget.style.color="rgba(255,255,255,.3)"; }}>
-            Editar perfil
-          </button>
+          {profile.statusText && (
+            <div style={{ fontFamily:"'Inter',sans-serif", fontSize:12, color:"#555", marginTop:5, fontStyle:"italic" }}>
+              {profile.statusText}
+            </div>
+          )}
         </div>
 
         <div style={{ display:"grid", gridTemplateColumns:"210px 1fr 230px", gap:12 }}>
@@ -439,7 +446,7 @@ export default function ProfilePage() {
           {/* CENTRAL */}
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             <div style={card}>
-              <div className="sec-title">† About Me</div>
+              <div className="sec-title">† Sobre mí</div>
               {profile.bio
                 ? <div style={{ fontSize:13, color:"rgba(232,228,217,.65)", lineHeight:1.75, fontFamily:"'Inter',sans-serif" }}>{profile.bio}</div>
                 : <div style={{ fontSize:12, color:"#222", cursor:"pointer" }} onClick={() => setShowEdit(true)}>+ agregar bio...</div>
@@ -447,7 +454,7 @@ export default function ProfilePage() {
             </div>
 
             <div style={card}>
-              <div className="sec-title">† Interests</div>
+              <div className="sec-title">† Intereses</div>
               {intereses.length > 0
                 ? intereses.map((t, i) => (
                   <div key={i} style={{ display:"flex", gap:10, marginBottom:5, fontSize:13, color:"rgba(232,228,217,.6)", fontFamily:"'Inter',sans-serif" }}>
@@ -459,21 +466,38 @@ export default function ProfilePage() {
             </div>
 
             <div style={card}>
-              <div className="sec-title">† Latest Posts</div>
+              <div className="sec-title">† Posts</div>
               {posts.length > 0
                 ? posts.map((p, i) => (
-                  <div key={p.id || i} className="post-row">
-                    <div style={{ display:"flex", gap:8, color:"#e8e4d9", overflow:"hidden", alignItems:"center", flex:1 }}>
-                      <span style={{ color:"rgba(255,255,255,.18)", flexShrink:0 }}>—</span>
-                      <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                        {p.titulo || p.contenido?.slice(0, 40) || "sin título"}
-                      </span>
-                    </div>
-                    <div style={{ display:"flex", alignItems:"center", gap:6, flexShrink:0, marginLeft:10 }}>
-                      <span style={{ color:"#3a3a3a", fontSize:11 }}>
-                        {new Date(p.creadoEn).toLocaleDateString("es-MX", { month:"short", day:"numeric" })}
-                      </span>
-                      <TrashBtn s={2} onDelete={() => handleDeletePost(p.id)} />
+                  <div key={p.id || i} style={{ marginBottom: 12, borderBottom: "1px solid rgba(255,255,255,.04)", paddingBottom: 12 }}>
+                    {/* Imagen grande si existe */}
+                    {p.imagen && (
+                      <div onClick={() => setLightboxSrc(p.imagen)}
+                        style={{ marginBottom: 8, background: "#050505", overflow: "hidden", borderRadius: 2, cursor: "pointer" }}>
+                        <img
+                          src={p.imagen.startsWith("http") ? p.imagen : `${API}${p.imagen}`}
+                          alt=""
+                          style={{ width: "100%", maxHeight: 320, objectFit: "contain", background: "#050505", display: "block" }}
+                        />
+                      </div>
+                    )}
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                      <div style={{ display:"flex", gap:8, color:"#e8e4d9", overflow:"hidden", alignItems:"center", flex:1 }}>
+                        {(p.titulo || p.contenido?.trim()) && (
+                          <>
+                            <span style={{ color:"rgba(255,255,255,.18)", flexShrink:0 }}>—</span>
+                            <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontSize:12, fontFamily:"'Inter',sans-serif" }}>
+                              {p.titulo || p.contenido?.slice(0, 50)}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      <div style={{ display:"flex", alignItems:"center", gap:6, flexShrink:0, marginLeft:10 }}>
+                        <span style={{ color:"#3a3a3a", fontSize:11 }}>
+                          {new Date(p.creadoEn).toLocaleDateString("es-MX", { month:"short", day:"numeric" })}
+                        </span>
+                        <TrashBtn s={2} onDelete={() => handleDeletePost(p.id)} />
+                      </div>
                     </div>
                   </div>
                 ))
@@ -513,19 +537,9 @@ export default function ProfilePage() {
                     </a>
                   );
                 })
-                : <div style={{ fontSize:12, color:"#222", cursor:"pointer" }} onClick={() => setShowEdit(true)}>+ agregar links...</div>
+                : <div style={{ fontSize:12, color:"#222" }}>+ agregar links...</div>
               }
             </div>
-
-            <button onClick={() => setShowEdit(true)} style={{
-              background:"#050505", border, padding:"10px", width:"100%",
-              color:"#444", fontFamily:"'Inter',sans-serif", fontSize:12,
-              cursor:"pointer", transition:"all .2s",
-            }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,.18)"; e.currentTarget.style.color = "#e8e4d9"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,.07)"; e.currentTarget.style.color = "#444"; }}>
-              Editar perfil
-            </button>
           </div>
         </div>
       </div>

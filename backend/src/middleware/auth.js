@@ -1,6 +1,10 @@
 const jwt = require('jsonwebtoken');
 
 const authMiddleware = (req, res, next) => {
+  console.log('[AUTH] method:', req.method, '| path:', req.path);
+  console.log('[AUTH] cookies:', req.cookies);
+  console.log('[AUTH] origin:', req.headers.origin);
+
   const token = req.cookies?.token;
   if (!token) return res.status(401).json({ error: 'No autorizado' });
 
