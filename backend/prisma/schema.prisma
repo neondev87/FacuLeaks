@@ -57,6 +57,7 @@ model messages {
   creadoEn                         DateTime  @default(now()) @db.DateTime(0)
   tipo                             String    @default("texto") @db.VarChar(20)
   audioUrl                         String?   @db.VarChar(300)
+  replyToId                        Int?
   users_messages_emisorIdTousers   users     @relation("messages_emisorIdTousers", fields: [emisorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "messages_ibfk_1")
   users_messages_receptorIdTousers users     @relation("messages_receptorIdTousers", fields: [receptorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "messages_ibfk_2")
 

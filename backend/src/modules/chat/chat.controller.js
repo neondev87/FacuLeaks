@@ -144,4 +144,23 @@ const sendAudio = async (req, res) => {
   }
 };
 
-module.exports = { getConversaciones, getMensajes, sendAudio };
+// DELETE /api/chat/mensaje/:id
+const deletemensaje = async (req, res) => {
+  const msgId  = parseInt(req.params.id);
+  const userId = req.userId;
+  try {
+    const msg = await prisma.messages.findUnique({ where: { id: msgId } });
+    if (!msg) return res.status(404).json({ error: 'Mensaje no encontrado' });
+    if (msg.emisorId !== userId) return res.status(403).json({ error: 'No autorizado' });
+    await prisma.messages.delete({ where: { id: msgId } });
+    // Notificar al receptor
+    const io = req.io;
+    if (io) io.emit('message:deleted', { id: msgId });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('deletemensaje error:', err.message);
+    res.status(500).json({ error: 'Error al eliminar mensaje' });
+  }
+};
+
+module.exports = { getConversaciones, getMensajes, sendAudio, deletemensaje };

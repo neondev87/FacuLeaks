@@ -2,7 +2,7 @@ const express = require('express');
 const router  = express.Router();
 const multer  = require('multer');
 const path    = require('path');
-const { getConversaciones, getMensajes, sendAudio } = require('./chat.controller');
+const { getConversaciones, getMensajes, sendAudio, deletemensaje } = require('./chat.controller');
 const { authMiddleware } = require('../../middleware/auth');
 
 // Multer para audio — guarda temporalmente
@@ -24,6 +24,7 @@ const upload = multer({
 
 router.get('/conversaciones',        authMiddleware, getConversaciones);
 router.post('/audio/:receptorId',    authMiddleware, upload.single('audio'), sendAudio);
+router.delete('/mensaje/:id',        authMiddleware, deletemensaje);
 router.get('/:userId',               authMiddleware, getMensajes);
 
 module.exports = router;
