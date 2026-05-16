@@ -260,6 +260,7 @@ function PostCard({ post, currentUserId, onDelete, accent = "#ffffff" }) {
   const [lightbox, setLightbox] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [reaction, setReaction] = useState(null); // "heart" | "skull" | null
+  const router = useRouter();
   const ac = accent;
 
   const username = post.autor?.username || post.user || "unknown";
@@ -303,10 +304,15 @@ function PostCard({ post, currentUserId, onDelete, accent = "#ffffff" }) {
       >
         {/* Header */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", borderBottom:"1px solid rgba(255,255,255,.04)" }}>
-          <div style={{ display:"flex", gap:10, alignItems:"center" }}>
-            <div style={{ width:30, height:30, background:"#0a0a0a", border:`1px solid ${ac}33`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, color:`${ac}55` }}>◈</div>
+          <div style={{ display:"flex", gap:10, alignItems:"center", cursor: post.autor?.id ? "pointer" : "default" }}
+            onClick={() => post.autor?.id && router.push(`/perfil/${post.autor.id}`)}>
+            <div style={{ width:30, height:30, background:"#0a0a0a", border:`1px solid ${ac}33`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, color:`${ac}55`, transition:"border-color .2s" }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = `${ac}88`}
+              onMouseLeave={e => e.currentTarget.style.borderColor = `${ac}33`}>◈</div>
             <div>
-              <div style={{ fontSize:13, color:"#e8e4d9", fontFamily:"'Inter',sans-serif", fontWeight:500 }}>{username}</div>
+              <div style={{ fontSize:13, color:"#e8e4d9", fontFamily:"'Inter',sans-serif", fontWeight:500, transition:"color .15s" }}
+                onMouseEnter={e => e.currentTarget.style.color = "#fff"}
+                onMouseLeave={e => e.currentTarget.style.color = "#e8e4d9"}>{username}</div>
               <div style={{ fontSize:11, color:"#444", fontFamily:"'Inter',sans-serif" }}>{tiempo}</div>
             </div>
           </div>
