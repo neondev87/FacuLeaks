@@ -15,15 +15,25 @@ const perfilRoutes  = require('./modules/perfil/perfil.routes');
 
 const app    = express();
 const server = http.createServer(app);
-const io     = new Server(server, {
-  cors: { origin: 'http://localhost:3000', credentials: true }
+
+// ── Socket.io con CORS desde variable de entorno ──
+const io = new Server(server, {
+  cors: { 
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000', 
+    credentials: true 
+  }
 });
 
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+// ── CORS desde variable de entorno ──
+app.use(cors({ 
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000', 
+  credentials: true 
+}));
+
 app.use(express.json());
 app.use(cookieParser());
 
-app.use((req, res, next) => { req.io = io; next(); });
+app.use((req, res, next) => { req.io = io; req.onlineUsers = onlineUsers; next(); });
 
 app.use('/uploads', express.static('uploads'));
 app.use('/api/upload',  uploadRoutes);
