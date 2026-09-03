@@ -14,6 +14,8 @@ const amigosRoutes  = require('./modules/amigos/amigos.routes');
 const uploadRoutes  = require('./modules/upload/upload.routes');
 const spotifyRoutes = require('./modules/spotify/spotify.routes');
 const perfilRoutes  = require('./modules/perfil/perfil.routes');
+const { authMiddleware } = require('./middleware/auth');
+const { serveAudio }     = require('./modules/chat/chat.controller');
 
 // ── Asegurar carpetas de uploads antes de aceptar peticiones ──
 ['uploads/tmp', 'uploads/imagenes', 'uploads/documentos', 'uploads/audios'].forEach(dir => {
@@ -60,6 +62,9 @@ const uploadLimiter = rateLimit({
   message: { error: 'Demasiadas subidas, esperá un momento' },
 });
 
+// Audios de DM: gateados por sesión + verificación emisor/receptor.
+// Debe ir ANTES del static para que /uploads/audios/* no quede público.
+app.get('/uploads/audios/:file', authMiddleware, serveAudio);
 app.use('/uploads', express.static('uploads'));
 app.use('/api/upload',  uploadLimiter, uploadRoutes);
 app.get('/api/ping',    (req, res) => res.json({ message: 'Backend funcionando' }));

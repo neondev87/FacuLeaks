@@ -105,7 +105,9 @@ function TypingIndicator({ username }) {
 function AudioReplyPreview({ src }) {
   const [dur, setDur] = useState("...");
   useEffect(() => {
-    const a = new Audio(`${API}${src}`);
+    const a = new Audio();
+    a.crossOrigin = "use-credentials"; // manda la cookie al backend (audio gateado)
+    a.src = `${API}${src}`;
     a.onloadedmetadata = () => {
       const s = Math.floor(a.duration);
       setDur(`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`);
@@ -133,7 +135,7 @@ function AudioPlayer({ src, esPropio }) {
 
   return (
     <div style={{ display:"flex", alignItems:"center", gap:10, width:"100%" }}>
-      <audio ref={audioRef} src={src} style={{ display:"none" }}
+      <audio ref={audioRef} src={src} crossOrigin="use-credentials" style={{ display:"none" }}
         onTimeUpdate={e => setProgress(e.target.currentTime)}
         onLoadedMetadata={e => setDuration(e.target.duration)}
         onEnded={() => { setPlaying(false); setProgress(0); }} />
