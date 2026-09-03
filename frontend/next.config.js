@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Oculta el indicador de desarrollo de Next (el círculo con la "N").
+  // Antes estaba en next.config.mjs, que Next ignora porque gana el .js.
+  devIndicators: false,
   async rewrites() {
     return [
       {
