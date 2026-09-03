@@ -1,10 +1,38 @@
 const prisma = require('../../config/db');
+const crypto = require('crypto');
 require('dotenv').config();
 
 const CLIENT_ID     = process.env.SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const REDIRECT_URI  = process.env.SPOTIFY_REDIRECT_URI;
+const FRONTEND_URL  = process.env.CORS_ORIGIN || 'http://localhost:3000';
 const SCOPES        = 'user-read-currently-playing user-read-recently-played';
+
+// ── State firmado (HMAC) para el OAuth de Spotify ──
+// El callback no tiene sesión; sin firma, un atacante podría completar su
+// propio flujo con state=<idVictima> y sobrescribir los tokens de la víctima.
+const signState = (userId) => {
+  const payload = String(userId);
+  const sig = crypto
+    .createHmac('sha256', process.env.JWT_SECRET)
+    .update(payload)
+    .digest('base64url');
+  return `${payload}.${sig}`;
+};
+
+const verifyState = (state) => {
+  if (typeof state !== 'string' || !state.includes('.')) return null;
+  const [payload, sig] = state.split('.');
+  const expected = crypto
+    .createHmac('sha256', process.env.JWT_SECRET)
+    .update(payload)
+    .digest('base64url');
+  const a = Buffer.from(sig || '');
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  const userId = parseInt(payload, 10);
+  return Number.isInteger(userId) ? userId : null;
+};
 
 // ── Helper: parsear respuesta de Spotify de forma segura ──
 const safeJson = async (response) => {
@@ -14,6 +42,20 @@ const safeJson = async (response) => {
   try { return JSON.parse(text); } catch { return null; }
 };
 
+// ── Respeta la preferencia de privacidad del usuario ──
+const spotifyVisible = async (userId) => {
+  try {
+    const profile = await prisma.user_profiles.findUnique({
+      where:  { userId },
+      select: { mostrarSpotify: true },
+    });
+    // Sin fila de perfil => default del schema (true)
+    return profile ? profile.mostrarSpotify : true;
+  } catch {
+    return true;
+  }
+};
+
 // ── 1. Iniciar OAuth ──
 const spotifyAuth = (req, res) => {
   const params = new URLSearchParams({
@@ -21,7 +63,7 @@ const spotifyAuth = (req, res) => {
     response_type: 'code',
     redirect_uri:  REDIRECT_URI,
     scope:         SCOPES,
-    state:         String(req.userId),
+    state:         signState(req.userId),
   });
   res.redirect(`https://accounts.spotify.com/authorize?${params}`);
 };
@@ -29,9 +71,10 @@ const spotifyAuth = (req, res) => {
 // ── 2. Callback ──
 const spotifyCallback = async (req, res) => {
   const { code, state } = req.query;
-  if (!code || !state) return res.redirect('http://localhost:3000/perfil?spotify=error');
+  if (!code || !state) return res.redirect(`${FRONTEND_URL}/perfil?spotify=error`);
 
-  const userId = parseInt(state);
+  const userId = verifyState(state);
+  if (userId === null) return res.redirect(`${FRONTEND_URL}/perfil?spotify=error`);
 
   try {
     const body = new URLSearchParams({
@@ -60,10 +103,10 @@ const spotifyCallback = async (req, res) => {
       create: { userId, accessToken: data.access_token, refreshToken: data.refresh_token, expiresAt },
     });
 
-    res.redirect('http://localhost:3000/perfil?spotify=ok');
+    res.redirect(`${FRONTEND_URL}/perfil?spotify=ok`);
   } catch (err) {
     console.error('Spotify callback error:', err.message);
-    res.redirect('http://localhost:3000/perfil?spotify=error');
+    res.redirect(`${FRONTEND_URL}/perfil?spotify=error`);
   }
 };
 
@@ -101,6 +144,8 @@ const nowPlaying = async (req, res) => {
   const userId = parseInt(req.params.userId);
 
   try {
+    if (!(await spotifyVisible(userId))) return res.json({ connected: false });
+
     const tokenRecord = await prisma.spotify_tokens.findUnique({ where: { userId } });
     if (!tokenRecord) return res.json({ connected: false });
 
@@ -177,6 +222,8 @@ const disconnect = async (req, res) => {
 const recentlyPlayed = async (req, res) => {
   const userId = parseInt(req.params.userId);
   try {
+    if (!(await spotifyVisible(userId))) return res.json({ connected: false, tracks: [] });
+
     const tokenRecord = await prisma.spotify_tokens.findUnique({ where: { userId } });
     if (!tokenRecord) return res.json({ connected: false, tracks: [] });
 

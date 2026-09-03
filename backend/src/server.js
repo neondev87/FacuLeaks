@@ -2,7 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const http = require('http');
+const fs = require('fs');
 const { Server } = require('socket.io');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const authRoutes    = require('./modules/auth/auth.routes');
@@ -13,21 +15,28 @@ const uploadRoutes  = require('./modules/upload/upload.routes');
 const spotifyRoutes = require('./modules/spotify/spotify.routes');
 const perfilRoutes  = require('./modules/perfil/perfil.routes');
 
+// ── Asegurar carpetas de uploads antes de aceptar peticiones ──
+['uploads/tmp', 'uploads/imagenes', 'uploads/documentos', 'uploads/audios'].forEach(dir => {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+});
+
+const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000';
+
 const app    = express();
 const server = http.createServer(app);
 
 // ── Socket.io con CORS desde variable de entorno ──
 const io = new Server(server, {
-  cors: { 
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000', 
-    credentials: true 
+  cors: {
+    origin: CORS_ORIGIN,
+    credentials: true
   }
 });
 
 // ── CORS desde variable de entorno ──
-app.use(cors({ 
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000', 
-  credentials: true 
+app.use(cors({
+  origin: CORS_ORIGIN,
+  credentials: true
 }));
 
 app.use(express.json());
@@ -35,10 +44,26 @@ app.use(cookieParser());
 
 app.use((req, res, next) => { req.io = io; req.onlineUsers = onlineUsers; next(); });
 
+// ── Rate limiting en superficies sensibles (login/registro y uploads) ──
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100, // margen para el polling de /check del frontend; frena enumeración automatizada
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos, probá de nuevo en unos minutos' },
+});
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas subidas, esperá un momento' },
+});
+
 app.use('/uploads', express.static('uploads'));
-app.use('/api/upload',  uploadRoutes);
+app.use('/api/upload',  uploadLimiter, uploadRoutes);
 app.get('/api/ping',    (req, res) => res.json({ message: 'Backend funcionando' }));
-app.use('/api/auth',    authRoutes);
+app.use('/api/auth',    authLimiter, authRoutes);
 app.use('/api/posts',   postsRoutes);
 app.use('/api/chat',    chatRoutes);
 app.use('/api/amigos',  amigosRoutes);
@@ -131,4 +156,7 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => console.log(`Server corriendo en puerto ${PORT}`));
+// Por defecto solo loopback. Para probar desde otro dispositivo en la LAN,
+// exportá HOST=0.0.0.0 explícitamente.
+const HOST = process.env.HOST || '127.0.0.1';
+server.listen(PORT, HOST, () => console.log(`Server corriendo en ${HOST}:${PORT}`));
