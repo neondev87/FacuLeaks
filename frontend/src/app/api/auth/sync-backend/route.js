@@ -26,9 +26,18 @@ export async function GET(req) {
   try {
     const backendRes = await fetch("http://localhost:4000/api/auth/login", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        // Secreto interno server-to-server: el browser nunca lo ve, así que
+        // no puede forjar un login para un googleId ajeno.
+        "x-internal-secret": process.env.INTERNAL_API_SECRET || "",
+      },
       body: JSON.stringify({ googleId }),
     });
+
+    if (!backendRes.ok) {
+      console.error("[sync-backend] backend respondió", backendRes.status);
+    }
 
     if (backendRes.ok) {
       // Reenviar la Set-Cookie del backend al browser

@@ -427,13 +427,15 @@ export default function ProfilePage() {
     try {
       let res = await fetch(`${API}/api/perfil`, { credentials: "include" });
       if (res.status === 401) {
-        const googleId = session.user.googleId || session.user.id;
-        await fetch(`${API}/api/auth/login`, {
-          method: "POST", credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ googleId }),
-        });
-        res = await fetch(`${API}/api/perfil`, { credentials: "include" });
+        // Cookie del backend caída/expirada: re-sincronizar vía el route
+        // server de Next y volver a esta misma página. El flag _sync_done
+        // (que agrega sync-backend) evita un bucle si la re-sync no alcanza.
+        if (!new URLSearchParams(window.location.search).has("_sync_done")) {
+          const back = encodeURIComponent(window.location.pathname);
+          window.location.href = `/api/auth/sync-backend?callbackUrl=${back}`;
+          return;
+        }
+        throw new Error("sesión backend no disponible");
       }
       if (!res.ok) throw new Error();
       const data = await res.json();

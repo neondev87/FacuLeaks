@@ -100,18 +100,10 @@ export default function AuthPage() {
           return;
         }
 
-        // 2. Setear cookie JWT del backend
-        const loginRes = await fetch(`${API}/api/auth/login`, {
-          method:      "POST",
-          credentials: "include",   // ← para que la cookie se guarde en el browser
-          headers:     { "Content-Type": "application/json" },
-          body:        JSON.stringify({ googleId }),
-        });
-
-        if (!loginRes.ok) throw new Error("login backend falló");
-
-        // 3. Redirigir al feed
-        window.location.href = "/feed";
+        // 2. Setear la cookie JWT del backend vía el route server de Next.
+        //    /api/auth/login ya no acepta llamadas del browser (requiere
+        //    secreto interno); sync-backend la hace server-to-server.
+        window.location.href = "/api/auth/sync-backend?callbackUrl=/feed";
 
       } catch (err) {
         console.error("Error en login:", err);
