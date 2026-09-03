@@ -7,6 +7,11 @@ const { Server } = require('socket.io');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+// sharp >= 0.35 en Windows deja el archivo de entrada bloqueado un rato
+// tras .toFile(); sin esto, el fs.unlinkSync(tmpPath) de los uploads tira
+// EBUSY y la subida falla. Desactivar la cache de sharp lo resuelve.
+require('sharp').cache(false);
+
 const authRoutes    = require('./modules/auth/auth.routes');
 const postsRoutes   = require('./modules/posts/posts.routes');
 const chatRoutes    = require('./modules/chat/chat.routes');
