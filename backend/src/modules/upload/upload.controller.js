@@ -69,6 +69,29 @@ const uploadDocumento = async (req, res) => {
   }
 };
 
+// ── fetch siguiendo redirecciones a mano, revalidando cada salto (anti-SSRF) ──
+const fetchSeguro = async (urlInicial, { signal } = {}) => {
+  let actual = urlInicial;
+  for (let i = 0; i < 4; i++) {
+    const resp = await fetch(actual, {
+      signal,
+      headers:  { 'User-Agent': 'FacuLeaks-Bot/1.0' },
+      redirect: 'manual',
+    });
+
+    if (resp.status >= 300 && resp.status < 400) {
+      const location = resp.headers.get('location');
+      if (!location) return resp;
+      const siguiente = sanitizarUrl(new URL(location, actual).href);
+      if (!siguiente) throw new Error('Redirección no permitida');
+      actual = siguiente;
+      continue;
+    }
+    return resp;
+  }
+  throw new Error('Demasiadas redirecciones');
+};
+
 const importarUrl = async (req, res) => {
   const { url } = req.body;
   if (!url) return res.status(400).json({ error: 'URL requerida' });
@@ -81,12 +104,12 @@ const importarUrl = async (req, res) => {
     const controller = new AbortController();
     const timeout    = setTimeout(() => controller.abort(), 5000);
 
-    const response = await fetch(urlLimpia, {
-      signal:  controller.signal,
-      headers: { 'User-Agent': 'FacuLeaks-Bot/1.0' },
-      redirect: 'follow',
-    });
-    clearTimeout(timeout);
+    let response;
+    try {
+      response = await fetchSeguro(urlLimpia, { signal: controller.signal });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     const contentType = response.headers.get('content-type') || '';
     if (!contentType.includes('text/html')) {

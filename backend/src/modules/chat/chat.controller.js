@@ -144,6 +144,31 @@ const sendAudio = async (req, res) => {
   }
 };
 
+// GET /uploads/audios/:file — sirve un audio de DM SOLO a su emisor o receptor.
+// Montada antes de express.static para que los .webm no sean públicos.
+const serveAudio = async (req, res) => {
+  const userId   = req.userId;
+  const filename = path.basename(String(req.params.file)); // corta path traversal
+  const audioUrl = `/uploads/audios/${filename}`;
+  try {
+    const msg = await prisma.messages.findFirst({
+      where:  { audioUrl, OR: [{ emisorId: userId }, { receptorId: userId }] },
+      select: { id: true },
+    });
+    if (!msg) return res.status(403).json({ error: 'No autorizado' });
+
+    // root + ruta relativa: evita que send() rechace la ruta si algún
+    // segmento del cwd empieza con "." (p.ej. .claude en un worktree).
+    const rel = path.join('uploads', 'audios', filename);
+    return res.sendFile(rel, { root: process.cwd(), dotfiles: 'allow' }, (err) => {
+      if (err && !res.headersSent) res.status(404).json({ error: 'Audio no encontrado' });
+    });
+  } catch (err) {
+    console.error('serveAudio error:', err.message);
+    if (!res.headersSent) res.status(500).json({ error: 'Error al servir audio' });
+  }
+};
+
 // DELETE /api/chat/mensaje/:id
 const deletemensaje = async (req, res) => {
   const msgId  = parseInt(req.params.id);
@@ -163,4 +188,4 @@ const deletemensaje = async (req, res) => {
   }
 };
 
-module.exports = { getConversaciones, getMensajes, sendAudio, deletemensaje };
+module.exports = { getConversaciones, getMensajes, sendAudio, deletemensaje, serveAudio };
