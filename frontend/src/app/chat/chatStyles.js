@@ -1,19 +1,24 @@
 // MÓDULO: app/chat/chatStyles.js
 // CSS de la página de chat (burbujas, animaciones de escribiendo/grabando,
 // scrollbar). Se inyecta con hooks/useInjectedStyles.js ("chat-styles", …)
-// desde app/chat/page.js. Es puro texto CSS, no tiene lógica.
+// desde app/chat/page.js. Es puro texto CSS, no tiene lógica. Comparte
+// fuentes/animaciones con las demás páginas vía lib/theme.js; `fadeIn`,
+// `flicker` y `micPulse` son propias de esta página (no se repiten en
+// ningún otro lado, por eso se quedan acá en vez de en el archivo compartido).
+import { FONT_IMPORT_CHAT, NOISE_TEXTURE, KF } from "@/lib/theme";
+
 export const chatStyles = `
-      @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap');
-      @keyframes spin     { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+      ${FONT_IMPORT_CHAT}
+      ${KF.spin}
       @keyframes fadeIn   { from{opacity:0} to{opacity:1} }
-      @keyframes fadeUp   { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
-      @keyframes blink    { 0%,100%{opacity:1} 50%{opacity:0} }
+      ${KF.fadeUp}
+      ${KF.blink}
       @keyframes flicker  { 0%,100%{opacity:1;transform:scaleY(1)} 33%{opacity:.92;transform:scaleY(.97) scaleX(1.02)} 66%{opacity:.96;transform:scaleY(1.02) scaleX(.98)} }
-      @keyframes pulse    { 0%,100%{opacity:.35} 50%{opacity:.55} }
-      @keyframes wave     { 0%,100%{transform:scaleY(0.3)} 50%{transform:scaleY(1)} }
+      ${KF.pulse}
+      ${KF.wave}
       @keyframes micPulse { 0%,100%{opacity:.6;transform:scale(1)} 50%{opacity:1;transform:scale(1.08)} }
       body { background:#000; color:#e8e4d9; font-family:'IBM Plex Mono',monospace; font-size:13px; overflow:hidden; }
-      body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E"); opacity:.04; pointer-events:none; z-index:9998; }
+      ${NOISE_TEXTURE}
       ::-webkit-scrollbar{width:3px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
       .conv-item { padding:9px 15px; cursor:pointer; border-left:2px solid transparent; transition:all .12s; display:flex; gap:10px; align-items:center; }
       .conv-item:hover { background:rgba(255,255,255,.03); }

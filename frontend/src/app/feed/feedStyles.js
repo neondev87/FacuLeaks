@@ -2,14 +2,18 @@
 // CSS de la página de feed (animaciones, fondo con ruido, hairlines, fuentes
 // de Google Fonts propias de esta página). Se inyecta con
 // hooks/useInjectedStyles.js ("feed-styles", …) desde app/feed/page.js.
-// Es puro texto CSS, no tiene lógica.
+// Es puro texto CSS, no tiene lógica. Los valores compartidos con otras
+// páginas (fuentes, ruido de fondo, scrollbar, animaciones) vienen de
+// lib/theme.js — ver ese archivo si hay que cambiar alguno.
+import { FONT_IMPORT_MAIN, NOISE_TEXTURE, SCROLLBAR_THIN, KF } from "@/lib/theme";
+
 export const feedStyles = `
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&family=Cinzel:wght@400;600;900&display=swap');
-      @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-      @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+      ${FONT_IMPORT_MAIN}
+      ${KF.fadeIn}
+      ${KF.spin}
       body { background:#000; color:#e8e4d9; font-family:'Inter',sans-serif; font-size:13px; overflow-x:hidden; }
-      body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E"); opacity:.04; pointer-events:none; z-index:9998; }
-      ::-webkit-scrollbar { width:4px } ::-webkit-scrollbar-track { background:#000 } ::-webkit-scrollbar-thumb { background:#222 }
+      ${NOISE_TEXTURE}
+      ${SCROLLBAR_THIN}
       .feed-wrap { padding:68px 28px 48px; max-width:860px; margin:0 auto; animation:fadeIn .5s ease; }
       .post-title-input { width:100%; background:transparent; border:none; outline:none; font-family:'Inter',sans-serif; font-size:14px; font-weight:500; color:rgba(232,228,217,.5); padding:4px 0; margin-bottom:6px; border-bottom:1px solid rgba(255,255,255,.04); }
       .post-title-input::placeholder { color:rgba(232,228,217,.2); }
