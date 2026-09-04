@@ -1,255 +1,48 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import BgCross from "@/components/BgCross";
-import { API } from "@/lib/api";
+import useInjectedStyles from "@/hooks/useInjectedStyles";
+import useAmigos from "@/hooks/useAmigos";
+import UserCard from "@/components/amigos/UserCard";
+import { amigosStyles } from "./amigosStyles";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: app/amigos/page.js — buscar gente y manejar solicitudes
 // ════════════════════════════════════════════════════════════════════════
-// QUÉ HACE: lista tus amigos + solicitudes recibidas/enviadas, y un
-// buscador (con debounce) para encontrar gente y mandarle solicitud. Es de
-// las pocas páginas que llama al backend DIRECTO en el archivo, sin un hook
-// propio en hooks/ — quedó así desde antes de la Fase 2 de reestructura.
+// QUÉ HACE: junta el buscador de usuarios y las 3 listas (solicitudes
+// recibidas, enviadas, amigos) — toda la lógica vive en hooks/useAmigos.js,
+// este archivo es sobre todo el JSX. Parejada con el patrón de Fase 2
+// (hook + componente + useInjectedStyles) el 2026-09-04 — antes tenía todo
+// inline, sin hook propio.
 //
-// CON QUÉ SE CONECTA: backend /api/amigos/* completo
-// (amigos.controller.js): listar, buscar, enviar/aceptar/rechazar
-// solicitud, eliminar amistad.
+// CON QUÉ SE CONECTA: hooks/useAmigos.js, components/amigos/UserCard.js.
 // ════════════════════════════════════════════════════════════════════════
 export default function AmigosPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
-  const ac = "#ffffff";
 
-  const [amigos,    setAmigos]    = useState([]);
-  const [recibidas, setRecibidas] = useState([]);
-  const [enviadas,  setEnviadas]  = useState([]);
-  const [busqueda,  setBusqueda]  = useState("");
-  const [resultados,setResultados]= useState([]);
-  const [buscando,  setBuscando]  = useState(false);
-  const [loading,   setLoading]   = useState(false);
+  const {
+    amigos, recibidas, enviadas,
+    busqueda, setBusqueda, resultados, buscando, loading,
+    enviarSolicitud, aceptar, rechazar, eliminar,
+  } = useAmigos({ status });
+
+  useInjectedStyles("amigos-styles", amigosStyles);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth");
   }, [status, router]);
 
-  // ── Estilos ──
-  useEffect(() => {
-    const s = document.createElement("style");
-    s.id = "amigos-styles";
-    s.textContent = `
-      @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Cinzel:wght@400;600;900&display=swap');
-
-      @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-      @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-
-      body { background:#000; color:#e8e4d9; font-family:'Space Mono',monospace; font-size:13px; overflow-x:hidden; }
-
-      body::before {
-        content:''; position:fixed; inset:0;
-        background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-        opacity:.05; pointer-events:none; z-index:9998;
-      }
-      body::after {
-        content:''; position:fixed; inset:0;
-        background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.15) 2px,rgba(0,0,0,.15) 4px);
-        pointer-events:none; z-index:9999;
-      }
-
-      ::-webkit-scrollbar{width:4px}
-      ::-webkit-scrollbar-track{background:#000}
-      ::-webkit-scrollbar-thumb{background:#333}
-
-      .page-wrap {
-        padding: 68px 28px 48px;
-        max-width: 900px;
-        margin: 0 auto;
-        animation: fadeIn .5s ease;
-      }
-
-      .search-input {
-        width: 100%;
-        background: rgba(255,255,255,.04);
-        border: 1px solid rgba(255,255,255,.1);
-        color: #e8e4d9;
-        font-family: 'Space Mono', monospace;
-        font-size: 13px;
-        padding: 12px 16px;
-        outline: none;
-        letter-spacing: .04em;
-        transition: border-color .2s;
-      }
-      .search-input:focus { border-color: rgba(255,255,255,.3); }
-      .search-input::placeholder { color: rgba(255,255,255,.2); }
-
-      .user-card {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px 16px;
-        border: 1px solid rgba(255,255,255,.06);
-        margin-bottom: 8px;
-        transition: border-color .2s;
-      }
-      .user-card:hover { border-color: rgba(255,255,255,.15); }
-
-      .btn-action {
-        font-family: 'Space Mono', monospace;
-        font-size: 10px;
-        letter-spacing: .15em;
-        padding: 5px 14px;
-        cursor: pointer;
-        transition: all .2s;
-        border: 1px solid;
-        background: transparent;
-      }
-      .btn-add      { color: rgba(255,255,255,.6);  border-color: rgba(255,255,255,.2);  }
-      .btn-add:hover{ color: #fff; border-color: rgba(255,255,255,.5); background: rgba(255,255,255,.05); }
-      .btn-accept   { color: rgba(100,220,120,.8);  border-color: rgba(100,220,120,.3);  }
-      .btn-accept:hover { color: #fff; border-color: rgba(100,220,120,.7); background: rgba(100,220,120,.08); }
-      .btn-reject   { color: rgba(220,80,80,.7);    border-color: rgba(220,80,80,.2);    }
-      .btn-reject:hover { color: #fff; border-color: rgba(220,80,80,.5); background: rgba(220,80,80,.08); }
-      .btn-remove   { color: rgba(255,255,255,.3);  border-color: rgba(255,255,255,.08); }
-      .btn-remove:hover { color: rgba(220,80,80,.8); border-color: rgba(220,80,80,.3); }
-
-      .section-header {
-        font-family: 'Cinzel', serif;
-        font-size: 14px;
-        letter-spacing: .2em;
-        color: #fff;
-        margin-bottom: 16px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid rgba(255,255,255,.08);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-      .badge {
-        background: #cc3344;
-        color: #fff;
-        font-family: 'Space Mono', monospace;
-        font-size: 9px;
-        padding: 1px 6px;
-        min-width: 18px;
-        text-align: center;
-      }
-
-      .spinner {
-        width: 12px; height: 12px;
-        border: 1px solid rgba(255,255,255,.15);
-        border-top-color: rgba(255,255,255,.5);
-        border-radius: 50%;
-        animation: spin .7s linear infinite;
-        display: inline-block;
-      }
-
-      .empty-state {
-        text-align: center;
-        padding: 32px 0;
-        color: #333;
-        font-size: 12px;
-        letter-spacing: .1em;
-      }
-
-      .pending-badge {
-        font-size: 9px;
-        letter-spacing: .1em;
-        color: #f0a500;
-        border: 1px solid rgba(240,165,0,.3);
-        padding: 2px 6px;
-      }
-      .sent-badge {
-        font-size: 9px;
-        letter-spacing: .1em;
-        color: rgba(255,255,255,.3);
-        border: 1px solid rgba(255,255,255,.1);
-        padding: 2px 6px;
-      }
-    `;
-    document.head.appendChild(s);
-    return () => document.getElementById("amigos-styles")?.remove();
-  }, []);
-
-  // ── Cargar amigos ──
-  const loadAmigos = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res  = await fetch(`${API}/api/amigos`, { credentials: "include" });
-      const data = await res.json();
-      setAmigos(data.amigos     || []);
-      setRecibidas(data.recibidas || []);
-      setEnviadas(data.enviadas   || []);
-    } catch {}
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    if (status === "authenticated") loadAmigos();
-  }, [status, loadAmigos]);
-
-  // ── Buscar usuarios ──
-  useEffect(() => {
-    if (busqueda.length < 2) { setResultados([]); return; }
-    const t = setTimeout(async () => {
-      setBuscando(true);
-      try {
-        const res  = await fetch(`${API}/api/amigos/buscar?q=${busqueda}`, { credentials: "include" });
-        const data = await res.json();
-        setResultados(data.usuarios || []);
-      } catch {}
-      setBuscando(false);
-    }, 400);
-    return () => clearTimeout(t);
-  }, [busqueda]);
-
-  // ── Acciones ──
-  const enviarSolicitud = async (userId) => {
-    await fetch(`${API}/api/amigos/solicitud/${userId}`, { method: "POST", credentials: "include" });
-    setBusqueda("");
-    loadAmigos();
-  };
-
-  const aceptar = async (amistadId) => {
-    await fetch(`${API}/api/amigos/aceptar/${amistadId}`, { method: "PUT", credentials: "include" });
-    loadAmigos();
-  };
-
-  const rechazar = async (amistadId) => {
-    await fetch(`${API}/api/amigos/rechazar/${amistadId}`, { method: "PUT", credentials: "include" });
-    loadAmigos();
-  };
-
-  const eliminar = async (amistadId) => {
-    await fetch(`${API}/api/amigos/${amistadId}`, { method: "DELETE", credentials: "include" });
-    loadAmigos();
-  };
-
-  // ── Componente usuario card ──
-  const UserCard = ({ user, actions }) => (
-    <div className="user-card">
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ width: 32, height: 32, background: "#0a0a0a", border: `1px solid ${ac}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: `${ac}44`, flexShrink: 0 }}>◈</div>
-        <div>
-          <div style={{ fontSize: 13, color: "#e8e4d9", letterSpacing: ".04em" }}>@{user.username}</div>
-          <div style={{ fontSize: 11, color: "#555" }}>{user.nombre}</div>
-        </div>
-      </div>
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        {actions}
-      </div>
-    </div>
-  );
-
   if (status === "loading") return null;
 
   return (
     <>
-      {/* ── NAVBAR ── */}
-        <Navbar />
-        <BgCross />
+      <Navbar />
+      <BgCross />
 
       <div className="page-wrap">
 
@@ -270,7 +63,6 @@ export default function AmigosPage() {
             )}
           </div>
 
-          {/* Resultados de búsqueda */}
           {resultados.length > 0 && (
             <div style={{ marginTop: 8, border: "1px solid rgba(255,255,255,.08)", padding: 8 }}>
               {resultados.map(u => (

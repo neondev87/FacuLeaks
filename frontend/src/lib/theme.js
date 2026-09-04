@@ -72,6 +72,11 @@ export const FONT_IMPORT_MAIN =
 export const FONT_IMPORT_CHAT =
   "@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap');";
 
+// Space Mono + Cinzel, sin Inter — la usan amigos y foro (feed/perfil llevan
+// la superset de arriba porque además usan Inter para el cuerpo de texto).
+export const FONT_IMPORT_MONO_DISPLAY =
+  "@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Cinzel:wght@400;600;900&display=swap');";
+
 // El fondo con ruido — idéntico en feed/chat/perfil/perfil-público.
 export const NOISE_TEXTURE = `
       body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E"); opacity:.04; pointer-events:none; z-index:9998; }`;
@@ -81,9 +86,21 @@ export const NOISE_TEXTURE = `
 export const SCROLLBAR_THIN = `
       ::-webkit-scrollbar { width:4px } ::-webkit-scrollbar-track { background:#000 } ::-webkit-scrollbar-thumb { background:#222 }`;
 
+// Ruido + líneas de escaneo (scanline) — variante más marcada (opacidad .05)
+// que usan amigos y foro. Distinta de NOISE_TEXTURE (opacidad .04, sin
+// scanline) a propósito, no es la misma textura.
+export const NOISE_TEXTURE_SCANLINE = `
+      body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E"); opacity:.05; pointer-events:none; z-index:9998; }
+      body::after { content:''; position:fixed; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.15) 2px,rgba(0,0,0,.15) 4px); pointer-events:none; z-index:9999; }`;
+
 // Cada animación por separado — cada *Styles.js arma solo las que necesita.
 export const KF = {
   fadeIn:  `@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }`,
+  // Versión sin desplazamiento (solo opacidad) — la usan chat y register
+  // para animaciones cortas donde no se quiere el "slide". Mismo nombre de
+  // keyframe (`fadeIn`) que la de arriba, pero nunca conviven en la misma
+  // página, así que no hay colisión real.
+  fadeInPlain: `@keyframes fadeIn { from{opacity:0} to{opacity:1} }`,
   fadeUp:  `@keyframes fadeUp { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }`,
   slideUp: `@keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }`,
   spin:    `@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`,
