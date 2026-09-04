@@ -26,3 +26,7 @@ npm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# User-uploaded runtime content (privado — nunca versionar)
+backend/uploads/*
+!backend/uploads/.gitkeep
