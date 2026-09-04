@@ -1,3 +1,6 @@
+// MÓDULO: components/chat/pixel/PixelFlame.js
+// Dibuja la llamita pixel-art de la racha (StreakC.js) como grilla de
+// colores → <rect> SVG. Puramente visual.
 const FLAME_MAP = [
   [0,0,0,0,1,1,0,0,0,0],[0,0,0,1,2,2,1,0,0,0],[0,0,0,1,3,2,1,1,0,0],
   [0,0,1,2,4,3,2,1,0,0],[0,1,2,3,5,4,3,1,0,0],[0,1,3,4,5,5,4,2,1,0],

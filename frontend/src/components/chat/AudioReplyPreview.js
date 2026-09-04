@@ -3,7 +3,11 @@
 import { useState, useEffect } from "react";
 import { API } from "@/lib/api";
 
-// ── Vista previa de un audio citado en una respuesta ──
+// MÓDULO: components/chat/AudioReplyPreview.js
+// Cuando respondés a un mensaje de audio, muestra "🎤 0:07" en vez del
+// audio completo (sería raro tener un reproductor adentro de la cita). Solo
+// necesita la duración, así que carga el audio en silencio para leer su
+// metadata. Lo usa components/chat/Bubble.js.
 export default function AudioReplyPreview({ src }) {
   const [dur, setDur] = useState("...");
   useEffect(() => {

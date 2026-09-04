@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from "react";
 
-// ── Indicador "escribiendo..." del otro usuario ──
+// MÓDULO: components/chat/TypingIndicator.js
+// Burbuja "Fulano está escribiendo..._" con puntitos animados. Puramente
+// visual — hooks/useChat.js decide cuándo mostrarla (typing:start/stop por
+// socket), este componente solo la dibuja. Lo usa app/chat/page.js.
 export default function TypingIndicator({ username }) {
   const frames = ["_", "._", ".._", "..._"];
   const [frame, setFrame] = useState(0);

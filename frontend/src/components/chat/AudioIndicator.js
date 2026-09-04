@@ -1,6 +1,10 @@
 import { BARS } from "./constants";
 
-// ── Indicador "mandando audio" del otro usuario ──
+// MÓDULO: components/chat/AudioIndicator.js
+// Burbuja "Fulano está mandando un audio..." con las barritas de un
+// visualizador de audio animadas. Puramente visual — hooks/useChat.js
+// decide CUÁNDO mostrarla (evento de socket audio:start/stop), este
+// componente solo la dibuja.
 export default function AudioIndicator({ username, label="mandando audio" }) {
   return (
     <div style={{ display:"flex", gap:10, alignItems:"flex-end", marginBottom:10, animation:"fadeUp .18s ease" }}>

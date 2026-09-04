@@ -1,6 +1,14 @@
 import PixelFlame from "./pixel/PixelFlame";
 
-// ── Racha de conversación (contador + barra 24h) ──
+// MÓDULO: components/chat/StreakC.js — "racha" de días seguidos chateando
+// Dibuja la llama + contador + barra de 24h. Es puramente visual, recibe
+// todo por props desde hooks/useChat.js (streak.count/dying/progress).
+//
+// OJO PARA QUIEN TOQUE ESTO: el backend NO tiene el endpoint
+// GET /api/chat/streak/:userId todavía (ver hooks/useChat.js →
+// loadStreak()) — hoy este componente casi nunca se llega a mostrar porque
+// `streak.loaded` nunca pasa a true. No es un bug que rompa nada (falla en
+// silencio), pero la funcionalidad de "racha" real está sin construir.
 export default function StreakC({ dying=false, count=1, progress=1.0 }) {
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:5, padding:"7px 10px", background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.06)", borderRadius:3, width:90, flexShrink:0 }}>

@@ -1,4 +1,7 @@
-// ── Ícono de micrófono ──
+// MÓDULO: components/chat/MicIcon.js
+// Dibujo SVG del micrófono (verde si `recording` es true). Puramente
+// visual. Lo usan app/chat/page.js y components/chat/Bubble.js (en la
+// burbuja de audio).
 export default function MicIcon({ size=18, recording=false }) {
   const col = recording ? "#3ddc84" : "rgba(255,255,255,.6)";
   return (

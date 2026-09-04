@@ -2,7 +2,13 @@
 
 import { useState, useRef } from "react";
 
-// ── Reproductor de audio de un mensaje de voz ──
+// MÓDULO: components/chat/AudioPlayer.js
+// Reproductor de un mensaje de voz: play/pausa, barra de progreso
+// clickeable, tiempo transcurrido/total. `crossOrigin="use-credentials"` es
+// importante — el audio está gateado en el backend (solo emisor/receptor
+// pueden pedirlo, ver backend/src/modules/chat/chat.controller.js
+// serveAudio), así que el navegador tiene que mandar la cookie de sesión al
+// pedir el archivo, no solo al cargar la página. Lo usa components/chat/Bubble.js.
 export default function AudioPlayer({ src, esPropio }) {
   const [playing,  setPlaying]  = useState(false);
   const [progress, setProgress] = useState(0);

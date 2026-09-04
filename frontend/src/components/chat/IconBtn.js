@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 
-// ── Botón de ícono del composer (adjuntar, stickers, mic) ──
+// MÓDULO: components/chat/IconBtn.js
+// Botón genérico para los íconos de la barra de escribir del chat
+// (adjuntar imagen, stickers, micrófono) — le da a cualquier ícono el mismo
+// hover/disabled. No sabe nada de lo que hace cada botón, solo envuelve
+// `children` con el comportamiento visual. Lo usa app/chat/page.js.
 export default function IconBtn({ onClick, title, children, disabled }) {
   const [hov, setHov] = useState(false);
   return (

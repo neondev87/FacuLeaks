@@ -7,8 +7,25 @@ import MicIcon from "./MicIcon";
 import AudioPlayer from "./AudioPlayer";
 import AudioReplyPreview from "./AudioReplyPreview";
 
-// ── Burbuja de mensaje (texto, audio o imagen) ──
-// Por convención del proyecto se define FUERA de ChatPage (acá, módulo propio).
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: components/chat/Bubble.js — UNA burbuja de mensaje de chat
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: dibuja un mensaje según su tipo — texto normal, audio (con
+// AudioPlayer.js) o imagen (con Lightbox al hacer click) — y, si es
+// respuesta a otro mensaje, la cita arriba. Al pasar el mouse aparecen los
+// botones de "responder" y (si es tuyo) "borrar", con su animación.
+//
+// PARA QUÉ SIRVE: es la pieza que se repite una vez por cada mensaje en
+// app/chat/page.js. Convención del proyecto: este componente vive SIEMPRE
+// fuera/afuera de la página de chat (no inline adentro de ChatPage) — regla
+// vieja del prompt maestro que se mantiene.
+//
+// CON QUÉ SE CONECTA:
+//   - components/chat/AudioPlayer.js, MicIcon.js, AudioReplyPreview.js,
+//     components/Lightbox.js.
+//   - No llama al backend directo: recibe `onReply` y `onDelete` de
+//     app/chat/page.js, que a su vez usan hooks/useChat.js.
+// ════════════════════════════════════════════════════════════════════════
 export default function Bubble({ msg, esPropio, replyMsg, onReply, onDelete }) {
   const [hov,      setHov]      = useState(false);
   const [delPhase, setDelPhase] = useState("idle");
