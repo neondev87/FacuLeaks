@@ -5,6 +5,16 @@ const crypto = require('crypto');
 const prisma = require('../../config/db');
 const { verificarMagicBytes } = require('../upload/upload.security');
 
+// profile_visits y user_photos están modeladas en Prisma: se usan por el client,
+// NO por SQL crudo. Helper para no repetir el mapeo photoUrl -> url.
+const getFotos = (userId) =>
+  prisma.user_photos.findMany({
+    where:   { userId },
+    orderBy: { uploadedAt: 'desc' },
+    take:    6,
+    select:  { id: true, photoUrl: true, uploadedAt: true },
+  }).then(rows => rows.map(r => ({ id: r.id, url: r.photoUrl, uploadedAt: r.uploadedAt })));
+
 // GET /api/perfil — perfil propio
 const getPerfil = async (req, res) => {
   try {
@@ -25,8 +35,7 @@ const getPerfil = async (req, res) => {
 
     let visitas = 0;
     try {
-      const result = await prisma.$queryRaw`SELECT COUNT(*) as count FROM profile_visits WHERE perfilId = ${userId}`;
-      visitas = Number(result[0]?.count || 0);
+      visitas = await prisma.profile_visits.count({ where: { perfilId: userId } });
     } catch (e) { console.error('[VISITAS] error:', e.message); }
 
     const posts = await prisma.posts.findMany({
@@ -36,10 +45,9 @@ const getPerfil = async (req, res) => {
       select:  { id:true, titulo:true, contenido:true, imagen:true, creadoEn:true, totalVistas:true }
     });
 
-    // Obtener fotos del usuario
     let photos = [];
     try {
-      photos = await prisma.$queryRaw`SELECT id, photoUrl as url, uploadedAt FROM user_photos WHERE userId = ${userId} ORDER BY uploadedAt DESC LIMIT 6`;
+      photos = await getFotos(userId);
     } catch (e) { console.error('[PHOTOS] error:', e.message); }
 
     res.json({ user, profile:profile||{}, stats:{ amigos, vlogs, visitas }, posts, photos });
@@ -54,16 +62,16 @@ const getPerfilPublico = async (req, res) => {
   try {
     const visitorId     = req.userId;
     const profileUserId = parseInt(req.params.userId);
-    
-    console.log(`[PERFIL_PUBLICO] visitorId=${visitorId}, profileUserId=${profileUserId}`);
+
+    if (!Number.isInteger(profileUserId)) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
 
     const user = await prisma.users.findUnique({
       where:  { id: profileUserId },
       select: { id:true, username:true, nombre:true, imagen:true, creadoEn:true }
     });
-    
-    console.log(`[PERFIL_PUBLICO] user found:`, user ? 'YES' : 'NO');
-    
+
     if (!user) return res.status(404).json({ error:'Usuario no encontrado' });
 
     const profile = await prisma.user_profiles.findUnique({ where:{ userId:profileUserId } });
@@ -83,25 +91,23 @@ const getPerfilPublico = async (req, res) => {
     let visitas = 0;
     try {
       if (visitorId !== profileUserId) {
-        await prisma.$executeRaw`INSERT INTO profile_visits (visitanteId, perfilId) VALUES (${visitorId}, ${profileUserId})`;
+        await prisma.profile_visits.create({
+          data: { visitanteId: visitorId, perfilId: profileUserId },
+        });
       }
-      const result = await prisma.$queryRaw`SELECT COUNT(*) as count FROM profile_visits WHERE perfilId = ${profileUserId}`;
-      visitas = Number(result[0]?.count || 0);
+      visitas = await prisma.profile_visits.count({ where: { perfilId: profileUserId } });
       const targetSocket = req.onlineUsers?.get(String(profileUserId));
       if (targetSocket) req.io.to(targetSocket).emit('profile:visit', { visitas });
     } catch (e) { console.error('[VISITAS] error:', e.message); }
 
-    // Obtener fotos (solo públicas si no es el dueño)
     let photos = [];
     try {
-      photos = await prisma.$queryRaw`SELECT id, photoUrl as url, uploadedAt FROM user_photos WHERE userId = ${profileUserId} ORDER BY uploadedAt DESC LIMIT 6`;
+      photos = await getFotos(profileUserId);
     } catch (e) { console.error('[PHOTOS] error:', e.message); }
 
     res.json({ user, profile:profile||{}, stats:{ amigos, vlogs, visitas }, posts, photos, isOwnProfile: visitorId===profileUserId });
-    console.log(`[PERFIL_PUBLICO] Response sent successfully for userId=${profileUserId}`);
   } catch (err) {
     console.error('getPerfilPublico error:', err.message);
-    console.error('Stack:', err.stack);
     res.status(500).json({ error:'Error al obtener perfil' });
   }
 };
@@ -219,20 +225,12 @@ const uploadPhotos = async (req, res) => {
 
       const photoUrl = `/uploads/imagenes/${outName}`;
 
-      // Insertar en tabla user_photos
-      const result = await prisma.$executeRaw`
-        INSERT INTO user_photos (userId, photoUrl, uploadedAt)
-        VALUES (${req.userId}, ${photoUrl}, NOW())
-      `;
-
-      // Obtener el ID insertado
-      const inserted = await prisma.$queryRaw`SELECT LAST_INSERT_ID() as id`;
-      const photoId = Number(inserted[0]?.id);
-
-      uploadedPhotos.push({
-        id: photoId,
-        url: photoUrl
+      const created = await prisma.user_photos.create({
+        data:   { userId: req.userId, photoUrl },
+        select: { id: true },
       });
+
+      uploadedPhotos.push({ id: created.id, url: photoUrl });
     }
 
     res.json({ ok: true, photos: uploadedPhotos });
@@ -252,31 +250,29 @@ const uploadPhotos = async (req, res) => {
 const deletePhoto = async (req, res) => {
   try {
     const photoId = parseInt(req.params.id);
+    if (!Number.isInteger(photoId)) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
 
-    // Verificar que la foto pertenece al usuario
-    const photo = await prisma.$queryRaw`
-      SELECT id, userId, photoUrl FROM user_photos WHERE id = ${photoId}
-    `;
+    const photo = await prisma.user_photos.findUnique({ where: { id: photoId } });
 
-    if (!photo || photo.length === 0) {
+    if (!photo) {
       return res.status(404).json({ error: 'Foto no encontrada' });
     }
 
-    if (photo[0].userId !== req.userId) {
+    if (photo.userId !== req.userId) {
       return res.status(403).json({ error: 'No autorizado' });
     }
 
     // Eliminar archivo físico
-    const photoUrl = photo[0].photoUrl;
-    if (photoUrl && photoUrl.startsWith('/uploads')) {
-      const filepath = path.join(__dirname, '../../..', photoUrl);
+    if (photo.photoUrl && photo.photoUrl.startsWith('/uploads')) {
+      const filepath = path.join(__dirname, '../../..', photo.photoUrl);
       if (fs.existsSync(filepath)) {
         fs.unlinkSync(filepath);
       }
     }
 
-    // Eliminar de BD
-    await prisma.$executeRaw`DELETE FROM user_photos WHERE id = ${photoId}`;
+    await prisma.user_photos.delete({ where: { id: photoId } });
 
     res.json({ ok: true });
   } catch (err) {
