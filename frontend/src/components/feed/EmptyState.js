@@ -1,5 +1,7 @@
-// ── EMPTY STATE ──
-// Mensaje cuando la pestaña del feed no tiene posts.
+// MÓDULO: components/feed/EmptyState.js
+// Mensaje que se ve cuando la pestaña del feed no tiene posts (uno distinto
+// por pestaña: recientes/trending/siguiendo). Puramente visual, sin conexión
+// a backend. Lo usa app/feed/page.js.
 export default function EmptyState({ tab }) {
   const msgs = {
     RECIENTES: { title:"tu feed está vacío",  sub:"sé el primero en publicar algo" },

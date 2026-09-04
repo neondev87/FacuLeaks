@@ -3,7 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import PixelTrashIcon from "./pixel/PixelTrashIcon";
 
-// ── TRASH ICON BUTTON ──
+// MÓDULO: components/feed/TrashIcon.js
+// Botón de "borrar post" del muro, con animación de tachito abriéndose y
+// encogiéndose antes de llamar a `onDelete` (que le pasa PostCard.js — el
+// borrado real contra el backend lo hace el padre, este componente solo es
+// el botón + la animación). Usa el dibujo pixel-art de ./pixel/PixelTrashIcon.
 export default function TrashIcon({ onDelete }) {
   const [phase, setPhase] = useState("idle");
   const [deleting, setDeleting] = useState(false);

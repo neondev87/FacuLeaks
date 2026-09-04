@@ -1,5 +1,23 @@
 "use client";
 
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: components/Uploader.js — botón genérico de "subir archivo"
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: botón que abre el selector de archivos del sistema operativo,
+// sube lo elegido al backend, y muestra el resultado (preview si es imagen,
+// nombre si es documento, o el error). Sirve para dos tipos: `imagen` y
+// `documento` — el prop `tipo` decide cuál endpoint usar y qué validar.
+//
+// PARA QUÉ SIRVE: es el componente reusable de "subir algo" — el composer
+// del feed lo usa para adjuntar imágenes a un post.
+//
+// CON QUÉ SE CONECTA:
+//   - backend: POST /api/upload/imagen o POST /api/upload/documento
+//     (upload.controller.js — ahí se valida en serio con magic bytes).
+//   - `onSuccess` → le devuelve al que lo usa la URL final del archivo ya
+//     subido y comprimido.
+//   - Lo consume: app/feed/page.js (el composer, vía usePostComposer.js).
+// ════════════════════════════════════════════════════════════════════════
 import { useState, useRef, useEffect } from "react";
 import { API } from "@/lib/api";
 

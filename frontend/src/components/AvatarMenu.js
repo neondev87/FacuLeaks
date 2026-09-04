@@ -1,4 +1,24 @@
 'use client';
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: components/AvatarMenu.js — la foto de perfil (con menú de editar)
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: dibuja el avatar circular/cuadrado. Si `canEdit` es true (es tu
+// propio perfil), al hacer click abre un menú para cambiar la foto (con
+// preview instantáneo antes de que termine de subir), verla en grande, o
+// borrarla. Si `canEdit` es false (perfil ajeno), el click solo abre el
+// visor de la foto en grande.
+//
+// PARA QUÉ SIRVE: encapsula TODO lo del avatar en un solo componente
+// reusable — perfil propio y perfil público lo usan igual, solo cambia
+// `canEdit`.
+//
+// CON QUÉ SE CONECTA:
+//   - backend: PUT /api/perfil/avatar (subir), DELETE /api/perfil/avatar
+//     (borrar) — ambos en perfil.controller.js.
+//   - `onAvatarChange` → función que le pasa el padre para enterarse del
+//     cambio y actualizar su propio estado (no guarda estado global).
+//   - Lo consume: app/perfil/page.js y app/perfil/[id]/page.js.
+// ════════════════════════════════════════════════════════════════════════
 import { useState, useRef, useEffect } from 'react';
 import { API } from '@/lib/api';
 

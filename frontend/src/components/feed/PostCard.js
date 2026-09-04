@@ -8,7 +8,28 @@ import { REACTIONS } from "./reactions";
 import PostComments from "./PostComments";
 import TrashIcon from "./TrashIcon";
 
-// ── POST CARD ──
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: components/feed/PostCard.js — la tarjeta de un post en el MURO
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: dibuja un post del feed completo — autor, imagen, texto (con
+// links detectados y convertidos en <a>), reacciones, y el hilo de
+// comentarios desplegable. El borrado tiene una animación de salida antes
+// de sacarlo de la lista.
+//
+// PARA QUÉ SIRVE: es LA tarjeta de post del muro. Ojo: hay OTRA tarjeta de
+// post distinta, components/PostCard.js (sin carpeta feed/), que se usa en
+// el perfil — son dos diseños separados a propósito (deuda técnica conocida,
+// pendiente de unificar), pero las dos comparten el mismo hook de
+// comentarios (hooks/usePostComments.js).
+//
+// CON QUÉ SE CONECTA:
+//   - backend: DELETE /api/posts/:id (borrar, directo desde acá).
+//   - components/feed/reactions.js → qué botones de reacción dibujar.
+//   - components/feed/PostComments.js → el hilo de comentarios.
+//   - Recibe `onReact` y `onDelete` de su padre — no le habla directo al
+//     backend para reaccionar ni conoce el estado global, eso lo maneja
+//     hooks/useFeedPosts.js en app/feed/page.js.
+// ════════════════════════════════════════════════════════════════════════
 export default function PostCard({ post, currentUserId, onDelete, onReact, accent = "#ffffff" }) {
   const [lightbox, setLightbox] = useState(false);
   const [removing, setRemoving] = useState(false);

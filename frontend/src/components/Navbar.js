@@ -1,5 +1,26 @@
 "use client";
 
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: components/Navbar.js — la barra de arriba de toda la app
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: la barra fija de navegación (Muro/Perfil/Foro/Mensajes/Amigos +
+// logout) que aparece en casi todas las páginas. Adentro, sin ser un
+// archivo separado, vive `SpotifyNavWidget` — una versión chiquita del
+// widget de Spotify (canción sonando) hecha a medida para caber en la
+// navbar, con su propio polling cada 10 segundos.
+//
+// PARA QUÉ SIRVE: es el único componente de navegación de la app — no hay
+// un router de tabs ni nada más, cada página lo importa y lo pone arriba.
+//
+// CON QUÉ SE CONECTA:
+//   - next-auth/react (useSession, signOut) → sabe quién sos y cierra sesión.
+//   - backend: GET /api/spotify/now-playing/:userId (el widget interno).
+//   - Nota para quien toque esto: hay OTRO widget de Spotify parecido pero
+//     no idéntico en components/SpotifyWidget.js — ese es el que se usa
+//     DENTRO de la tarjeta de perfil (con más detalle y botón conectar/
+//     desconectar), no en la navbar. Son dos componentes a propósito, no
+//     una duplicación por error.
+// ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";

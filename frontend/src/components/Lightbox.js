@@ -1,11 +1,23 @@
 "use client";
 
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: components/Lightbox.js — visor de imagen a pantalla completa
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: tapa toda la pantalla con la imagen en grande. Se cierra
+// clickeando afuera o con la tecla Escape. Acepta tanto una URL completa
+// (http://...) como una relativa al backend (/uploads/...) — en el segundo
+// caso le agrega automáticamente la URL del backend (lib/api.js).
+//
+// PARA QUÉ SIRVE: es el visor genérico que se reutiliza en varios lugares
+// en vez de reimplementar el mismo "modal de imagen" cada vez.
+//
+// CON QUÉ SE CONECTA: no llama al backend, es puramente visual. Lo usan
+// components/feed/PostCard.js, components/PostCard.js (perfil) y
+// components/chat/Bubble.js (para las fotos del chat).
+// ════════════════════════════════════════════════════════════════════════
 import { useEffect } from "react";
 import { API } from "@/lib/api";
 
-// ── LIGHTBOX ──
-// Visor de imagen a pantalla completa. Cierra con click fuera o Escape.
-// Acepta `src` absoluto (http…) o relativo al backend (/uploads/…).
 // `dim` = color de fondo del overlay (feed usaba .92; perfil usa .95).
 export default function Lightbox({ src, onClose, dim = "rgba(0,0,0,.92)" }) {
   useEffect(() => {

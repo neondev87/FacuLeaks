@@ -3,10 +3,17 @@
 import { useState, useEffect, useRef } from "react";
 import PixelSkull from "./pixel/PixelSkull";
 
-// ── SKULL ICON (reacción DISLIKE) ──
-// Controlado por el padre: `active` = el usuario tiene esta reacción,
-// `count` = total autoritativo del backend, `onToggle` = alterna la reacción.
-// La animación de colapso de la calavera es puramente visual.
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: components/feed/SkullIcon.js — botón de reacción DISLIKE
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: mismo patrón que HeartIcon.js pero para el dislike (calavera).
+// "Controlado" por props (`active`, `count`, `onToggle`) — no guarda ni
+// decide el dato real, solo lo dibuja y avisa el click.
+//
+// CON QUÉ SE CONECTA: components/feed/PostCard.js lo llama vía
+// components/feed/reactions.js; el click termina en `toggleReaction()` de
+// hooks/useFeedPosts.js.
+// ════════════════════════════════════════════════════════════════════════
 export default function SkullIcon({ active = false, count = 0, disabled = false, onToggle }) {
   const [phase, setPhase] = useState("idle");
   const resetRef = useRef();

@@ -1,7 +1,10 @@
 "use client";
 
-// ── LINK PREVIEW ──
-// Tarjeta de vista previa de un enlace pegado en el composer.
+// MÓDULO: components/feed/LinkPreview.js
+// Tarjeta con título/imagen/descripción de un link pegado en el composer
+// del feed. Es puramente visual: recibe los datos ya resueltos por
+// hooks/usePostComposer.js (que le pidió al backend POST /api/upload/url) —
+// este componente no llama a nada, solo los muestra.
 export default function LinkPreview({ data, onRemove }) {
   if (!data) return null;
   return (

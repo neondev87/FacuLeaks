@@ -1,5 +1,28 @@
 "use client";
 
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: components/SpotifyWidget.js — tarjeta de Spotify del perfil
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: muestra la canción actual (o la última escuchada) con carátula,
+// barra de progreso y botón de conectar/desconectar la cuenta. Actualiza
+// cada 5 segundos preguntándole al backend.
+//
+// IMPORTANTE — regla del proyecto: este archivo debe quedar SIEMPRE sin
+// caracteres UTF-8 raros (emojis, tildes en identificadores, símbolos
+// especiales fuera de comentarios) — es una convención vieja del proyecto
+// para evitar problemas de encoding en Windows. Los estilos van como
+// objetos JS al final del archivo, no como string de CSS.
+//
+// PARA QUÉ SIRVE: es el widget "completo" — para el mini-widget de la
+// navbar ver components/Navbar.js (SpotifyNavWidget, adentro del archivo).
+//
+// CON QUÉ SE CONECTA:
+//   - backend: GET /api/spotify/now-playing/:userId,
+//     DELETE /api/spotify/disconnect.
+//   - `onConnect` normalmente dispara `window.location.href` hacia
+//     GET /api/spotify/auth (arranca el OAuth) — lo decide quien lo usa.
+//   - Lo consume: app/perfil/page.js (tu propio perfil).
+// ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useRef } from "react";
 import { API } from "@/lib/api";
 

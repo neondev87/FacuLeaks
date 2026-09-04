@@ -1,4 +1,7 @@
-// ── PIXEL TRASH ──
+// MÓDULO: components/feed/pixel/PixelTrashIcon.js
+// Dibuja el tachito de basura pixel-art (con tapa abierta/cerrada según la
+// fase de la animación de borrado). Puramente visual — lo usa
+// components/feed/TrashIcon.js.
 // Bote de basura pixel 9x11
 const TRASH_BODY = [
   [0,1,1,1,1,1,1,1,0],

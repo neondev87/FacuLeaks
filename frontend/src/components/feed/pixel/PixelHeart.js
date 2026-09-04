@@ -1,4 +1,7 @@
-// ── PIXEL HEART ──
+// MÓDULO: components/feed/pixel/PixelHeart.js
+// Dibuja el corazón pixel-art del botón de LIKE como una grilla de <rect>
+// SVG (cada número de la matriz es un color distinto). Puramente visual,
+// sin lógica ni conexión — lo usa components/feed/HeartIcon.js.
 const HRT = [
   [0,0,1,1,0,0,1,1,0,0],
   [0,1,3,3,1,1,3,3,1,0],

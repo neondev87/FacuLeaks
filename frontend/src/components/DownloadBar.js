@@ -1,5 +1,18 @@
 "use client";
 
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: components/DownloadBar.js — la barrita falsa de "descargando..."
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: es 100% cosmético/de ambientación — simula una barra de
+// descarga estilo terminal de Windows cuando subís una imagen al feed (no
+// descarga nada de verdad, es puro efecto visual para la estética del
+// proyecto). Cada vez que `trigger` cambia de valor, arranca la animación
+// de nuevo con `requestAnimationFrame` durante ~2.2 segundos.
+//
+// CON QUÉ SE CONECTA: no llama a ningún backend. Lo dispara
+// app/feed/page.js cuando termina de subirse una imagen (incrementa
+// `dlTrigger` y le pasa el nombre del archivo).
+// ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useRef } from "react";
 
 export default function DownloadBar({ filename, trigger }) {

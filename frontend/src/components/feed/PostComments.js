@@ -4,9 +4,21 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import usePostComments from "@/hooks/usePostComments";
 
-// ── Hilo de comentarios del feed ──
-// Se monta cuando la PostCard despliega los replies. Estilo alineado al DNA del
-// feed: hairlines, Space Mono, marca †.
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: components/feed/PostComments.js — hilo de comentarios (diseño feed)
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: la lista de comentarios de un post + el input para escribir
+// uno nuevo. Se monta recién cuando el usuario despliega los replies en
+// PostCard.js (no antes — así no se piden comentarios de posts que nadie
+// abrió). TODA la lógica de datos (cargar, mandar, borrar, tiempo real) vive
+// en el hook — este archivo es solo el dibujo con el estilo visual del feed
+// (hairlines, Space Mono, el símbolo †).
+//
+// CON QUÉ SE CONECTA:
+//   - hooks/usePostComments.js → toda la lógica real (compartida con la
+//     otra tarjeta de post, components/PostCard.js, del perfil).
+//   - Lo consume: components/feed/PostCard.js.
+// ════════════════════════════════════════════════════════════════════════
 export default function PostComments({ postId, currentUserId, accent = "#ffffff" }) {
   const ac = accent;
   const router = useRouter();

@@ -3,11 +3,22 @@
 import { useState, useEffect, useRef } from "react";
 import PixelHeart from "./pixel/PixelHeart";
 
-// ── HEART ICON (reacción LIKE) ──
-// Controlado por el padre: `active` = el usuario tiene esta reacción,
-// `count` = total autoritativo del backend, `onToggle` = alterna la reacción.
-// `disabled` opcional para bloquear (no se usa hoy: las reacciones se cambian
-// entre sí). La animación de "muerte" del corazón es puramente visual.
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: components/feed/HeartIcon.js — botón de reacción LIKE
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: dibuja el corazón + el número de likes, y una animación de
+// "muerte" (se pone blanco, se achica, desaparece) cuando lo clickeás. ESE
+// componente NO decide nada por su cuenta: es "controlado" por quien lo usa
+// — recibe `active` (¿ya reaccionaste con esta?) y `count` (número real que
+// vino del backend) como props, y avisa el click con `onToggle`. Así, el
+// componente que sabe la verdad de los datos (PostCard.js, y detrás
+// useFeedPosts.js) es el único dueño del estado real.
+//
+// CON QUÉ SE CONECTA: nada directo al backend — lo llama
+// components/feed/PostCard.js a través de la config de
+// components/feed/reactions.js, y el click termina llamando a
+// `toggleReaction()` de hooks/useFeedPosts.js.
+// ════════════════════════════════════════════════════════════════════════
 export default function HeartIcon({ active = false, count = 0, disabled = false, onToggle }) {
   const [phase, setPhase] = useState("idle");
   const resetRef = useRef();

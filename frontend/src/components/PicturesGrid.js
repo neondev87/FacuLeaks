@@ -1,4 +1,20 @@
 'use client';
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: components/PicturesGrid.js — galería de fotos del perfil
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: grilla de 2 columnas con las fotos del usuario (hasta 5 + un
+// botón [+] para subir más). Al pasar el mouse sobre una foto (si
+// `canEdit`) aparece el botón de borrar. Click en una foto la abre en
+// lightbox.
+//
+// PARA QUÉ SIRVE: es la sección "Pictures" del perfil, tanto propio como
+// ajeno (con `canEdit=false` en el ajeno).
+//
+// CON QUÉ SE CONECTA:
+//   - backend: POST /api/perfil/fotos (subir varias), DELETE
+//     /api/perfil/fotos/:id (borrar) — perfil.controller.js.
+//   - Lo consume: app/perfil/page.js y app/perfil/[id]/page.js.
+// ════════════════════════════════════════════════════════════════════════
 import { useState, useRef, useEffect } from 'react';
 import { API } from '@/lib/api';
 
