@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import { API } from "@/lib/api";
 import Lightbox from "@/components/Lightbox";
 import { REACTIONS } from "./reactions";
+import PostComments from "./PostComments";
 import TrashIcon from "./TrashIcon";
 
 // ── POST CARD ──
 export default function PostCard({ post, currentUserId, onDelete, onReact, accent = "#ffffff" }) {
   const [lightbox, setLightbox] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   const router = useRouter();
   const ac = accent;
 
@@ -107,10 +109,19 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, accen
                 onToggle={() => onReact?.(post.id, key)}
               />
             ))}
-            <span style={{ cursor:"pointer", letterSpacing:".1em", color:`${ac}66`, fontSize:11, marginLeft:8, fontFamily:"'Space Mono',monospace" }}>† {comments} replies</span>
+            <span
+              onClick={() => setShowComments(v => !v)}
+              style={{ cursor:"pointer", letterSpacing:".1em", color: showComments ? "#e8e4d9" : `${ac}66`, fontSize:11, marginLeft:8, fontFamily:"'Space Mono',monospace", transition:"color .15s" }}
+              onMouseEnter={e => e.currentTarget.style.color = "#e8e4d9"}
+              onMouseLeave={e => e.currentTarget.style.color = showComments ? "#e8e4d9" : `${ac}66`}
+            >† {comments} replies</span>
           </div>
           <span style={{ color:"rgba(255,255,255,.2)", fontSize:11, fontFamily:"'Inter',sans-serif" }}>{vistas}v</span>
         </div>
+
+        {showComments && (
+          <PostComments postId={post.id} currentUserId={currentUserId} accent={ac} />
+        )}
       </div>
     </>
   );
