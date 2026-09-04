@@ -2,7 +2,10 @@
 
 import { INTER, MONO } from "./constants";
 
-// ── Campo de formulario (label + hint + children) ──
+// MÓDULO: components/perfil/edit/PField.js
+// Envoltorio de "campo de formulario" (label arriba, ayuda opcional al
+// costado, y adentro cualquier input/textarea/etc que le pases como hijo).
+// Lo usa EditModal.js para darle formato parejo a todos los campos.
 export default function PField({ label, hint, children }) {
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:6 }}>

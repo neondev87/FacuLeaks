@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from "react";
 
-// ── Contador terminal con animación ──
-// Anima de 0 a `value`; o muestra `text` fijo si viene. El "_" parpadea con
-// la keyframe `blink` que inyecta cada página de perfil.
+// MÓDULO: components/perfil/TerminalCounter.js
+// Fila de estadística del perfil (ej. "amigos: 12") con el número animando
+// de 0 hasta el valor real, estilo consola. Si le pasás `text` en vez de
+// `value`, muestra ese texto fijo (para cosas que no son un número). El "_"
+// parpadea con la keyframe `blink` que inyecta cada página de perfil (vía
+// hooks/useInjectedStyles.js). Puramente visual, sin conexión a backend.
 export default function TerminalCounter({ label, value, text }) {
   const [display, setDisplay] = useState(0);
   useEffect(() => {

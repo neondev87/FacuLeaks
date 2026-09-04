@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { INTER } from "./constants";
 
-// ── Input de tags (intereses). Enter o coma agrega; Backspace en vacío quita ──
+// MÓDULO: components/perfil/edit/TagInput.js
+// Campo de "intereses" con tags tipo chip: Enter o coma agrega uno,
+// Backspace en el campo vacío quita el último, máximo 10. Guarda el array
+// completo en el estado que le pasa EditModal.js (`tags`/`setTags`).
 export default function TagInput({ tags, setTags }) {
   const [val, setVal] = useState("");
   const [focus, setFocus] = useState(false);

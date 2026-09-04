@@ -1,4 +1,25 @@
 'use client';
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: components/PostCard.js — tarjeta de post (diseño PERFIL)
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: dibuja un post en la sección "Posts" del perfil (propio o
+// ajeno) — autor, título, contenido, imagen, y comentarios desplegables.
+// Tiene su propio botón de borrar con animación (TrashBtn, definido en este
+// mismo archivo) para los posts que sí podés borrar (`canDelete`).
+//
+// PARA QUÉ SIRVE / OJO IMPORTANTE: este es un diseño de tarjeta DISTINTO al
+// del muro (components/feed/PostCard.js) — deuda técnica conocida, pendiente
+// de unificar en algún momento. Las dos comparten la misma lógica de
+// comentarios (hooks/usePostComments.js), pero el diseño visual es
+// independiente. Si agregás una funcionalidad nueva a los posts (por
+// ejemplo reacciones), hoy hay que agregarla en LAS DOS tarjetas.
+//
+// CON QUÉ SE CONECTA:
+//   - hooks/usePostComments.js → comentarios (recibe `viewerId`, el id de
+//     quien está mirando, NO `currentUser` — ese es el dueño del perfil
+//     cuando el perfil es ajeno, son cosas distintas a propósito).
+//   - Lo consume: app/perfil/page.js y app/perfil/[id]/page.js.
+// ════════════════════════════════════════════════════════════════════════
 import { useState, useRef, useEffect } from 'react';
 import usePostComments from '@/hooks/usePostComments';
 import { API } from '@/lib/api';

@@ -10,7 +10,20 @@ import LinkRow from "./edit/LinkRow";
 import PDivider from "./edit/PDivider";
 import PTab from "./edit/PTab";
 
-// ── Modal de editar perfil (perfil propio) ──
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: components/perfil/EditModal.js — modal de editar TU perfil
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: junta todos los campitos de components/perfil/edit/ (nombre,
+// bio, intereses, links de redes) en un modal con pestañas. Arma su propio
+// estado de formulario a partir del `profile`/`user` que recibe, y al
+// guardar llama a `onSave(...)` con TODO junto — no le habla al backend
+// directamente, delega en quien lo usa.
+//
+// CON QUÉ SE CONECTA:
+//   - components/perfil/edit/* → cada campo del formulario.
+//   - `onSave` → en app/perfil/page.js es `handleSave` de
+//     hooks/useOwnProfile.js, que ahí sí hace el PUT /api/perfil real.
+// ════════════════════════════════════════════════════════════════════════
 export default function EditModal({ profile, user, onClose, onSave }) {
   const [tab,    setTab]    = useState("perfil");
   const [saved,  setSaved]  = useState(false);

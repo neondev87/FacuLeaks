@@ -2,7 +2,8 @@
 
 import { INTER } from "./constants";
 
-// ── Divisor horizontal con label opcional ──
+// MÓDULO: components/perfil/edit/PDivider.js
+// Línea divisoria del modal de editar perfil, con un texto opcional al medio.
 export default function PDivider({ label }) {
   return (
     <div style={{ display:"flex", alignItems:"center", gap:12 }}>

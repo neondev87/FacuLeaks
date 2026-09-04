@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { INTER, MONO, PLATFORMS } from "./constants";
 
-// ── Fila de link: selector de plataforma + URL + botón quitar ──
+// MÓDULO: components/perfil/edit/LinkRow.js
+// Una fila del modal de editar perfil: selector de plataforma (Discord,
+// Twitter...) + input de URL + botón de quitar. Puramente de formulario,
+// sin conexión al backend — EditModal.js junta todas las filas y las manda
+// juntas cuando el usuario guarda.
 export default function LinkRow({ link, onChange, onRemove }) {
   const [f1, setF1] = useState(false);
   const [f2, setF2] = useState(false);
