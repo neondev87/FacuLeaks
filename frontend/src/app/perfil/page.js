@@ -14,6 +14,25 @@ import useOwnProfile from "@/hooks/useOwnProfile";
 import TerminalCounter from "@/components/perfil/TerminalCounter";
 import EditModal from "@/components/perfil/EditModal";
 import Lightbox from "@/components/Lightbox";
+
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: app/perfil/page.js — TU perfil (propio, editable)
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: muestra tu perfil completo y permite editarlo — avatar, bio,
+// intereses, links, galería de fotos, tus posts, tu widget de Spotify. Usa
+// hooks/useOwnProfile.js para todo el estado y datos.
+//
+// PARA QUÉ SIRVE / OJO IMPORTANTE: esta página es la del perfil PROPIO —
+// para ver el perfil de OTRO usuario existe una página hermana,
+// app/perfil/[id]/page.js (con su propio hook, usePublicProfile). En algún
+// momento (Fase 2, bug B1) estas dos páginas estuvieron con el contenido
+// literalmente intercambiado — si algo del perfil se ve raro, lo primero es
+// confirmar que estás editando la página correcta.
+//
+// CON QUÉ SE CONECTA: hooks/useOwnProfile.js, components/{SpotifyWidget,
+// AvatarMenu, PicturesGrid, PostCard}.js, components/perfil/*. Protegida
+// por proxy.js.
+// ════════════════════════════════════════════════════════════════════════
 import { profileStyles } from "./profileStyles";
 
 // ════════════════════════════════════════════════════════════════

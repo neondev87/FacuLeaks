@@ -5,6 +5,21 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { API } from "@/lib/api";
 
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: app/register/page.js — completar el registro (por pasos)
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: cuando alguien se loguea con Google por primera vez, NextAuth
+// sabe que existe en Google pero el backend todavía no tiene una fila para
+// esa persona (`needsRegister: true`) — acá se completa: elegir username y
+// contraseña (validados en el momento con las funciones de más abajo), y al
+// confirmar se manda todo a POST /api/auth/register.
+//
+// PARA QUÉ SIRVE: es el puente entre "tenés cuenta de Google" y "tenés
+// cuenta en FacuLeaks". Fase 3 va a rediseñar SOLO lo visual de esta
+// pantalla — el flujo de pasos se mantiene igual.
+//
+// CON QUÉ SE CONECTA: backend POST /api/auth/register (auth.controller.js).
+// ════════════════════════════════════════════════════════════════════════
 const validateUsername = (v) => {
   if (v.length < 3)  return "mínimo 3 caracteres";
   if (v.length > 20) return "máximo 20 caracteres";

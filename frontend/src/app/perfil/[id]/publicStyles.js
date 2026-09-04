@@ -1,5 +1,7 @@
-// CSS de la página de perfil público. Se inyecta con
-// useInjectedStyles("perfil-pub-styles", …). Texto idéntico al que estaba inline.
+// MÓDULO: app/perfil/[id]/publicStyles.js
+// CSS de la página de perfil público (de otro usuario). Se inyecta con
+// hooks/useInjectedStyles.js ("perfil-pub-styles", …) desde
+// app/perfil/[id]/page.js. Es puro texto CSS, no tiene lógica.
 export const publicStyles = `
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Mono:wght@400;700&family=Cinzel:wght@400;600;900&display=swap');
       @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }

@@ -13,6 +13,19 @@ import TerminalCounter from "@/components/perfil/TerminalCounter";
 import Lightbox from "@/components/Lightbox";
 import { publicStyles } from "./publicStyles";
 
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: app/perfil/[id]/page.js — perfil de OTRO usuario (público)
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: la versión "solo lectura" del perfil — sin edición, sin
+// widget de Spotify a modo de conexión propia, sin caja de escribir (esa
+// existía como stub y se borró: no había concepto de "muro" real en el
+// backend). Usa hooks/usePublicProfile.js, que a su vez redirige a
+// app/perfil/page.js si resulta que el id de la URL sos vos mismo.
+//
+// CON QUÉ SE CONECTA: hooks/usePublicProfile.js, components/{AvatarMenu,
+// PicturesGrid, PostCard}.js, components/perfil/TerminalCounter.js.
+// Protegida por proxy.js.
+// ════════════════════════════════════════════════════════════════════════
 export default function PerfilPublicoPage() {
   const { data: session, status } = useSession();
   const router = useRouter();

@@ -1,5 +1,7 @@
+// MÓDULO: app/perfil/profileStyles.js
 // CSS de la página de perfil propio. Se inyecta con
-// useInjectedStyles("profile-styles", …). Texto idéntico al que estaba inline.
+// hooks/useInjectedStyles.js ("profile-styles", …) desde app/perfil/page.js.
+// Es puro texto CSS, no tiene lógica.
 export const profileStyles = `
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Mono:wght@400;700&family=Cinzel:wght@400;600;900&display=swap');
       @keyframes fadeIn  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }

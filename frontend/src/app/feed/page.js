@@ -16,6 +16,23 @@ import EmptyState from "@/components/feed/EmptyState";
 import PostCard from "@/components/feed/PostCard";
 import { feedStyles } from "./feedStyles";
 
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: app/feed/page.js — el MURO (feed principal)
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: es la página en sí, pero casi sin lógica propia — junta el
+// composer (usePostComposer), la lista de posts con reacciones en vivo
+// (useFeedPosts) y los estilos de la página (feedStyles.js vía
+// useInjectedStyles), y arma el JSX. Toda la lógica pesada vive en los hooks.
+//
+// PARA QUÉ SIRVE: es la primera pantalla que ve un usuario logueado — el
+// "home" de la red social.
+//
+// CON QUÉ SE CONECTA: hooks/useFeedPosts.js, hooks/usePostComposer.js,
+// components/feed/* (PostCard, EmptyState, LinkPreview),
+// components/Uploader.js, components/DownloadBar.js. Protegida por
+// proxy.js (redirige a /auth si no hay sesión).
+// ════════════════════════════════════════════════════════════════════════
+
 export default function FeedPage() {
   const { data: session, status } = useSession();
   const router = useRouter();

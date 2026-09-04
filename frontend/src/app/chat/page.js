@@ -20,6 +20,20 @@ import TypingIndicator from "@/components/chat/TypingIndicator";
 import AudioReplyPreview from "@/components/chat/AudioReplyPreview";
 import { chatStyles } from "./chatStyles";
 
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: app/chat/page.js — mensajería (chat)
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: es la página que junta TODOS los hooks del chat — useChat (el
+// grande: conversaciones, mensajes, socket), useChatSearch (buscar gente),
+// useAudioRecorder (grabar audio) y useChatImage (mandar fotos) — y los
+// componentes visuales (Bubble para cada mensaje, indicadores de
+// escribiendo/grabando, la racha). El archivo en sí es sobre todo el JSX
+// que combina todo eso; la lógica real está repartida en los hooks.
+//
+// CON QUÉ SE CONECTA: hooks/{useChat,useChatSearch,useAudioRecorder,
+// useChatImage}.js, components/chat/*. Protegida por proxy.js.
+// ════════════════════════════════════════════════════════════════════════
+
 export default function ChatPage() {
   const { data: session, status } = useSession();
   const router = useRouter();

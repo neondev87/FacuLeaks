@@ -1,5 +1,8 @@
-// CSS de la página de feed. Se inyecta con useInjectedStyles("feed-styles", …).
-// Texto idéntico al que estaba inline en feed/page.js.
+// MÓDULO: app/feed/feedStyles.js
+// CSS de la página de feed (animaciones, fondo con ruido, hairlines, fuentes
+// de Google Fonts propias de esta página). Se inyecta con
+// hooks/useInjectedStyles.js ("feed-styles", …) desde app/feed/page.js.
+// Es puro texto CSS, no tiene lógica.
 export const feedStyles = `
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&family=Cinzel:wght@400;600;900&display=swap');
       @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }

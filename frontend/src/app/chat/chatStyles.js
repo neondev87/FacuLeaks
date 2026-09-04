@@ -1,5 +1,7 @@
-// CSS de la página de chat. Se inyecta con useInjectedStyles("chat-styles", …).
-// Texto idéntico al que estaba inline en chat/page.js.
+// MÓDULO: app/chat/chatStyles.js
+// CSS de la página de chat (burbujas, animaciones de escribiendo/grabando,
+// scrollbar). Se inyecta con hooks/useInjectedStyles.js ("chat-styles", …)
+// desde app/chat/page.js. Es puro texto CSS, no tiene lógica.
 export const chatStyles = `
       @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap');
       @keyframes spin     { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }

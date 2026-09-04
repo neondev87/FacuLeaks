@@ -4,6 +4,19 @@ import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { API } from "@/lib/api";
 
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: app/auth/page.js — la pantalla de login
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: la página de login con el botón "Continuar con Google" — arranca
+// el flujo de NextAuth con signIn("google"). Es la única página con
+// estética "cyberpunk/glitch" del proyecto (arte gótico en blanco y negro,
+// branding NEONDEV) y por regla del proyecto NO se toca en el rediseño de
+// Fase 3 — todo el resto de la app va a un estilo distinto (minimalista
+// underground/Y2K), pero esta pantalla se queda como está.
+//
+// CON QUÉ SE CONECTA: next-auth/react (signIn) → arranca el flujo que
+// termina resolviéndose en lib/authOptions.js.
+// ════════════════════════════════════════════════════════════════════════
 function GothicCross({ size = 54, opacity = 0.38, style = {} }) {
   return (
     <svg width={size} height={size * 1.78} viewBox="0 0 80 140" fill="none" style={{ opacity, ...style }}>

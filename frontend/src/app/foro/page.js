@@ -6,6 +6,18 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import BgCross from "@/components/BgCross";
 
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: app/foro/page.js — foro (100% MOCK, no funcional)
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE HOY: nada real — `channels` y los mensajes son datos de prueba
+// escritos a mano acá adentro, y el input de escribir no manda nada a
+// ningún lado. No existe tabla ni endpoint de foro en el backend.
+//
+// PARA QUÉ SIRVE: es una vidriera de cómo se vería el foro, pendiente de
+// construir de cero (modelo de datos + backend + frontend). Decisión
+// explícita de Erick: queda para el final, fuera del prompt maestro de
+// Fases 0-3. No tocar sin que se pida explícitamente.
+// ════════════════════════════════════════════════════════════════════════
 export default function ForoPage() {
   const { data: session, status } = useSession();
   const router = useRouter();

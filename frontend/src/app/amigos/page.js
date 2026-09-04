@@ -7,7 +7,18 @@ import Navbar from "@/components/Navbar";
 import BgCross from "@/components/BgCross";
 import { API } from "@/lib/api";
 
-// ── AMIGOS PAGE ───────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: app/amigos/page.js — buscar gente y manejar solicitudes
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: lista tus amigos + solicitudes recibidas/enviadas, y un
+// buscador (con debounce) para encontrar gente y mandarle solicitud. Es de
+// las pocas páginas que llama al backend DIRECTO en el archivo, sin un hook
+// propio en hooks/ — quedó así desde antes de la Fase 2 de reestructura.
+//
+// CON QUÉ SE CONECTA: backend /api/amigos/* completo
+// (amigos.controller.js): listar, buscar, enviar/aceptar/rechazar
+// solicitud, eliminar amistad.
+// ════════════════════════════════════════════════════════════════════════
 export default function AmigosPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
