@@ -72,6 +72,7 @@ export default function useChat({ session, status, inputRef }) {
     socket.on("audio:start",     ({ userId }) => { setIsAudio(String(userId)); setIsTyping(false); });
     socket.on("audio:stop",      ({ userId }) => { setIsAudio(prev => prev === String(userId) ? false : prev); });
     socket.on("message:receive:audio", msg => { addMensaje(msg); loadConversaciones(); });
+    socket.on("message:receive:image", msg => { addMensaje(msg); loadConversaciones(); });
     socket.on("message:deleted", ({ id }) => {
       setMensajes(prev => prev.filter(m => m.id !== id));
     });

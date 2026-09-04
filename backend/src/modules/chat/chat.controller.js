@@ -1,6 +1,9 @@
-const fs    = require('fs');
-const path  = require('path');
+const fs     = require('fs');
+const path   = require('path');
+const sharp  = require('sharp');
+const crypto = require('crypto');
 const prisma = require('../../config/db');
+const { verificarMagicBytes } = require('../upload/upload.security');
 
 const getConversaciones = async (req, res) => {
   try {
@@ -46,7 +49,7 @@ const getConversaciones = async (req, res) => {
         convMap.set(otherId, {
           userId:   otherId,
           username: otherUser?.username || 'unknown',
-          lastMsg:  msg.tipo === 'audio' ? '🎤 Audio' : msg.contenido,
+          lastMsg:  msg.tipo === 'audio' ? '🎤 Audio' : msg.tipo === 'imagen' ? '📷 Imagen' : msg.contenido,
           lastTime: msg.creadoEn,
           unread:   msg.receptorId === userId && !msg.leido ? 1 : 0,
         });
@@ -144,6 +147,61 @@ const sendAudio = async (req, res) => {
   }
 };
 
+// POST /api/chat/imagen/:receptorId — B4: enviar una imagen por DM.
+// Mismo pipeline que el muro (magic bytes + Sharp → WebP). El archivo final
+// queda en uploads/imagenes (servido de forma pública, igual que las imágenes
+// de posts; el nombre es un hash aleatorio).
+const sendImagen = async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No se recibió imagen' });
+
+  const tmpPath    = req.file.path;
+  const emisorId   = req.userId;
+  const receptorId = parseInt(req.params.receptorId);
+
+  try {
+    if (!verificarMagicBytes(tmpPath, 'imagen')) {
+      fs.unlinkSync(tmpPath);
+      return res.status(400).json({ error: 'Archivo inválido' });
+    }
+
+    const outName = `${crypto.randomBytes(16).toString('hex')}.webp`;
+    const outPath = path.join('uploads', 'imagenes', outName);
+
+    await sharp(tmpPath)
+      .rotate()
+      .resize(1920, 1920, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 82, effort: 6 })
+      .toFile(outPath);
+
+    fs.unlinkSync(tmpPath);
+
+    const imageUrl = `/uploads/imagenes/${outName}`;
+
+    const msg = await prisma.messages.create({
+      data: {
+        emisorId,
+        receptorId,
+        contenido: '📷 Imagen',
+        tipo:      'imagen',
+        imageUrl,
+      },
+      include: {
+        users_messages_emisorIdTousers: { select: { id: true, username: true } }
+      }
+    });
+
+    const msgNorm = { ...msg, emisor: msg.users_messages_emisorIdTousers };
+
+    if (req.io) req.io.emit('message:receive:image', msgNorm);
+
+    res.json({ ok: true, msg: msgNorm });
+  } catch (err) {
+    if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
+    console.error('sendImagen error:', err.message);
+    res.status(500).json({ error: 'Error al enviar imagen' });
+  }
+};
+
 // GET /uploads/audios/:file — sirve un audio de DM SOLO a su emisor o receptor.
 // Montada antes de express.static para que los .webm no sean públicos.
 const serveAudio = async (req, res) => {
@@ -188,4 +246,4 @@ const deletemensaje = async (req, res) => {
   }
 };
 
-module.exports = { getConversaciones, getMensajes, sendAudio, deletemensaje, serveAudio };
+module.exports = { getConversaciones, getMensajes, sendAudio, sendImagen, deletemensaje, serveAudio };
