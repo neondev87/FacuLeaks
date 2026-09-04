@@ -1,254 +1,39 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { API } from "@/lib/api";
+import useInjectedStyles from "@/hooks/useInjectedStyles";
+import useRegister from "@/hooks/useRegister";
+import TermLine from "@/components/register/TermLine";
+import ProgressBar from "@/components/register/ProgressBar";
+import { registerStyles } from "./registerStyles";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: app/register/page.js — completar el registro (por pasos)
 // ════════════════════════════════════════════════════════════════════════
 // QUÉ HACE: cuando alguien se loguea con Google por primera vez, NextAuth
 // sabe que existe en Google pero el backend todavía no tiene una fila para
-// esa persona (`needsRegister: true`) — acá se completa: elegir username y
-// contraseña (validados en el momento con las funciones de más abajo), y al
-// confirmar se manda todo a POST /api/auth/register.
+// esa persona — acá se completa: elegir username y contraseña, y al
+// confirmar se manda todo a POST /api/auth/register. Toda la lógica vive en
+// hooks/useRegister.js (parejado con el patrón de Fase 2 el 2026-09-04);
+// este archivo es el JSX de los 6 pasos.
 //
 // PARA QUÉ SIRVE: es el puente entre "tenés cuenta de Google" y "tenés
 // cuenta en FacuLeaks". Fase 3 va a rediseñar SOLO lo visual de esta
 // pantalla — el flujo de pasos se mantiene igual.
 //
-// CON QUÉ SE CONECTA: backend POST /api/auth/register (auth.controller.js).
+// CON QUÉ SE CONECTA: hooks/useRegister.js, components/register/*.
 // ════════════════════════════════════════════════════════════════════════
-const validateUsername = (v) => {
-  if (v.length < 3)  return "mínimo 3 caracteres";
-  if (v.length > 20) return "máximo 20 caracteres";
-  if (!/^[a-zA-Z0-9_]+$/.test(v)) return "solo letras, números y _";
-  return null;
-};
-
-const validatePassword = (v) => {
-  if (v.length < 8)     return "mínimo 8 caracteres";
-  if (v.length > 14)    return "máximo 14 caracteres";
-  if (!/[A-Z]/.test(v)) return "necesita al menos una mayúscula";
-  if (!/[0-9]/.test(v)) return "necesita al menos un número";
-  return null;
-};
-
-function useTypewriter(text, speed = 18) {
-  const [displayed, setDisplayed] = useState("");
-  useEffect(() => {
-    setDisplayed("");
-    let i = 0;
-    const id = setInterval(() => {
-      setDisplayed(text.slice(0, ++i));
-      if (i >= text.length) clearInterval(id);
-    }, speed);
-    return () => clearInterval(id);
-  }, [text, speed]);
-  return displayed;
-}
-
-function TermLine({ text, color = "rgba(255,255,255,.9)", delay = 0, style = {} }) {
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(true), delay);
-    return () => clearTimeout(t);
-  }, [delay]);
-  if (!visible) return null;
-  return (
-    <div style={{
-      fontFamily: "'Share Tech Mono', monospace",
-      fontSize: 12, letterSpacing: ".06em",
-      color, lineHeight: 1.7, ...style,
-    }}>
-      {text}
-    </div>
-  );
-}
-
-function ProgressBar({ percent }) {
-  const filled = Math.round(percent / 10);
-  const empty  = 10 - filled;
-  return (
-    <span style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 12, color: "#fff" }}>
-      [{"█".repeat(filled)}{"░".repeat(empty)}] {percent}%
-    </span>
-  );
-}
-
 export default function RegisterPage() {
   const { data: session, status } = useSession();
-  const router = useRouter();
 
-  const [checking, setChecking] = useState(true);
-  const [step,     setStep]     = useState(0);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm,  setConfirm]  = useState("");
-  const [error,    setError]    = useState("");
-  const [progress, setProgress] = useState(0);
-  const inputRef = useRef(null);
+  const {
+    checking, step, inputRef, introText,
+    username, setUsername, password, setPassword, confirm, setConfirm,
+    error, setError, progress, pwReqs,
+    handleUsername, handlePassword, handleConfirm,
+  } = useRegister({ status, session });
 
-  // ── Si ya tiene dbId en sesión → directo al feed ──
-  useEffect(() => {
-    if (status === "loading") return;
-    if (status === "unauthenticated") { router.push("/auth"); return; }
-
-    // dbId viene del route.js — si existe, ya está registrado
-    if (session?.user?.dbId) {
-      router.push("/feed");
-      return;
-    }
-
-    // No tiene dbId — verificar con el backend por si el token no se actualizó
-    const googleId = session?.user?.googleId || session?.user?.id;
-    if (!googleId) { setChecking(false); return; }
-
-    fetch(`${API}/api/auth/check/${googleId}`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.exists) {
-          router.push("/feed");
-        } else {
-          setChecking(false);
-        }
-      })
-      .catch(() => setChecking(false));
-  }, [status, session, router]);
-
-  const introText = useTypewriter(
-    session?.user?.name
-      ? `> SISTEMA: bienvenido, ${session.user.name}\n> nuevo usuario detectado\n> iniciando protocolo de registro...`
-      : `> SISTEMA: nuevo usuario detectado\n> iniciando protocolo de registro...`,
-    14
-  );
-
-  useEffect(() => {
-    if (checking) return;
-    if (step === 0) {
-      const t = setTimeout(() => setStep(1), session?.user?.name ? 2800 : 2200);
-      return () => clearTimeout(t);
-    }
-  }, [step, session, checking]);
-
-  useEffect(() => {
-    if (step >= 1 && step <= 3) {
-      setTimeout(() => inputRef.current?.focus(), 80);
-    }
-  }, [step]);
-
-  useEffect(() => {
-    const s = document.createElement("style");
-    s.id = "register-styles";
-    s.textContent = `
-      @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-      @keyframes blink    { 0%,100%{opacity:1} 50%{opacity:0} }
-      @keyframes fadeIn   { from{opacity:0} to{opacity:1} }
-      @keyframes scanline { from{transform:translateY(-100%)} to{transform:translateY(100vh)} }
-      body { background:#000; overflow:hidden; }
-      body::before {
-        content:''; position:fixed; inset:0;
-        background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-        opacity:.04; pointer-events:none; z-index:9998;
-      }
-      body::after {
-        content:''; position:fixed; inset:0;
-        background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.12) 2px,rgba(0,0,0,.12) 4px);
-        pointer-events:none; z-index:9999;
-      }
-      .term-input {
-        background:transparent; border:none; outline:none;
-        font-family:'Share Tech Mono',monospace;
-        font-size:14px; letter-spacing:.08em;
-        color:#ffffff; caret-color:#ffffff; width:100%; padding:0;
-      }
-      .term-input::placeholder { color:rgba(255,255,255,.2); }
-      .cursor-blink { animation:blink 1s step-end infinite; }
-      .req-ok  { color:rgba(100,220,120,.9); }
-      .req-bad { color:rgba(255,255,255,.25); }
-      .confirm-btn {
-        background:transparent; border:1px solid rgba(255,255,255,.2);
-        color:rgba(255,255,255,.55); font-family:'Share Tech Mono',monospace;
-        font-size:10px; letter-spacing:.2em; padding:4px 14px;
-        cursor:pointer; transition:all .2s;
-      }
-      .confirm-btn:hover { border-color:rgba(255,255,255,.7); color:#fff; }
-      .moving-scan {
-        position:fixed; top:0; left:0; right:0; height:1px;
-        background:rgba(255,255,255,.03);
-        animation:scanline 10s linear infinite;
-        pointer-events:none; z-index:10000;
-      }
-    `;
-    document.head.appendChild(s);
-    return () => document.getElementById("register-styles")?.remove();
-  }, []);
-
-  const handleUsername = (e) => {
-    e.preventDefault();
-    const err = validateUsername(username);
-    if (err) { setError(err); return; }
-    setError(""); setStep(2);
-  };
-
-  const handlePassword = (e) => {
-    e.preventDefault();
-    const err = validatePassword(password);
-    if (err) { setError(err); return; }
-    setError(""); setStep(3);
-  };
-
-  const handleConfirm = async (e) => {
-    e.preventDefault();
-    if (confirm !== password) { setError("las contraseñas no coinciden"); return; }
-    setError("");
-    setStep(4);
-
-    [{ p:20,d:300 },{ p:45,d:700 },{ p:70,d:1200 },{ p:90,d:1800 },{ p:100,d:2400 }]
-      .forEach(({ p, d }) => setTimeout(() => setProgress(p), d));
-
-    setTimeout(async () => {
-      try {
-        const res = await fetch(`${API}/api/auth/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            googleId: session?.user?.googleId || session?.user?.id,
-            email:    session?.user?.email,
-            nombre:   session?.user?.name,
-            username,
-            password,
-          }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          setStep(3);
-          setProgress(0);
-          setError(data.error || 'Error al registrar');
-          return;
-        }
-
-        setStep(5);
-        setTimeout(() => { window.location.href = '/feed'; }, 2000);
-
-      } catch {
-        setStep(3);
-        setProgress(0);
-        setError('No se pudo conectar con el servidor');
-      }
-    }, 3000);
-  };
-
-  const pwReqs = [
-    { label: "mínimo 8 caracteres",  ok: password.length >= 8 },
-    { label: "máximo 14 caracteres", ok: password.length <= 14 && password.length > 0 },
-    { label: "una mayúscula",        ok: /[A-Z]/.test(password) },
-    { label: "un número",            ok: /[0-9]/.test(password) },
-  ];
+  useInjectedStyles("register-styles", registerStyles);
 
   const CD = "rgba(255,255,255,.5)";
   const CF = "rgba(255,255,255,.2)";
