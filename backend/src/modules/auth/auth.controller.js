@@ -1,3 +1,35 @@
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: auth/auth.controller.js — el corazón del login
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE:
+//   - register(): crea una cuenta nueva en MySQL y le entrega la cookie
+//     de sesión de una.
+//   - checkUser(): responde "¿este googleId ya tiene cuenta acá?" — lo usa
+//     NextAuth (en el frontend) para decidir si mandar al registro o al feed.
+//     Ojo: responde SOLO {exists, user:{id, imagen}} — nunca email/nombre,
+//     porque esta ruta no pide sesión (cualquiera podría llamarla).
+//   - login(): la ÚNICA forma de conseguir la cookie de sesión del backend.
+//     No la llama el navegador directamente — la llama el propio servidor
+//     de Next (frontend/src/app/api/auth/sync-backend/route.js) después de
+//     confirmar el login de Google. Por eso exige un header secreto
+//     (x-internal-secret) en vez de pedir contraseña: el browser nunca ve
+//     ese secreto, así que no puede forjar un login de otro usuario.
+//   - setAuthCookie(): firma un JWT con los datos mínimos (id, username) y
+//     lo manda como cookie httpOnly (el JS del navegador no puede leerla,
+//     protección contra robo de sesión por XSS).
+//
+// PARA QUÉ SIRVE:
+//   Es el único lugar del backend donde se genera la cookie que después
+//   valida middleware/auth.js en cada ruta protegida.
+//
+// CON QUÉ SE CONECTA:
+//   - auth.service.js → hace el trabajo pesado contra la base de datos
+//     (crear usuario, buscar por googleId).
+//   - process.env.JWT_SECRET → firma el token (nunca un valor fijo en código).
+//   - process.env.INTERNAL_API_SECRET → el secreto que protege /login.
+//   - frontend/src/app/api/auth/sync-backend/route.js → es quien llama a
+//     POST /login desde el servidor de Next, nunca el browser.
+// ════════════════════════════════════════════════════════════════════════
 const { registerUser, findUserByGoogleId } = require('./auth.service');
 const jwt    = require('jsonwebtoken');
 const crypto = require('crypto');

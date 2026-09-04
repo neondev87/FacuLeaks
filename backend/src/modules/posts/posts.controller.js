@@ -1,3 +1,32 @@
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: posts/posts.controller.js — el muro (feed, likes/dislikes, comentarios)
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE:
+//   - Los 3 feeds (recientes / trending / siguiendo): cada uno arma su
+//     propia consulta a la BD y usa mapPost() para dejar la respuesta
+//     pareja (mismo formato para el frontend, sin importar qué feed sea).
+//   - Publicar y borrar posts (nuevoPost / deletePost).
+//   - Reacciones LIKE/DISLIKE (toggleReaction): un usuario solo puede tener
+//     UNA reacción por post — si clickea la misma, se la saca; si clickea la
+//     otra, se la cambia. Después de cada cambio se RECUENTA (no se suma/
+//     resta a ciegas) cuántos likes y dislikes tiene el post, para que el
+//     número mostrado sea siempre exacto aunque algo falle a mitad de camino.
+//   - Comentarios (listComments / createComment / deleteComment): mismo
+//     patrón de recuento exacto para totalComentarios.
+//
+// PARA QUÉ SIRVE:
+//   Es el módulo más grande del backend porque el muro es el corazón de la
+//   red social — publicar, reaccionar y comentar son las 3 acciones que más
+//   se repiten.
+//
+// CON QUÉ SE CONECTA:
+//   - config/db.js (Prisma) → tablas posts, post_likes, comments.
+//   - req.io (Socket.io, inyectado por server.js en cada petición) → avisa
+//     en vivo a todos los que tienen el feed abierto: post:new, post:deleted,
+//     post:react, post:comment, post:comment:deleted.
+//   - Frontend: hooks/useFeedPosts.js y hooks/usePostComments.js son quienes
+//     llaman a estos endpoints y escuchan esos eventos de socket.
+// ════════════════════════════════════════════════════════════════════════
 const prisma = require('../../config/db');
 
 // Normaliza un post del feed: expone `autor` y `myReaction` ("LIKE" | "DISLIKE" | null),

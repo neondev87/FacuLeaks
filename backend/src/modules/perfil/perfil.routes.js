@@ -1,3 +1,15 @@
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: perfil/perfil.routes.js — mapa de URLs del perfil
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: define las rutas de "mi perfil" y "perfil de otro usuario" (la
+// misma URL /perfil/:userId sirve para las dos cosas — perfil.controller.js
+// decide adentro si sos el dueño o no), editar datos, subir/borrar avatar y
+// subir/borrar fotos de la galería. Todas piden sesión.
+//
+// SE CONECTA CON: perfil.controller.js. Tiene su propia config de multer acá
+// mismo (guarda temporalmente en uploads/tmp antes de que el controller la
+// procese con Sharp). Montado en server.js bajo /api/perfil.
+// ════════════════════════════════════════════════════════════════════════
 const express  = require('express');
 const router   = express.Router();
 const multer   = require('multer');

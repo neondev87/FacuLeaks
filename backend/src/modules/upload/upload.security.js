@@ -1,3 +1,27 @@
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: upload/upload.security.js — las validaciones de seguridad de archivos
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE (son 4 funciones puras, sin tocar la BD ni el request):
+//   - verificarMagicBytes(): abre el archivo y mira sus primeros bytes
+//     REALES. Cada formato de archivo empieza con una "firma" fija (ej. un
+//     PNG siempre arranca con 0x89 0x50 0x4E 0x47) — esto es indetectable
+//     por la extensión o el mimetype que declara el navegador, así que es
+//     la única forma confiable de saber "esto es realmente una imagen".
+//   - esHostInterno(): dice si un hostname/IP apunta a la red interna
+//     (localhost, 127.0.0.1, 192.168.x.x, la IP de metadata de la nube, etc).
+//   - sanitizarUrl(): solo deja pasar URLs http/https que NO apunten a la
+//     red interna — esto es lo que evita un ataque de tipo SSRF (Server-Side
+//     Request Forgery: engañar al servidor para que le pegue a SU PROPIA
+//     red interna en vez de a internet, usando el feature de "importar URL").
+//   - sanitizarTexto(): saca caracteres peligrosos de un texto (para
+//     nombres de archivo o títulos) y lo corta a 255 caracteres.
+//
+// PARA QUÉ SIRVE: es la caja de herramientas de seguridad para archivos y
+// URLs — ningún archivo ni URL externa se acepta en la app sin pasar por acá.
+//
+// CON QUÉ SE CONECTA: lo importan upload.controller.js, perfil.controller.js
+// y chat.controller.js — cualquier módulo que reciba un archivo del usuario.
+// ════════════════════════════════════════════════════════════════════════
 const fs = require('fs');
 
 // Magic bytes de cada formato — defensa real contra extensiones falsas

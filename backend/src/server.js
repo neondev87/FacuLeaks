@@ -1,3 +1,32 @@
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: server.js — el punto de arranque de TODO el backend
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE:
+//   1. Levanta un servidor HTTP con Express y, sobre el MISMO puerto (4000),
+//      un servidor de WebSockets con Socket.io (el chat/feed en vivo).
+//   2. Configura la seguridad de red: CORS (solo el frontend puede llamar),
+//      rate limiting (frena fuerza bruta en login/uploads), y bind a
+//      127.0.0.1 por defecto (no expuesto a la red salvo que se pida).
+//   3. "Monta" cada módulo de rutas bajo su prefijo /api/* — es literalmente
+//      el mapa de qué carpeta de módulo atiende qué URL.
+//   4. Maneja la conexión de cada socket: guarda quién está online
+//      (`onlineUsers`) y delega TODO lo demás del chat (mandar mensaje,
+//      marcar leído, indicadores de "escribiendo") al módulo chat/.
+//
+// PARA QUÉ SIRVE:
+//   Es el "main" del backend — el único archivo que arranca todo lo demás.
+//   Ningún otro archivo del backend se ejecuta solo; todos cuelgan de acá.
+//
+// CON QUÉ SE CONECTA:
+//   - Cada modules/<nombre>/<nombre>.routes.js → le entrega su router y
+//     server.js lo cuelga de una URL (`app.use('/api/posts', postsRoutes)`).
+//   - modules/chat/chat.socket.js → toda la lógica de tiempo real del chat
+//     vive ahí, no acá (server.js solo hace `registerChatSocketHandlers`).
+//   - backend/.env → PORT, HOST, CORS_ORIGIN, y (indirecto) todo lo que
+//     usan los módulos que este archivo importa.
+//   - carpeta uploads/ → se sirve como archivos estáticos, y se crean sus
+//     subcarpetas acá si no existen al arrancar.
+// ════════════════════════════════════════════════════════════════════════
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');

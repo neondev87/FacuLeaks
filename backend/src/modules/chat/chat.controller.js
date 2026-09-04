@@ -1,3 +1,33 @@
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: chat/chat.controller.js — lo que se hace por HTTP en el chat
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE:
+//   - getConversaciones(): arma la lista de "con quién hablaste" (últimos
+//     mensajes) + tus amigos, para la barra lateral del chat.
+//   - getMensajes(): trae el historial completo con una persona.
+//   - sendAudio() / sendImagen(): reciben el archivo, lo VALIDAN de verdad
+//     (magic bytes — los primeros bytes reales del archivo, no solo la
+//     extensión, para que nadie suba un .exe disfrazado de .webp), lo
+//     comprimen (Sharp → WebP en el caso de imagen) y crean el mensaje.
+//   - serveAudio(): sirve un audio de DM, pero SOLO si quien lo pide es el
+//     que lo mandó o el que lo recibió — por eso no está bajo la carpeta
+//     pública /uploads, tiene su propia ruta gateada en server.js.
+//   - deletemensaje(): borra un mensaje (solo su dueño puede).
+//
+// PARA QUÉ SIRVE:
+//   Es la mitad "por HTTP" del chat. La otra mitad — mandar texto, marcar
+//   leído, indicador de "escribiendo" — vive en chat.socket.js porque es
+//   instantánea y no necesita esperar una respuesta HTTP.
+//
+// CON QUÉ SE CONECTA:
+//   - config/db.js (Prisma) → tabla messages.
+//   - upload/upload.security.js → verificarMagicBytes (misma validación
+//     anti-archivo-falso que usa el módulo upload/ para el muro).
+//   - req.io (Socket.io) → avisa en vivo con message:receive:audio /
+//     message:receive:image / message:deleted.
+//   - Frontend: hooks/useChat.js, hooks/useChatImage.js y
+//     hooks/useAudioRecorder.js llaman a estos endpoints.
+// ════════════════════════════════════════════════════════════════════════
 const fs     = require('fs');
 const path   = require('path');
 const sharp  = require('sharp');

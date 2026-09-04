@@ -1,3 +1,30 @@
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: perfil/perfil.controller.js — perfil propio y perfil público
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE:
+//   - getPerfil(): tus propios datos completos (bio, stats, tus últimos
+//     posts, tus fotos) para la página /perfil.
+//   - getPerfilPublico(): el perfil de OTRO usuario (solo lo público) y,
+//     de paso, registra la visita (tabla profile_visits) y le avisa por
+//     socket en vivo al dueño ("alguien visitó tu perfil").
+//   - updatePerfil(): editar bio, intereses, links, etc.
+//   - updateAvatar() / deleteAvatar(): sube (valida + comprime con Sharp a
+//     WebP) o borra la foto de perfil.
+//   - uploadPhotos() / deletePhoto(): la galería de fotos (hasta 10 por vez).
+//
+// PARA QUÉ SIRVE:
+//   Es todo lo que necesitan las páginas app/perfil/page.js (propio) y
+//   app/perfil/[id]/page.js (público) para dibujarse.
+//
+// CON QUÉ SE CONECTA:
+//   - config/db.js (Prisma) → users, user_profiles, posts, profile_visits,
+//     user_photos. Ojo: TODO pasa por el cliente de Prisma, no hay ni una
+//     consulta SQL escrita a mano en este archivo (se sacó el 2026-09-04).
+//   - upload/upload.security.js → verificarMagicBytes antes de aceptar
+//     cualquier imagen (avatar o foto de galería).
+//   - req.io + req.onlineUsers → el aviso en vivo de "visita a tu perfil".
+//   - Frontend: hooks/useOwnProfile.js y hooks/usePublicProfile.js.
+// ════════════════════════════════════════════════════════════════════════
 const fs     = require('fs');
 const path   = require('path');
 const sharp  = require('sharp');

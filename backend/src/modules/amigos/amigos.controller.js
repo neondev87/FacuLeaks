@@ -1,3 +1,29 @@
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: amigos/amigos.controller.js — sistema de amistad
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE:
+//   La tabla `amistades` guarda UNA fila por par de usuarios, con un
+//   `estado` (PENDIENTE / ACEPTADO / RECHAZADO / BLOQUEADO). No hay tabla
+//   separada de "solicitudes" — es la misma fila que cambia de estado:
+//   - enviarSolicitud() crea la fila en PENDIENTE.
+//   - aceptarSolicitud() la pasa a ACEPTADO (solo puede hacerlo quien la recibió).
+//   - rechazarSolicitud() la pasa a RECHAZADO.
+//   - eliminarAmistad() borra la fila entera.
+//   - getAmigos() junta todo y lo separa en 3 listas para el frontend:
+//     amigos (ACEPTADO), recibidas (PENDIENTE que me mandaron) y enviadas
+//     (PENDIENTE que yo mandé).
+//   - buscarUsuarios() busca por username y le agrega a cada resultado el
+//     estado de amistad actual con vos (para mostrar el botón correcto:
+//     "agregar", "pendiente", etc.).
+//
+// PARA QUÉ SIRVE: es la base de "quién es amigo de quién" que usan el
+// feed (pestaña SIGUIENDO), el chat (lista de conversaciones) y el perfil.
+//
+// CON QUÉ SE CONECTA:
+//   - config/db.js (Prisma) → tabla amistades.
+//   - Frontend: app/amigos/page.js llama a estos endpoints directo (sin hook
+//     propio, es de los pocos que quedó sin extraer a un hook en Fase 2).
+// ════════════════════════════════════════════════════════════════════════
 const prisma = require('../../config/db');
 
 const getAmigos = async (req, res) => {

@@ -1,3 +1,30 @@
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: spotify/spotify.controller.js — integración con la API de Spotify
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE:
+//   - spotifyAuth() / spotifyCallback(): el flujo de "conectar tu cuenta de
+//     Spotify" (OAuth). El `state` que viaja en la URL va firmado con HMAC
+//     (signState/verifyState) para que nadie pueda completar el flujo con
+//     el id de otro usuario y pisarle los tokens.
+//   - nowPlaying() / recentlyPlayed(): lo que se ve en el perfil — la
+//     canción sonando ahora o las últimas escuchadas. ANTES de devolver
+//     nada, chequean spotifyVisible() (el flag mostrarSpotify del perfil) —
+//     si el dueño lo desactivó, no se muestra nada aunque la ruta sea pública.
+//   - refreshToken(): los tokens de Spotify vencen; si el guardado expiró,
+//     se pide uno nuevo automáticamente con el refresh_token.
+//   - disconnect(): borra los tokens guardados (desconectar la cuenta).
+//
+// PARA QUÉ SIRVE: le da vida al widget de Spotify del perfil y la navbar.
+//
+// CON QUÉ SE CONECTA:
+//   - config/db.js (Prisma) → tabla spotify_tokens, y user_profiles para
+//     el flag de privacidad.
+//   - La API real de Spotify (accounts.spotify.com / api.spotify.com) →
+//     este es de los pocos módulos que le habla a un servicio externo.
+//   - process.env.SPOTIFY_CLIENT_ID/SECRET/REDIRECT_URI, JWT_SECRET (para
+//     firmar el state), CORS_ORIGIN (a dónde redirigir de vuelta).
+//   - Frontend: components/SpotifyWidget.js y Navbar.js.
+// ════════════════════════════════════════════════════════════════════════
 const prisma = require('../../config/db');
 const crypto = require('crypto');
 require('dotenv').config();

@@ -1,3 +1,29 @@
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: upload/upload.controller.js — procesar archivos subidos
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE:
+//   - uploadImagen(): recibe la imagen que ya guardó multer como archivo
+//     temporal, CONFIRMA que de verdad es una imagen (magic bytes, no solo
+//     la extensión), y la re-comprime con Sharp a formato WebP (más liviano,
+//     y de paso "limpia" cualquier metadata rara del archivo original).
+//   - uploadDocumento(): mismo control de magic bytes para PDF/Word.
+//   - importarUrl() + fetchSeguro(): cuando alguien pega un link en el
+//     composer del muro, esto va a buscar el título y la imagen de vista
+//     previa (og:image) — SIN ejecutar el JavaScript del sitio, solo lee el
+//     HTML. fetchSeguro() sigue redirecciones A MANO, revalidando cada salto
+//     — así una URL "buena" no puede redirigir a `http://localhost` o a una
+//     IP interna (ver el porqué en upload.security.js).
+//
+// PARA QUÉ SIRVE: es el punto único donde cualquier archivo o URL que un
+// usuario mete a la app pasa un control real antes de guardarse o usarse.
+//
+// CON QUÉ SE CONECTA:
+//   - upload.security.js → toda la validación real (magic bytes, anti-SSRF).
+//   - Se reutiliza desde OTROS módulos, no solo upload/: perfil.controller.js
+//     y chat.controller.js usan el mismo patrón (magic bytes + Sharp) para
+//     avatar/fotos y para imágenes de chat.
+//   - Frontend: components/Uploader.js (el botón "+ imagen" del composer).
+// ════════════════════════════════════════════════════════════════════════
 const fs    = require('fs');
 const path  = require('path');
 const sharp = require('sharp');

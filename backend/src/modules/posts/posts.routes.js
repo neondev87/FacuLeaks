@@ -1,3 +1,14 @@
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: posts/posts.routes.js — mapa de URLs del muro (feed)
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: define TODAS las rutas de posts, reacciones y comentarios.
+// TODAS piden sesión (authMiddleware) — hasta /feed/trending, que antes era
+// pública y se cerró porque ahora necesita saber quién sos para decirte
+// "vos ya reaccionaste a este post con qué".
+//
+// SE CONECTA CON: posts.controller.js (toda la lógica). Montado en
+// server.js bajo el prefijo /api/posts.
+// ════════════════════════════════════════════════════════════════════════
 const express = require('express');
 const router = express.Router();
 const {
