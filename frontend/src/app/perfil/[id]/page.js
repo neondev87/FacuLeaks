@@ -10,7 +10,6 @@ import PostCard from "@/components/PostCard";
 import useInjectedStyles from "@/hooks/useInjectedStyles";
 import usePublicProfile from "@/hooks/usePublicProfile";
 import TerminalCounter from "@/components/perfil/TerminalCounter";
-import WritePost from "@/components/perfil/WritePost";
 import Lightbox from "@/components/Lightbox";
 import { publicStyles } from "./publicStyles";
 
@@ -21,8 +20,8 @@ export default function PerfilPublicoPage() {
   const userId = params?.id;
 
   const {
-    perfil, loading, notFound, photos, sonAmigos,
-    lightboxSrc, setLightboxSrc, fetchPerfil,
+    perfil, loading, notFound, photos,
+    lightboxSrc, setLightboxSrc,
   } = usePublicProfile({ userId, status, session, router });
 
   const border = "1px solid rgba(255,255,255,.07)";
@@ -134,11 +133,6 @@ export default function PerfilPublicoPage() {
 
           {/* CENTRAL */}
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-
-            {/* ← NUEVO: Caja para escribir (solo si son amigos) */}
-            {sonAmigos && !isOwnProfile && (
-              <WritePost profileUserId={parseInt(userId)} onPostCreated={fetchPerfil} />
-            )}
 
             <div style={card}>
               <div className="sec-title">† Sobre mí</div>
