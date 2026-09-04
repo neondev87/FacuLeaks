@@ -161,6 +161,7 @@ export default function PerfilPublicoPage() {
                     key={p.id}
                     post={p}
                     currentUser={perfil.user}
+                    viewerId={session?.user?.dbId}
                     canDelete={false}
                     onImageClick={(src) => setLightboxSrc(src)}
                   />

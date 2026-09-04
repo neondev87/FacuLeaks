@@ -107,6 +107,10 @@ const sendAudio = async (req, res) => {
 
   const emisorId   = req.userId;
   const receptorId = parseInt(req.params.receptorId);
+  if (!Number.isInteger(receptorId)) {
+    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    return res.status(400).json({ error: 'receptorId inválido' });
+  }
 
   // Asegurar que existe la carpeta
   const dir = path.join('uploads', 'audios');
@@ -157,6 +161,11 @@ const sendImagen = async (req, res) => {
   const tmpPath    = req.file.path;
   const emisorId   = req.userId;
   const receptorId = parseInt(req.params.receptorId);
+
+  if (!Number.isInteger(receptorId)) {
+    if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
+    return res.status(400).json({ error: 'receptorId inválido' });
+  }
 
   try {
     if (!verificarMagicBytes(tmpPath, 'imagen')) {

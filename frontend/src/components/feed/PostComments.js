@@ -35,7 +35,7 @@ export default function PostComments({ postId, currentUserId, accent = "#ffffff"
         <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:12 }}>
           {comments.map(c => {
             const autor = c.autor || c.users || {};
-            const mine  = currentUserId && autor.id === currentUserId;
+            const mine  = currentUserId != null && Number(autor.id) === Number(currentUserId);
             return (
               <div key={c.id} style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
                 <div

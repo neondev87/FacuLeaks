@@ -1,13 +1,15 @@
 const prisma = require('../../config/db');
 
-// Normaliza un post del feed: expone `autor` y `myReaction` ("LIKE" | "DISLIKE" | null)
-// y quita el array crudo `post_likes` (solo se usaba para calcular la reacción propia).
+// Normaliza un post del feed: expone `autor` y `myReaction` ("LIKE" | "DISLIKE" | null),
+// y usa el conteo real de comentarios (_count) como fuente de verdad —
+// `posts.totalComentarios` puede estar desfasado por comentarios previos a B3.
 const mapPost = (p) => {
-  const { post_likes, users, ...rest } = p;
+  const { post_likes, users, _count, ...rest } = p;
   return {
     ...rest,
     autor: users,
     myReaction: post_likes?.[0]?.tipo || null,
+    totalComentarios: _count?.comments ?? rest.totalComentarios ?? 0,
   };
 };
 
@@ -158,6 +160,8 @@ const toggleReaction = async (req, res) => {
   const userId = req.userId;
   const tipo   = req.body?.tipo === 'DISLIKE' ? 'DISLIKE' : 'LIKE';
 
+  if (!Number.isInteger(postId)) return res.status(400).json({ error: 'ID inválido' });
+
   try {
     const post = await prisma.posts.findUnique({
       where: { id: postId },
@@ -213,6 +217,7 @@ const toggleReaction = async (req, res) => {
 // GET /api/posts/:id/comments
 const listComments = async (req, res) => {
   const postId = parseInt(req.params.id);
+  if (!Number.isInteger(postId)) return res.status(400).json({ error: 'ID inválido' });
   try {
     const comments = await prisma.comments.findMany({
       where: { postId },
@@ -232,6 +237,7 @@ const createComment = async (req, res) => {
   const autorId   = req.userId;
   const contenido = String(req.body?.contenido || '').trim();
 
+  if (!Number.isInteger(postId)) return res.status(400).json({ error: 'ID inválido' });
   if (!contenido) return res.status(400).json({ error: 'Comentario vacío' });
   if (contenido.length > 500) return res.status(400).json({ error: 'Máximo 500 caracteres' });
 
@@ -239,22 +245,21 @@ const createComment = async (req, res) => {
     const post = await prisma.posts.findUnique({ where: { id: postId }, select: { id: true } });
     if (!post) return res.status(404).json({ error: 'Post no encontrado' });
 
-    const [comment] = await prisma.$transaction([
-      prisma.comments.create({
+    let comment, total;
+    await prisma.$transaction(async (tx) => {
+      comment = await tx.comments.create({
         data: { postId, autorId, contenido },
         include: { users: { select: { id: true, username: true, nombre: true, imagen: true } } },
-      }),
-      prisma.posts.update({
-        where: { id: postId },
-        data: { totalComentarios: { increment: 1 } },
-      }),
-    ]);
+      });
+      // Recuento exacto (no increment): evita drift y contadores negativos si
+      // hay comentarios previos a B3 que nunca tocaron totalComentarios.
+      total = await tx.comments.count({ where: { postId } });
+      await tx.posts.update({ where: { id: postId }, data: { totalComentarios: total } });
+    });
 
     const payload = { ...comment, autor: comment.users };
-    const totals  = await prisma.posts.findUnique({ where: { id: postId }, select: { totalComentarios: true } });
-
-    req.io.emit('post:comment', { postId, totalComentarios: totals.totalComentarios, comment: payload });
-    res.status(201).json({ comment: payload, totalComentarios: totals.totalComentarios });
+    req.io.emit('post:comment', { postId, totalComentarios: total, comment: payload });
+    res.status(201).json({ comment: payload, totalComentarios: total });
   } catch (err) {
     console.error('createComment error:', err.message);
     res.status(500).json({ error: 'Error al comentar' });
@@ -267,6 +272,9 @@ const deleteComment = async (req, res) => {
   const commentId = parseInt(req.params.commentId);
   const userId    = req.userId;
 
+  if (!Number.isInteger(postId) || !Number.isInteger(commentId))
+    return res.status(400).json({ error: 'ID inválido' });
+
   try {
     const comment = await prisma.comments.findUnique({
       where: { id: commentId },
@@ -276,17 +284,15 @@ const deleteComment = async (req, res) => {
     if (comment.autorId !== userId && comment.posts.autorId !== userId)
       return res.status(403).json({ error: 'No autorizado' });
 
-    await prisma.$transaction([
-      prisma.comments.delete({ where: { id: commentId } }),
-      prisma.posts.update({
-        where: { id: postId },
-        data: { totalComentarios: { decrement: 1 } },
-      }),
-    ]);
+    let total;
+    await prisma.$transaction(async (tx) => {
+      await tx.comments.delete({ where: { id: commentId } });
+      total = await tx.comments.count({ where: { postId } });
+      await tx.posts.update({ where: { id: postId }, data: { totalComentarios: total } });
+    });
 
-    const totals = await prisma.posts.findUnique({ where: { id: postId }, select: { totalComentarios: true } });
-    req.io.emit('post:comment:deleted', { postId, commentId, totalComentarios: totals.totalComentarios });
-    res.json({ ok: true, totalComentarios: totals.totalComentarios });
+    req.io.emit('post:comment:deleted', { postId, commentId, totalComentarios: total });
+    res.json({ ok: true, totalComentarios: total });
   } catch (err) {
     console.error('deleteComment error:', err.message);
     res.status(500).json({ error: 'Error al eliminar comentario' });

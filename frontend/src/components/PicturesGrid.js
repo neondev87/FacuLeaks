@@ -72,8 +72,6 @@ export default function PicturesGrid({ userId, initialPhotos = [], canEdit = tru
         {slots.map((photo, idx) => (
           <div
             key={photo?.id || `empty-${idx}`}
-            onMouseEnter={() => photo && setHoveredPhotoId(photo.id)}
-            onMouseLeave={() => setHoveredPhotoId(null)}
             style={{
               aspectRatio: '1',
               background: '#080808',
@@ -87,9 +85,13 @@ export default function PicturesGrid({ userId, initialPhotos = [], canEdit = tru
               transition: 'border-color .2s'
             }}
             onMouseEnter={(e) => {
-              if (photo) e.currentTarget.style.borderColor = 'rgba(255,255,255,.15)';
+              if (photo) {
+                setHoveredPhotoId(photo.id);
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,.15)';
+              }
             }}
             onMouseLeave={(e) => {
+              setHoveredPhotoId(null);
               e.currentTarget.style.borderColor = 'rgba(255,255,255,.05)';
             }}
           >

@@ -86,7 +86,7 @@ export default function useFeedPosts({ activeTab, status, session }) {
       feedSocket = null;
       clearInterval(trendingTimer.current);
     };
-  }, [status, session]);
+  }, [status, session, loadPosts]);
 
   const removePost = useCallback((id) => {
     setPosts(prev => prev.filter(p => p.id !== id));

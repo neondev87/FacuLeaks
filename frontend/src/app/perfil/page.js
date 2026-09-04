@@ -139,6 +139,7 @@ export default function ProfilePage() {
                       key={p.id}
                       post={p}
                       currentUser={user}
+                      viewerId={session?.user?.dbId}
                       canDelete={true}
                       onDelete={() => handleDeletePost(p.id)}
                       onImageClick={(src) => setLightboxSrc(src)}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { io } from "socket.io-client";
 import { API } from "@/lib/api";
 
@@ -12,7 +12,6 @@ export default function usePostComments(postId, enabled) {
   const [comments, setComments] = useState([]);
   const [loading,  setLoading]  = useState(false);
   const [sending,  setSending]  = useState(false);
-  const loadedRef = useRef(false);
 
   const upsert = useCallback((comment) => {
     setComments(prev => prev.some(c => c.id === comment.id) ? prev : [...prev, comment]);
@@ -25,7 +24,6 @@ export default function usePostComments(postId, enabled) {
       const res  = await fetch(`${API}/api/posts/${postId}/comments`, { credentials: "include" });
       const data = await res.json();
       setComments(data.comments || []);
-      loadedRef.current = true;
     } catch {
       setComments([]);
     } finally {
@@ -33,8 +31,10 @@ export default function usePostComments(postId, enabled) {
     }
   }, [postId]);
 
+  // Recarga cada vez que se abre el hilo (no solo la primera): así no queda
+  // desincronizado si cambió mientras estaba colapsado sin socket.
   useEffect(() => {
-    if (enabled && !loadedRef.current) load();
+    if (enabled) load();
   }, [enabled, load]);
 
   useEffect(() => {

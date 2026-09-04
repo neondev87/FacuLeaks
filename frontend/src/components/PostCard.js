@@ -54,7 +54,10 @@ function TrashBtn({ onDelete, s = 2 }) {
 }
 
 // ── Componente PostCard ──
-export default function PostCard({ post, currentUser, canDelete = false, onDelete, onImageClick }) {
+export default function PostCard({ post, currentUser, viewerId, canDelete = false, onDelete, onImageClick }) {
+  // viewerId = id del usuario logueado (para "es mío"). En el perfil público
+  // `currentUser` es el DUEÑO del perfil, no el que mira — por eso va aparte.
+  const uid = viewerId ?? currentUser?.id;
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
   const { comments, add, remove } = usePostComments(post.id, showComments);
@@ -235,7 +238,7 @@ export default function PostCard({ post, currentUser, canDelete = false, onDelet
               {comments.map(comment => {
                 const autor = comment.autor || comment.users || {};
                 const avatar = autor.imagen;
-                const mine = currentUser?.id && autor.id === currentUser.id;
+                const mine = uid != null && Number(autor.id) === Number(uid);
                 return (
                 <div key={comment.id} style={{
                   display: "flex",
