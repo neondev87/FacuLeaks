@@ -7,7 +7,7 @@ import Navbar from "@/components/Navbar";
 import Uploader from "@/components/Uploader";
 import DownloadBar from "@/components/DownloadBar";
 import BgCross from "@/components/BgCross";
-import { API } from "@/lib/api";
+import { API, avatarSrc } from "@/lib/api";
 import useInjectedStyles from "@/hooks/useInjectedStyles";
 import useFeedPosts from "@/hooks/useFeedPosts";
 import usePostComposer from "@/hooks/usePostComposer";
@@ -42,7 +42,7 @@ export default function FeedPage() {
   const [dlTrigger,  setDlTrigger]  = useState(0);
   const [dlFilename, setDlFilename] = useState("");
 
-  const { posts, loading, newCount, resetNewCount, removePost, toggleReaction } =
+  const { posts, loading, newCount, resetNewCount, removePost, toggleReaction, ownImagen } =
     useFeedPosts({ activeTab, status, session });
 
   const {
@@ -82,7 +82,7 @@ export default function FeedPage() {
 
         <div style={{ border:`1px solid ${ac}18`, padding:16, marginBottom:28, background:`${ac}03` }}>
           <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
-            <div style={{ width:34, height:34, background:"#0a0a0a", border:`1px solid ${ac}22`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, color:`${ac}44`, flexShrink:0 }}>◈</div>
+            <div style={{ width:34, height:34, background: avatarSrc(ownImagen) ? `url(${avatarSrc(ownImagen)})` : "#0a0a0a", backgroundSize:"cover", backgroundPosition:"center", border:`1px solid ${ac}22`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, color:`${ac}44`, flexShrink:0 }}>{!avatarSrc(ownImagen) && "◈"}</div>
             <div style={{ flex:1 }}>
               <input className="post-title-input" placeholder="Título (opcional)" value={postTitle} onChange={e => setPostTitle(e.target.value)} />
               <textarea className="post-body-input" placeholder="¿Qué está pasando en tu realidad?" value={postContent} onChange={handleContentChange} rows={2} />

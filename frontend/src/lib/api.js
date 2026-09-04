@@ -23,3 +23,8 @@
 // ════════════════════════════════════════════════════════════════════════
 export const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 export const API_INTERNAL = process.env.API_INTERNAL_URL || API;
+
+// URL completa de una imagen (avatar, foto de post, etc.) guardada como
+// ruta relativa (`/uploads/...`) o ya absoluta (viene de una URL externa).
+export const avatarSrc = (imagen) =>
+  !imagen ? null : imagen.startsWith("http") ? imagen : `${API}${imagen}`;

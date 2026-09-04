@@ -66,6 +66,20 @@ export default function usePublicProfile({ userId, status, session, router }) {
     socket.on("profile:visit", ({ visitas }) => {
       setPerfil(prev => prev ? { ...prev, stats: { ...prev.stats, visitas } } : prev);
     });
+    // El dueño de este perfil (o el autor de alguno de sus posts, que acá
+    // siempre es él mismo) cambió su foto — reflejarlo sin recargar.
+    socket.on("user:avatar", ({ userId, imagen }) => {
+      setPerfil(prev => {
+        if (!prev || Number(prev.user?.id) !== Number(userId)) return prev;
+        return {
+          ...prev,
+          user: { ...prev.user, imagen },
+          posts: (prev.posts || []).map(p =>
+            p.autor ? { ...p, autor: { ...p.autor, imagen } } : p
+          ),
+        };
+      });
+    });
     return () => socket.disconnect();
   }, [session?.user?.dbId]);
 

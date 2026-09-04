@@ -8,8 +8,15 @@
 //     de paso, registra la visita (tabla profile_visits) y le avisa por
 //     socket en vivo al dueño ("alguien visitó tu perfil").
 //   - updatePerfil(): editar bio, intereses, links, etc.
+//   - getAvatar(): solo tu propio avatar (sin el resto del perfil) — para
+//     pantallas que solo necesitan mostrar "tu ícono" (composer del muro,
+//     chat), sin pedir stats/posts/fotos de más.
 //   - updateAvatar() / deleteAvatar(): sube (valida + comprime con Sharp a
-//     WebP) o borra la foto de perfil.
+//     WebP, con fit:'contain' — reescala la foto ENTERA adentro del cuadrado
+//     en vez de recortarla, como Facebook/Instagram) o borra la foto de
+//     perfil. Ambas avisan en vivo por socket (`user:avatar`) a todo el
+//     mundo — feed, perfiles públicos y chats abiertos actualizan el ícono
+//     sin recargar la página.
 //   - uploadPhotos() / deletePhoto(): la galería de fotos (hasta 10 por vez).
 //
 // PARA QUÉ SIRVE:
@@ -22,7 +29,9 @@
 //     consulta SQL escrita a mano en este archivo (se sacó el 2026-09-04).
 //   - upload/upload.security.js → verificarMagicBytes antes de aceptar
 //     cualquier imagen (avatar o foto de galería).
-//   - req.io + req.onlineUsers → el aviso en vivo de "visita a tu perfil".
+//   - req.io + req.onlineUsers → el aviso en vivo de "visita a tu perfil" Y
+//     el de "cambié mi avatar" (`user:avatar`, escuchado por
+//     hooks/useFeedPosts.js, usePublicProfile.js y useChat.js).
 //   - Frontend: hooks/useOwnProfile.js y hooks/usePublicProfile.js.
 // ════════════════════════════════════════════════════════════════════════
 const fs     = require('fs');
@@ -41,6 +50,21 @@ const getFotos = (userId) =>
     take:    6,
     select:  { id: true, photoUrl: true, uploadedAt: true },
   }).then(rows => rows.map(r => ({ id: r.id, url: r.photoUrl, uploadedAt: r.uploadedAt })));
+
+// Posts del perfil (propio o público): siempre con el autor incluido —
+// como acá el autor es SIEMPRE el dueño del perfil, esto evita el bug de
+// tarjetas de post sin avatar (PostCard.js pinta `post.autor?.imagen`, que
+// sin este include quedaba undefined).
+const getPostsConAutor = (userId, privacidadFiltro) =>
+  prisma.posts.findMany({
+    where:   privacidadFiltro ? { autorId: userId, privacidad: privacidadFiltro } : { autorId: userId },
+    orderBy: { creadoEn: 'desc' },
+    take:    5,
+    select: {
+      id: true, titulo: true, contenido: true, imagen: true, creadoEn: true, totalVistas: true,
+      users: { select: { id: true, username: true, nombre: true, imagen: true } },
+    },
+  }).then(rows => rows.map(({ users, ...p }) => ({ ...p, autor: users })));
 
 // GET /api/perfil — perfil propio
 const getPerfil = async (req, res) => {
@@ -65,12 +89,7 @@ const getPerfil = async (req, res) => {
       visitas = await prisma.profile_visits.count({ where: { perfilId: userId } });
     } catch (e) { console.error('[VISITAS] error:', e.message); }
 
-    const posts = await prisma.posts.findMany({
-      where:   { autorId: userId },
-      orderBy: { creadoEn:'desc' },
-      take:    5,
-      select:  { id:true, titulo:true, contenido:true, imagen:true, creadoEn:true, totalVistas:true }
-    });
+    const posts = await getPostsConAutor(userId);
 
     let photos = [];
     try {
@@ -108,12 +127,7 @@ const getPerfilPublico = async (req, res) => {
     });
     const vlogs = await prisma.posts.count({ where:{ autorId:profileUserId } });
 
-    const posts = await prisma.posts.findMany({
-      where:   { autorId:profileUserId, privacidad:'PUBLICA' },
-      orderBy: { creadoEn:'desc' },
-      take:    5,
-      select:  { id:true, titulo:true, contenido:true, imagen:true, creadoEn:true, totalVistas:true }
-    });
+    const posts = await getPostsConAutor(profileUserId, 'PUBLICA');
 
     let visitas = 0;
     try {
@@ -156,6 +170,19 @@ const updatePerfil = async (req, res) => {
   }
 };
 
+// GET /api/perfil/avatar — solo tu propio avatar (liviano: sin stats/posts/
+// fotos), para pantallas que necesitan mostrar "tu icono" sin cargar todo
+// el perfil (composer del muro, chat).
+const getAvatar = async (req, res) => {
+  try {
+    const user = await prisma.users.findUnique({ where:{ id:req.userId }, select:{ imagen:true } });
+    res.json({ imagen: user?.imagen || null });
+  } catch (err) {
+    console.error('getAvatar error:', err.message);
+    res.status(500).json({ error:'Error al obtener avatar' });
+  }
+};
+
 // PUT /api/perfil/avatar
 const updateAvatar = async (req, res) => {
   if (!req.file) return res.status(400).json({ error:'No se recibió archivo' });
@@ -176,10 +203,18 @@ const updateAvatar = async (req, res) => {
     const hash    = crypto.randomBytes(16).toString('hex');
     const outName = `avatar_${req.userId}_${hash}.webp`;
     const outPath = path.join('uploads/imagenes', outName);
-    await sharp(tmpPath).rotate().resize(400,400,{ fit:'cover' }).webp({ quality:85 }).toFile(outPath);
+    // fit:'contain' (no 'cover'): reescala la foto entera adentro del cuadrado
+    // en vez de recortarla — así el ícono siempre muestra la foto completa
+    // (como Facebook/Instagram), sin cortar cabezas ni bordes por el crop
+    // centrado a ciegas. El relleno usa el mismo gris casi-negro que el
+    // placeholder de AvatarMenu.js, así no se nota como "barras".
+    await sharp(tmpPath).rotate().resize(400,400,{ fit:'contain', background:{ r:10,g:10,b:10,alpha:1 } }).webp({ quality:85 }).toFile(outPath);
     fs.unlinkSync(tmpPath);
     const url = `/uploads/imagenes/${outName}`;
     await prisma.users.update({ where:{ id:req.userId }, data:{ imagen:url } });
+    // Avisar en vivo a todo el mundo (feed abierto, tu perfil visto por
+    // otros, chats) para que actualicen tu ícono sin recargar la página.
+    req.io?.emit('user:avatar', { userId: req.userId, imagen: url });
     res.json({ ok:true, url });
   } catch (err) {
     if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
@@ -210,6 +245,7 @@ const deleteAvatar = async (req, res) => {
       data: { imagen: null }
     });
 
+    req.io?.emit('user:avatar', { userId: req.userId, imagen: null });
     res.json({ ok: true });
   } catch (err) {
     console.error('deleteAvatar error:', err.message);
@@ -312,6 +348,7 @@ module.exports = {
   getPerfil,
   getPerfilPublico,
   updatePerfil,
+  getAvatar,
   updateAvatar,
   deleteAvatar,
   uploadPhotos,

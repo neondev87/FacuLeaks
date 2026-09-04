@@ -45,8 +45,8 @@ const getConversaciones = async (req, res) => {
         OR: [{ solicitanteId: userId }, { receptorId: userId }]
       },
       include: {
-        users_amistades_solicitanteIdTousers: { select: { id: true, username: true, nombre: true } },
-        users_amistades_receptorIdTousers:    { select: { id: true, username: true, nombre: true } },
+        users_amistades_solicitanteIdTousers: { select: { id: true, username: true, nombre: true, imagen: true } },
+        users_amistades_receptorIdTousers:    { select: { id: true, username: true, nombre: true, imagen: true } },
       }
     });
 
@@ -58,13 +58,16 @@ const getConversaciones = async (req, res) => {
       nombre: a.solicitanteId === userId
         ? a.users_amistades_receptorIdTousers.nombre
         : a.users_amistades_solicitanteIdTousers.nombre,
+      imagen: a.solicitanteId === userId
+        ? a.users_amistades_receptorIdTousers.imagen
+        : a.users_amistades_solicitanteIdTousers.imagen,
     }));
 
     const mensajes = await prisma.messages.findMany({
       where: { OR: [{ emisorId: userId }, { receptorId: userId }] },
       include: {
-        users_messages_emisorIdTousers:   { select: { id: true, username: true } },
-        users_messages_receptorIdTousers: { select: { id: true, username: true } },
+        users_messages_emisorIdTousers:   { select: { id: true, username: true, imagen: true } },
+        users_messages_receptorIdTousers: { select: { id: true, username: true, imagen: true } },
       },
       orderBy: { creadoEn: 'desc' },
     });
@@ -79,6 +82,7 @@ const getConversaciones = async (req, res) => {
         convMap.set(otherId, {
           userId:   otherId,
           username: otherUser?.username || 'unknown',
+          imagen:   otherUser?.imagen || null,
           lastMsg:  msg.tipo === 'audio' ? '🎤 Audio' : msg.tipo === 'imagen' ? '📷 Imagen' : msg.contenido,
           lastTime: msg.creadoEn,
           unread:   msg.receptorId === userId && !msg.leido ? 1 : 0,
@@ -109,7 +113,7 @@ const getMensajes = async (req, res) => {
         ]
       },
       include: {
-        users_messages_emisorIdTousers: { select: { id: true, username: true } }
+        users_messages_emisorIdTousers: { select: { id: true, username: true, imagen: true } }
       },
       orderBy: { creadoEn: 'asc' },
     });
@@ -121,7 +125,7 @@ const getMensajes = async (req, res) => {
 
     const otherUser = await prisma.users.findUnique({
       where:  { id: otherUserId },
-      select: { id: true, username: true }
+      select: { id: true, username: true, imagen: true }
     });
 
     res.json({ mensajes: mensajesNorm, otherUser });
@@ -158,7 +162,7 @@ const sendAudio = async (req, res) => {
         audioUrl,
       },
       include: {
-        users_messages_emisorIdTousers: { select: { id: true, username: true } }
+        users_messages_emisorIdTousers: { select: { id: true, username: true, imagen: true } }
       }
     });
 
@@ -225,7 +229,7 @@ const sendImagen = async (req, res) => {
         imageUrl,
       },
       include: {
-        users_messages_emisorIdTousers: { select: { id: true, username: true } }
+        users_messages_emisorIdTousers: { select: { id: true, username: true, imagen: true } }
       }
     });
 

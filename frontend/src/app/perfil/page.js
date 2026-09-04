@@ -114,7 +114,13 @@ export default function ProfilePage() {
               currentAvatar={user.imagen}
               canEdit={true}
               onAvatarChange={(url) => {
-                setPerfil(p => ({ ...p, user: { ...p.user, imagen: url } }));
+                setPerfil(p => ({
+                  ...p,
+                  user: { ...p.user, imagen: url },
+                  posts: (p.posts || []).map(post =>
+                    post.autor ? { ...post, autor: { ...post.autor, imagen: url } } : post
+                  ),
+                }));
               }}
             />
 

@@ -33,9 +33,10 @@ let feedSocket = null;
 // (post:new / post:deleted / post:react / post:comment) + refresco periódico de
 // TRENDING + contador de posts nuevos.
 export default function useFeedPosts({ activeTab, status, session }) {
-  const [posts,    setPosts]    = useState([]);
-  const [loading,  setLoading]  = useState(false);
-  const [newCount, setNewCount] = useState(0);
+  const [posts,     setPosts]     = useState([]);
+  const [loading,   setLoading]   = useState(false);
+  const [newCount,  setNewCount]  = useState(0);
+  const [ownImagen, setOwnImagen] = useState(null);
 
   const activeTabRef  = useRef(activeTab);
   const trendingTimer = useRef(null);
@@ -69,10 +70,32 @@ export default function useFeedPosts({ activeTab, status, session }) {
     if (status === "authenticated") loadPosts(activeTab);
   }, [activeTab, status, loadPosts]);
 
+  // Tu propio avatar (para el "◈" del composer) — endpoint liviano dedicado,
+  // no el /api/perfil completo (que trae stats/posts/fotos de más).
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    (async () => {
+      try {
+        const res  = await fetch(`${API}/api/perfil/avatar`, { credentials: "include" });
+        if (!res.ok) return;
+        const data = await res.json();
+        setOwnImagen(data.imagen || null);
+      } catch {}
+    })();
+  }, [status]);
+
   useEffect(() => {
     if (status !== "authenticated" || !session?.user?.dbId) return;
     feedSocket = io(API);
     feedSocket.emit("user:connect", session.user.dbId);
+    // Alguien (vos u otro usuario cuyos posts están en el feed) cambió su
+    // foto de perfil — actualizar en vivo sin recargar.
+    feedSocket.on("user:avatar", ({ userId, imagen }) => {
+      if (String(userId) === String(session.user.dbId)) setOwnImagen(imagen);
+      setPosts(prev => prev.map(p =>
+        Number(p.autor?.id) === Number(userId) ? { ...p, autor: { ...p.autor, imagen } } : p
+      ));
+    });
     feedSocket.on("post:new", (post) => {
       const tab = activeTabRef.current;
       if (tab === "RECIENTES" && post.privacidad === "PUBLICA") {
@@ -149,5 +172,5 @@ export default function useFeedPosts({ activeTab, status, session }) {
     }
   }, [loadPosts]);
 
-  return { posts, loading, newCount, resetNewCount, removePost, toggleReaction };
+  return { posts, loading, newCount, resetNewCount, removePost, toggleReaction, ownImagen };
 }

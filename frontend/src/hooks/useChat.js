@@ -17,11 +17,14 @@
 //
 // CON QUÉ SE CONECTA:
 //   - backend: GET /api/chat/conversaciones, GET /api/chat/:userId,
-//     DELETE /api/chat/mensaje/:id, y el streak (si existe el endpoint).
+//     DELETE /api/chat/mensaje/:id, GET /api/perfil/avatar (tu propio
+//     ícono), y el streak (si existe el endpoint).
 //   - Socket.io: message:send/receive/sent/error, messages:read,
 //     typing:start/stop, audio:start/stop, message:receive:audio,
 //     message:receive:image, message:deleted — todo esto lo maneja
-//     backend/src/modules/chat/chat.socket.js del otro lado.
+//     backend/src/modules/chat/chat.socket.js del otro lado. También
+//     escucha user:avatar (emitido desde perfil.controller.js) para
+//     actualizar ícono propio/ajeno sin recargar la página.
 //   - Lo consume: app/chat/page.js, que le pasa el socket (`socketRef`) y
 //     `addMensaje` a useAudioRecorder y useChatImage para que ellos también
 //     puedan agregar mensajes a la lista.
@@ -41,6 +44,7 @@ export default function useChat({ session, status, inputRef }) {
   const [isTyping,    setIsTyping]    = useState(false);
   const [isAudio,     setIsAudio]     = useState(false);
   const [streak,      setStreak]      = useState({ count:0, dying:false, progress:1.0, loaded:false });
+  const [ownImagen,   setOwnImagen]   = useState(null);
 
   const socketRef   = useRef(null);
   const typingTimer = useRef(null);
@@ -80,12 +84,33 @@ export default function useChat({ session, status, inputRef }) {
     if (status === "authenticated") loadConversaciones();
   }, [status, loadConversaciones]);
 
+  // Tu propio avatar (para la burbuja "◎" de tus mensajes) — endpoint liviano.
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    (async () => {
+      try {
+        const res  = await fetch(`${API}/api/perfil/avatar`, { credentials:"include" });
+        if (!res.ok) return;
+        const data = await res.json();
+        setOwnImagen(data.imagen || null);
+      } catch {}
+    })();
+  }, [status]);
+
   useEffect(() => {
     if (status !== "authenticated" || !session?.user?.dbId) return;
     const socket = io(API);
     socketRef.current = socket;
     socket.emit("user:connect", session.user.dbId);
     socket.on("users:online",    users => setOnlineUsers(users));
+    // Alguien cambió su foto de perfil — reflejarlo en vivo en la lista de
+    // conversaciones, en la cabecera del chat activo, y en tu propio ícono.
+    socket.on("user:avatar", ({ userId, imagen }) => {
+      if (String(userId) === String(session.user.dbId)) { setOwnImagen(imagen); return; }
+      setRecientes(prev => prev.map(c => c.userId === userId ? { ...c, imagen } : c));
+      setAmigos(prev => prev.map(a => a.userId === userId ? { ...a, imagen } : a));
+      setActiveChat(prev => prev && prev.userId === userId ? { ...prev, imagen } : prev);
+    });
     socket.on("message:receive", msg   => { addMensaje(msg); loadConversaciones(); });
     socket.on("message:sent",    msg   => { addMensaje(msg); });
     socket.on("typing:start",    ({ userId }) => { setIsTyping(String(userId)); setIsAudio(false); });
@@ -102,7 +127,7 @@ export default function useChat({ session, status, inputRef }) {
 
   const openChat = async user => {
     setIsTyping(false); setIsAudio(false);
-    const chatUser = { userId: user.userId || user.id, username: user.username };
+    const chatUser = { userId: user.userId || user.id, username: user.username, imagen: user.imagen || null };
     setActiveChat(chatUser);
     setLoading(true); setMensajes([]); setReplyingTo(null);
     try {
@@ -175,5 +200,6 @@ export default function useChat({ session, status, inputRef }) {
     handleDeleteMsg,
     formatDate,
     socketRef, addMensaje,
+    ownImagen,
   };
 }

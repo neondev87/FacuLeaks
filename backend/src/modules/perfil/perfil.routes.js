@@ -17,6 +17,7 @@ const {
   getPerfil,
   getPerfilPublico,
   updatePerfil,
+  getAvatar,
   updateAvatar,
   deleteAvatar,
   uploadPhotos,
@@ -34,8 +35,9 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB por archivo
 });
 
-// Rutas
+// Rutas — /avatar va ANTES de /:userId, si no Express toma "avatar" como un userId
 router.get('/',              authMiddleware, getPerfil);
+router.get('/avatar',        authMiddleware, getAvatar);
 router.get('/:userId',       authMiddleware, getPerfilPublico);
 router.put('/',              authMiddleware, updatePerfil);
 router.put('/avatar',        authMiddleware, upload.single('file'), updateAvatar);

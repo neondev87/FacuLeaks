@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { avatarSrc } from "@/lib/api";
 import Navbar from "@/components/Navbar";
 import BgCross from "@/components/BgCross";
 import useInjectedStyles from "@/hooks/useInjectedStyles";
@@ -86,9 +87,14 @@ export default function ChatPage() {
                 <div style={{ marginTop:4, border:"1px solid rgba(255,255,255,.08)", maxHeight:150, overflowY:"auto", background:"#0a0a0a" }}>
                   {search.resultados.map(u => (
                     <div key={u.id} className="resultado-item" onClick={() => handleOpenChat(u)}>
-                      <div>
-                        <div style={{ fontSize:11, color:"#fff", fontFamily:"'IBM Plex Sans',sans-serif" }}>@{u.username}</div>
-                        <div style={{ fontSize:9, color:"rgba(255,255,255,.35)", fontFamily:"'IBM Plex Mono',monospace" }}>{u.nombre}</div>
+                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                        <div className="avatar-sm" style={avatarSrc(u.imagen) ? { backgroundImage:`url(${avatarSrc(u.imagen)})`, backgroundSize:"cover", backgroundPosition:"center" } : undefined}>
+                          {!avatarSrc(u.imagen) && "◈"}
+                        </div>
+                        <div>
+                          <div style={{ fontSize:11, color:"#fff", fontFamily:"'IBM Plex Sans',sans-serif" }}>@{u.username}</div>
+                          <div style={{ fontSize:9, color:"rgba(255,255,255,.35)", fontFamily:"'IBM Plex Mono',monospace" }}>{u.nombre}</div>
+                        </div>
                       </div>
                       <span style={{ fontSize:11, color:"rgba(255,255,255,.25)" }}>→</span>
                     </div>
@@ -108,7 +114,9 @@ export default function ChatPage() {
                 <div style={{ fontSize:8, letterSpacing:".2em", color:"rgba(255,255,255,.22)", padding:"8px 15px 3px", fontFamily:"'IBM Plex Mono',monospace" }}>RECIENTES</div>
                 {chat.recientes.map(c => (
                   <div key={c.userId} className={`conv-item${chat.isActive(c.userId) ? " active" : ""}`} onClick={() => handleOpenChat(c)}>
-                    <div className="avatar">◈<div className="status-dot" style={{ background: chat.isOnline(c.userId) ? "#3ddc84" : "#2a2a2a" }} /></div>
+                    <div className="avatar" style={avatarSrc(c.imagen) ? { backgroundImage:`url(${avatarSrc(c.imagen)})`, backgroundSize:"cover", backgroundPosition:"center" } : undefined}>
+                      {!avatarSrc(c.imagen) && "◈"}<div className="status-dot" style={{ background: chat.isOnline(c.userId) ? "#3ddc84" : "#2a2a2a" }} />
+                    </div>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
                         <span style={{ fontSize:10, fontFamily:"'IBM Plex Sans',sans-serif", color: chat.isActive(c.userId) ? "#fff" : "rgba(255,255,255,.65)" }}>{c.username}</span>
@@ -125,7 +133,9 @@ export default function ChatPage() {
                 <div style={{ fontSize:8, letterSpacing:".2em", color:"rgba(255,255,255,.22)", padding:"8px 15px 3px", marginTop: chat.recientes.length > 0 ? 4 : 0, fontFamily:"'IBM Plex Mono',monospace" }}>AMIGOS</div>
                 {chat.amigos.map(a => (
                   <div key={a.userId} className={`conv-item${chat.isActive(a.userId) ? " active" : ""}`} onClick={() => handleOpenChat(a)}>
-                    <div className="avatar">◈<div className="status-dot" style={{ background: chat.isOnline(a.userId) ? "#3ddc84" : "#2a2a2a" }} /></div>
+                    <div className="avatar" style={avatarSrc(a.imagen) ? { backgroundImage:`url(${avatarSrc(a.imagen)})`, backgroundSize:"cover", backgroundPosition:"center" } : undefined}>
+                      {!avatarSrc(a.imagen) && "◈"}<div className="status-dot" style={{ background: chat.isOnline(a.userId) ? "#3ddc84" : "#2a2a2a" }} />
+                    </div>
                     <div style={{ flex:1, minWidth:0 }}>
                       <span style={{ fontSize:10, fontFamily:"'IBM Plex Sans',sans-serif", color: chat.isActive(a.userId) ? "#fff" : "rgba(255,255,255,.65)" }}>{a.username}</span>
                     </div>
@@ -154,8 +164,8 @@ export default function ChatPage() {
           <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, background:"#000" }}>
 
             <div style={{ padding:"12px 22px", background:"#000", borderBottom:"1px solid rgba(255,255,255,.07)", display:"flex", alignItems:"center", gap:14 }}>
-              <div className="avatar" style={{ width:36, height:36 }}>
-                ◈<div className="status-dot-hdr" style={{ background: chat.isOnline(activeChat.userId) ? "#3ddc84" : "#2a2a2a" }} />
+              <div className="avatar" style={{ width:36, height:36, ...(avatarSrc(activeChat.imagen) ? { backgroundImage:`url(${avatarSrc(activeChat.imagen)})`, backgroundSize:"cover", backgroundPosition:"center" } : {}) }}>
+                {!avatarSrc(activeChat.imagen) && "◈"}<div className="status-dot-hdr" style={{ background: chat.isOnline(activeChat.userId) ? "#3ddc84" : "#2a2a2a" }} />
               </div>
               <div style={{ flex:1 }}>
                 <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:17, color:"#fff", lineHeight:1 }}>{activeChat.username}</div>
@@ -186,7 +196,11 @@ export default function ChatPage() {
                       {showDate && <div className="date-pill"><span>{chat.formatDate(msg.creadoEn)}</span></div>}
                       <div style={{ display:"flex", gap:8, flexDirection: esPropio ? "row-reverse" : "row", alignItems:"flex-end" }}>
                         <div style={{ width:30, flexShrink:0 }}>
-                          {!prevSame ? <div className="avatar-sm">{esPropio ? "◎" : "◈"}</div> : <div style={{ width:30 }} />}
+                          {!prevSame ? (
+                            <div className="avatar-sm" style={avatarSrc(esPropio ? chat.ownImagen : activeChat.imagen) ? { backgroundImage:`url(${avatarSrc(esPropio ? chat.ownImagen : activeChat.imagen)})`, backgroundSize:"cover", backgroundPosition:"center" } : undefined}>
+                              {!avatarSrc(esPropio ? chat.ownImagen : activeChat.imagen) && (esPropio ? "◎" : "◈")}
+                            </div>
+                          ) : <div style={{ width:30 }} />}
                         </div>
                         <div style={{ display:"flex", flexDirection:"column", alignItems: esPropio ? "flex-end" : "flex-start", maxWidth: msg.tipo === "audio" ? "620px" : "60%" }}>
                           {!prevSame && (

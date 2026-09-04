@@ -45,7 +45,7 @@ function registerChatSocketHandlers(io, socket, onlineUsers) {
           ...(replyToId ? { replyToId: parseInt(replyToId) } : {}),
         },
         include: {
-          users_messages_emisorIdTousers: { select: { id: true, username: true } },
+          users_messages_emisorIdTousers: { select: { id: true, username: true, imagen: true } },
         },
       });
 
