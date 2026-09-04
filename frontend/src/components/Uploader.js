@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { API } from "@/lib/api";
 
 const TIPOS = {
   imagen:    { accept: "image/jpeg,image/png,image/webp,image/gif", label: "imagen", icono: "◈" },
@@ -46,7 +47,7 @@ export default function Uploader({
     const form = new FormData();
     form.append("file", file);
     try {
-      const res  = await fetch(`http://localhost:4000/api/upload/${tipo}`, {
+      const res  = await fetch(`${API}/api/upload/${tipo}`, {
         method: "POST", body: form, credentials: "include"
       });
       const data = await res.json();
@@ -74,7 +75,7 @@ export default function Uploader({
       {estado === "ok" && tipo === "imagen" && preview ? (
         <div style={{ position:"relative", display:"inline-block" }}>
           <img
-            src={`http://localhost:4000${preview}`}
+            src={`${API}${preview}`}
             alt="preview"
             style={{ width: compact ? 48 : 120, height: compact ? 48 : 120, objectFit:"cover", borderRadius: compact ? "50%" : 3, border:"1px solid rgba(255,255,255,.12)" }}
           />

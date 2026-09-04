@@ -1,5 +1,6 @@
 import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
+import { API_INTERNAL } from "@/lib/api";
 
 // GET /api/auth/sync-backend?callbackUrl=/perfil
 // Llama al backend server-to-server (sin CORS), obtiene la cookie JWT
@@ -24,7 +25,7 @@ export async function GET(req) {
   const response = NextResponse.redirect(destination);
 
   try {
-    const backendRes = await fetch("http://localhost:4000/api/auth/login", {
+    const backendRes = await fetch(`${API_INTERNAL}/api/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

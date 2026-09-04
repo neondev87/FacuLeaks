@@ -1,7 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
-
-const API = "http://localhost:4000";
+import usePostComments from '@/hooks/usePostComments';
+import { API } from '@/lib/api';
 
 // ── Pixel Trash (ícono de basura pixel art) ──
 const TRASH_LID_C = [[0,0,1,1,1,0,0],[0,1,1,1,1,1,0],[0,0,1,1,1,0,0]];
@@ -57,26 +57,11 @@ function TrashBtn({ onDelete, s = 2 }) {
 export default function PostCard({ post, currentUser, canDelete = false, onDelete, onImageClick }) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
-  const [comments, setComments] = useState([]); // TODO: cargar del backend
+  const { comments, add, remove } = usePostComments(post.id, showComments);
 
   const handleComment = async () => {
-    if (!commentText.trim()) return;
-    
-    // TODO: Enviar al backend POST /api/posts/:postId/comments
-    console.log('Comentario:', commentText);
-    
-    // Placeholder: agregar localmente
-    const newComment = {
-      id: Date.now(),
-      userId: currentUser.id,
-      username: currentUser.username,
-      avatar: currentUser.imagen,
-      contenido: commentText,
-      creadoEn: new Date().toISOString()
-    };
-    
-    setComments([...comments, newComment]);
-    setCommentText("");
+    const ok = await add(commentText);
+    if (ok) setCommentText("");
   };
 
   const formatDate = (dateString) => {
@@ -231,7 +216,7 @@ export default function PostCard({ post, currentUser, canDelete = false, onDelet
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
-          <span>{comments.length || 0} comentarios</span>
+          <span>{(showComments ? comments.length : (post.totalComentarios ?? comments.length)) || 0} comentarios</span>
         </button>
       </div>
 
@@ -247,7 +232,11 @@ export default function PostCard({ post, currentUser, canDelete = false, onDelet
               gap: 10,
               marginBottom: 12
             }}>
-              {comments.map(comment => (
+              {comments.map(comment => {
+                const autor = comment.autor || comment.users || {};
+                const avatar = autor.imagen;
+                const mine = currentUser?.id && autor.id === currentUser.id;
+                return (
                 <div key={comment.id} style={{
                   display: "flex",
                   gap: 8,
@@ -258,8 +247,8 @@ export default function PostCard({ post, currentUser, canDelete = false, onDelet
                     width: 32,
                     height: 32,
                     borderRadius: "50%",
-                    background: comment.avatar
-                      ? `url(${comment.avatar.startsWith('http') ? comment.avatar : `${API}${comment.avatar}`})`
+                    background: avatar
+                      ? `url(${avatar.startsWith('http') ? avatar : `${API}${avatar}`})`
                       : "rgba(255,255,255,.1)",
                     backgroundSize: "cover",
                     backgroundPosition: "center",
@@ -276,12 +265,27 @@ export default function PostCard({ post, currentUser, canDelete = false, onDelet
                       padding: "8px 12px"
                     }}>
                       <div style={{
-                        fontSize: 12,
-                        fontWeight: 500,
-                        color: "rgba(255,255,255,.8)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
                         marginBottom: 4
                       }}>
-                        {comment.username}
+                        <span style={{
+                          fontSize: 12,
+                          fontWeight: 500,
+                          color: "rgba(255,255,255,.8)"
+                        }}>
+                          {autor.username || "unknown"}
+                        </span>
+                        {mine && (
+                          <span
+                            onClick={() => remove(comment.id)}
+                            title="Eliminar comentario"
+                            style={{ marginLeft: "auto", fontSize: 11, color: "rgba(255,255,255,.25)", cursor: "pointer" }}
+                            onMouseEnter={e => e.currentTarget.style.color = "rgba(255,80,80,.8)"}
+                            onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,.25)"}
+                          >✕</span>
+                        )}
                       </div>
                       <div style={{
                         fontSize: 13,
@@ -301,7 +305,8 @@ export default function PostCard({ post, currentUser, canDelete = false, onDelet
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
 

@@ -3,8 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
-
-const API = "http://localhost:4000";
+import { API } from "@/lib/api";
 
 function SpotifyNavWidget({ userId }) {
   const [data,    setData]    = useState(null);

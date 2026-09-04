@@ -9,6 +9,7 @@ import useInjectedStyles from "@/hooks/useInjectedStyles";
 import useChat from "@/hooks/useChat";
 import useChatSearch from "@/hooks/useChatSearch";
 import useAudioRecorder from "@/hooks/useAudioRecorder";
+import useChatImage from "@/hooks/useChatImage";
 import { BARS } from "@/components/chat/constants";
 import StreakC from "@/components/chat/StreakC";
 import MicIcon from "@/components/chat/MicIcon";
@@ -30,6 +31,7 @@ export default function ChatPage() {
   const search = useChatSearch();
   const chat   = useChat({ session, status, inputRef });
   const rec    = useAudioRecorder({ activeChat: chat.activeChat, socketRef: chat.socketRef, onAudioSent: chat.addMensaje });
+  const img    = useChatImage({ activeChat: chat.activeChat, onImageSent: chat.addMensaje });
 
   useInjectedStyles("chat-styles", chatStyles);
 
@@ -218,10 +220,10 @@ export default function ChatPage() {
             )}
 
             <div style={{ padding:"10px 18px 14px", background:"#000", borderTop:"1px solid rgba(255,255,255,.07)", display:"flex", gap:5, alignItems:"center" }}>
-              <input ref={fileInputRef} type="file" accept="image/*,.pdf,.doc,.docx" style={{ display:"none" }}
-                onChange={e => console.log("archivo:", e.target.files?.[0]?.name)} />
+              <input ref={fileInputRef} type="file" accept="image/*" style={{ display:"none" }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) img.sendImage(f); e.target.value = ""; }} />
 
-              <IconBtn title="Adjuntar archivo" onClick={() => fileInputRef.current?.click()} disabled={!activeChat}>
+              <IconBtn title={img.sending ? "Enviando imagen..." : "Adjuntar imagen"} onClick={() => fileInputRef.current?.click()} disabled={!activeChat || img.sending}>
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                   <rect x="8.3" y="2" width="1.4" height="14" rx=".7" fill="rgba(255,255,255,.6)"/>
                   <rect x="2" y="8.3" width="14" height="1.4" rx=".7" fill="rgba(255,255,255,.6)"/>

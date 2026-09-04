@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import BgCross from "@/components/BgCross";
+import { API } from "@/lib/api";
 
 // ── AMIGOS PAGE ───────────────────────────────────────────────
 export default function AmigosPage() {
@@ -165,7 +166,7 @@ export default function AmigosPage() {
   const loadAmigos = useCallback(async () => {
     setLoading(true);
     try {
-      const res  = await fetch("http://localhost:4000/api/amigos", { credentials: "include" });
+      const res  = await fetch(`${API}/api/amigos`, { credentials: "include" });
       const data = await res.json();
       setAmigos(data.amigos     || []);
       setRecibidas(data.recibidas || []);
@@ -184,7 +185,7 @@ export default function AmigosPage() {
     const t = setTimeout(async () => {
       setBuscando(true);
       try {
-        const res  = await fetch(`http://localhost:4000/api/amigos/buscar?q=${busqueda}`, { credentials: "include" });
+        const res  = await fetch(`${API}/api/amigos/buscar?q=${busqueda}`, { credentials: "include" });
         const data = await res.json();
         setResultados(data.usuarios || []);
       } catch {}
@@ -195,23 +196,23 @@ export default function AmigosPage() {
 
   // ── Acciones ──
   const enviarSolicitud = async (userId) => {
-    await fetch(`http://localhost:4000/api/amigos/solicitud/${userId}`, { method: "POST", credentials: "include" });
+    await fetch(`${API}/api/amigos/solicitud/${userId}`, { method: "POST", credentials: "include" });
     setBusqueda("");
     loadAmigos();
   };
 
   const aceptar = async (amistadId) => {
-    await fetch(`http://localhost:4000/api/amigos/aceptar/${amistadId}`, { method: "PUT", credentials: "include" });
+    await fetch(`${API}/api/amigos/aceptar/${amistadId}`, { method: "PUT", credentials: "include" });
     loadAmigos();
   };
 
   const rechazar = async (amistadId) => {
-    await fetch(`http://localhost:4000/api/amigos/rechazar/${amistadId}`, { method: "PUT", credentials: "include" });
+    await fetch(`${API}/api/amigos/rechazar/${amistadId}`, { method: "PUT", credentials: "include" });
     loadAmigos();
   };
 
   const eliminar = async (amistadId) => {
-    await fetch(`http://localhost:4000/api/amigos/${amistadId}`, { method: "DELETE", credentials: "include" });
+    await fetch(`${API}/api/amigos/${amistadId}`, { method: "DELETE", credentials: "include" });
     loadAmigos();
   };
 

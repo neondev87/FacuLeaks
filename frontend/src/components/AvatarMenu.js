@@ -1,7 +1,6 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
-
-const API = "http://localhost:4000";
+import { API } from '@/lib/api';
 
 export default function AvatarMenu({ currentAvatar, canEdit = true, onAvatarChange, onViewClick }) {
   const [menuOpen, setMenuOpen] = useState(false);

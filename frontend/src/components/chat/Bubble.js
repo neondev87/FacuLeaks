@@ -2,17 +2,20 @@
 
 import { useState } from "react";
 import { API } from "@/lib/api";
+import Lightbox from "@/components/Lightbox";
 import MicIcon from "./MicIcon";
 import AudioPlayer from "./AudioPlayer";
 import AudioReplyPreview from "./AudioReplyPreview";
 
-// ── Burbuja de mensaje (texto o audio) ──
+// ── Burbuja de mensaje (texto, audio o imagen) ──
 // Por convención del proyecto se define FUERA de ChatPage (acá, módulo propio).
 export default function Bubble({ msg, esPropio, replyMsg, onReply, onDelete }) {
   const [hov,      setHov]      = useState(false);
   const [delPhase, setDelPhase] = useState("idle");
+  const [lightbox, setLightbox] = useState(false);
   const formatTime = d => d ? new Date(d).toLocaleTimeString("es-MX", { hour:"2-digit", minute:"2-digit" }) : "";
   const isAudioMsg = msg.tipo === "audio" && msg.audioUrl;
+  const isImageMsg = msg.tipo === "imagen" && msg.imageUrl;
 
   const handleDelete = () => {
     setDelPhase("open");
@@ -52,7 +55,9 @@ export default function Bubble({ msg, esPropio, replyMsg, onReply, onDelete }) {
         </div>
       )}
 
-      <div className={esPropio ? "bubble-me" : "bubble-other"} style={ isAudioMsg ? { background: esPropio ? "#fff" : "#141414" } : {} }>
+      {lightbox && isImageMsg && <Lightbox src={msg.imageUrl} onClose={() => setLightbox(false)} />}
+
+      <div className={esPropio ? "bubble-me" : "bubble-other"} style={ isAudioMsg ? { background: esPropio ? "#fff" : "#141414" } : isImageMsg ? { background: "transparent", padding: 0 } : {} }>
         {replyMsg && (
           <div className={esPropio ? "reply-bar-me" : "reply-bar-other"}>
             <div style={{ width:2.5, borderRadius:2, background: esPropio ? "rgba(0,0,0,.22)" : "rgba(255,255,255,.28)", alignSelf:"stretch", flexShrink:0 }} />
@@ -79,6 +84,18 @@ export default function Bubble({ msg, esPropio, replyMsg, onReply, onDelete }) {
             </div>
             <AudioPlayer src={`${API}${msg.audioUrl}`} esPropio={esPropio} />
             <div className={esPropio ? "bubble-time-me" : "bubble-time-other"} style={{ alignSelf:"flex-end", marginTop:2 }}>
+              {formatTime(msg.creadoEn)}
+            </div>
+          </div>
+        ) : isImageMsg ? (
+          <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+            <img
+              src={`${API}${msg.imageUrl}`}
+              alt="imagen"
+              onClick={() => setLightbox(true)}
+              style={{ display:"block", maxWidth:280, maxHeight:320, width:"auto", objectFit:"cover", border:"1px solid rgba(255,255,255,.1)", cursor:"pointer" }}
+            />
+            <div className={esPropio ? "bubble-time-me" : "bubble-time-other"} style={{ alignSelf:"flex-end" }}>
               {formatTime(msg.creadoEn)}
             </div>
           </div>
