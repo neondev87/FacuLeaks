@@ -43,7 +43,7 @@ const mapPost = (p) => {
 };
 
 const feedInclude = (userId) => ({
-  users: { select: { id: true, username: true, nombre: true } },
+  users: { select: { id: true, username: true, nombre: true, imagen: true } },
   _count: { select: { comments: true } },
   post_likes: userId
     ? { where: { userId }, select: { tipo: true } }
@@ -54,7 +54,7 @@ const createPost = async (autorId, { titulo, contenido = "", privacidad = 'PUBLI
   const post = await prisma.posts.create({
     data: { autorId, titulo, contenido, privacidad, imagen },
     include: {
-      users: { select: { id: true, username: true, nombre: true } }
+      users: { select: { id: true, username: true, nombre: true, imagen: true } }
     }
   });
   return { ...post, autor: post.users };

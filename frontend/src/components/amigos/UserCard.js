@@ -1,5 +1,7 @@
 "use client";
 
+import { API } from "@/lib/api";
+
 // MÓDULO: components/amigos/UserCard.js
 // Fila de usuario reusada 4 veces en app/amigos/page.js (resultados de
 // búsqueda, solicitudes recibidas, enviadas, amigos) — solo cambian los
@@ -7,10 +9,19 @@
 // conexión a backend.
 export default function UserCard({ user, actions, accent = "#ffffff" }) {
   const ac = accent;
+  const avatarUrl = user.imagen
+    ? (user.imagen.startsWith("http") ? user.imagen : `${API}${user.imagen}`)
+    : null;
   return (
     <div className="user-card">
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ width: 32, height: 32, background: "#0a0a0a", border: `1px solid ${ac}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: `${ac}44`, flexShrink: 0 }}>◈</div>
+        <div style={{
+          width: 32, height: 32,
+          background: avatarUrl ? `url(${avatarUrl})` : "#0a0a0a",
+          backgroundSize: "cover", backgroundPosition: "center",
+          border: `1px solid ${ac}22`, display: "flex", alignItems: "center",
+          justifyContent: "center", fontSize: 10, color: `${ac}44`, flexShrink: 0,
+        }}>{!avatarUrl && "◈"}</div>
         <div>
           <div style={{ fontSize: 13, color: "#e8e4d9", letterSpacing: ".04em" }}>@{user.username}</div>
           <div style={{ fontSize: 11, color: "#555" }}>{user.nombre}</div>
