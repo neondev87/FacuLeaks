@@ -152,8 +152,7 @@ const deletePost = async (req, res) => {
 // ── B2 · Reacciones (LIKE / DISLIKE) ─────────────────────────────────────────
 // POST /api/posts/:id/react  body: { tipo: "LIKE" | "DISLIKE" }
 // Toggle: misma reacción => la quita; distinta => la cambia; ninguna => la crea.
-// Mantiene posts.totalLikes / posts.totalDislikes y user_stats.totalLikesRecibidos
-// del autor, y emite `post:react` con los totales.
+// Mantiene posts.totalLikes / posts.totalDislikes y emite `post:react`.
 const toggleReaction = async (req, res) => {
   const postId = parseInt(req.params.id);
   const userId = req.userId;
@@ -162,29 +161,24 @@ const toggleReaction = async (req, res) => {
   try {
     const post = await prisma.posts.findUnique({
       where: { id: postId },
-      select: { id: true, autorId: true },
+      select: { id: true },
     });
     if (!post) return res.status(404).json({ error: 'Post no encontrado' });
 
     const existing = await prisma.post_likes.findFirst({ where: { postId, userId } });
 
-    // delta de "likes" para las stats del autor
-    let likeDelta = 0;
     let myReaction;
 
     await prisma.$transaction(async (tx) => {
       if (!existing) {
         await tx.post_likes.create({ data: { postId, userId, tipo } });
         myReaction = tipo;
-        if (tipo === 'LIKE') likeDelta = 1;
       } else if (existing.tipo === tipo) {
         await tx.post_likes.delete({ where: { id: existing.id } });
         myReaction = null;
-        if (tipo === 'LIKE') likeDelta = -1;
       } else {
         await tx.post_likes.update({ where: { id: existing.id }, data: { tipo } });
         myReaction = tipo;
-        likeDelta = tipo === 'LIKE' ? 1 : -1;
       }
 
       const [likes, dislikes] = await Promise.all([
@@ -195,13 +189,6 @@ const toggleReaction = async (req, res) => {
         where: { id: postId },
         data: { totalLikes: likes, totalDislikes: dislikes },
       });
-
-      if (likeDelta !== 0) {
-        await tx.user_stats.updateMany({
-          where: { userId: post.autorId },
-          data:  { totalLikesRecibidos: { increment: likeDelta } },
-        });
-      }
     });
 
     const totals = await prisma.posts.findUnique({
