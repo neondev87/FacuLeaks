@@ -81,7 +81,7 @@ app.use('/api/spotify', spotifyRoutes);
 app.use('/api/perfil',  perfilRoutes);
 
 const onlineUsers = new Map();
-const prisma = require('./config/db');
+const { registerChatSocketHandlers } = require('./modules/chat/chat.socket');
 
 io.on('connection', (socket) => {
 
@@ -91,65 +91,9 @@ io.on('connection', (socket) => {
     io.emit('users:online', Array.from(onlineUsers.keys()));
   });
 
-  socket.on('audio:start', ({ receptorId }) => {
-    const receptorSocket = onlineUsers.get(String(receptorId));
-    if (receptorSocket) io.to(receptorSocket).emit('audio:start', { userId: socket.userId });
-  });
-
-  socket.on('audio:stop', ({ receptorId }) => {
-    const receptorSocket = onlineUsers.get(String(receptorId));
-    if (receptorSocket) io.to(receptorSocket).emit('audio:stop', { userId: socket.userId });
-  });
-
-  // ── message:send (único, con replyToId) ──
-  socket.on('message:send', async (data) => {
-    const { receptorId, contenido, emisorId, replyToId } = data;
-    try {
-      const msg = await prisma.messages.create({
-        data: {
-          emisorId:   parseInt(emisorId),
-          receptorId: parseInt(receptorId),
-          contenido,
-          ...(replyToId ? { replyToId: parseInt(replyToId) } : {}),
-        },
-        include: {
-          users_messages_emisorIdTousers: { select: { id: true, username: true } }
-        }
-      });
-
-      const msgNorm = { ...msg, emisor: msg.users_messages_emisorIdTousers };
-
-      const receptorSocket = onlineUsers.get(String(receptorId));
-      if (receptorSocket) io.to(receptorSocket).emit('message:receive', msgNorm);
-      socket.emit('message:sent', msgNorm);
-
-    } catch (err) {
-      console.error('Error enviando mensaje:', err.message);
-    }
-  });
-
-  socket.on('messages:read', async ({ emisorId, receptorId }) => {
-    try {
-      await prisma.messages.updateMany({
-        where: { emisorId: parseInt(emisorId), receptorId: parseInt(receptorId), leido: false },
-        data:  { leido: true, leidoEn: new Date() }
-      });
-      const emisorSocket = onlineUsers.get(String(emisorId));
-      if (emisorSocket) io.to(emisorSocket).emit('messages:read:confirm', { receptorId });
-    } catch (err) {
-      console.error('Error marcando leídos:', err.message);
-    }
-  });
-
-  socket.on('typing:start', ({ receptorId }) => {
-    const receptorSocket = onlineUsers.get(String(receptorId));
-    if (receptorSocket) io.to(receptorSocket).emit('typing:start', { userId: socket.userId });
-  });
-
-  socket.on('typing:stop', ({ receptorId }) => {
-    const receptorSocket = onlineUsers.get(String(receptorId));
-    if (receptorSocket) io.to(receptorSocket).emit('typing:stop', { userId: socket.userId });
-  });
+  // Todos los handlers del dominio chat (message:send, messages:read,
+  // typing/audio) viven en el módulo chat, no acá.
+  registerChatSocketHandlers(io, socket, onlineUsers);
 
   socket.on('disconnect', () => {
     if (socket.userId) {
