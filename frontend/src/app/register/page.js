@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { API } from "@/lib/api";
 
 const validateUsername = (v) => {
   if (v.length < 3)  return "mínimo 3 caracteres";
@@ -89,7 +90,7 @@ export default function RegisterPage() {
     const googleId = session?.user?.googleId || session?.user?.id;
     if (!googleId) { setChecking(false); return; }
 
-    fetch(`http://localhost:4000/api/auth/check/${googleId}`)
+    fetch(`${API}/api/auth/check/${googleId}`)
       .then(r => r.json())
       .then(data => {
         if (data.exists) {
@@ -194,7 +195,7 @@ export default function RegisterPage() {
 
     setTimeout(async () => {
       try {
-        const res = await fetch('http://localhost:4000/api/auth/register', {
+        const res = await fetch(`${API}/api/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',

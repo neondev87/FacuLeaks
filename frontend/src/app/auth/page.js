@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
-
-const API = "http://localhost:4000";
+import { API } from "@/lib/api";
 
 function GothicCross({ size = 54, opacity = 0.38, style = {} }) {
   return (

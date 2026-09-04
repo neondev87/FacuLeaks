@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-
-const API = "http://localhost:4000";
+import { API } from "@/lib/api";
 
 export default function SpotifyWidget({ userId, onConnect, onDisconnect }) {
   const [data,       setData]       = useState(null);

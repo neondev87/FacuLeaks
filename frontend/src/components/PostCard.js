@@ -1,8 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import usePostComments from '@/hooks/usePostComments';
-
-const API = "http://localhost:4000";
+import { API } from '@/lib/api';
 
 // ── Pixel Trash (ícono de basura pixel art) ──
 const TRASH_LID_C = [[0,0,1,1,1,0,0],[0,1,1,1,1,1,0],[0,0,1,1,1,0,0]];

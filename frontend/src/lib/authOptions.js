@@ -1,4 +1,5 @@
 import GoogleProvider from "next-auth/providers/google";
+import { API_INTERNAL } from "@/lib/api";
 
 export const authOptions = {
   providers: [
@@ -20,7 +21,7 @@ export const authOptions = {
         const googleId = profile.sub;
         token.googleId = googleId;
         try {
-          const res  = await fetch(`http://localhost:4000/api/auth/check/${googleId}`);
+          const res  = await fetch(`${API_INTERNAL}/api/auth/check/${googleId}`);
           const data = await res.json();
           token.dbId          = data.exists ? data.user.id    : null;
           token.imagen        = data.exists ? data.user.imagen : null;
@@ -34,7 +35,7 @@ export const authOptions = {
         const resolvedId = token.googleId || token.sub;
         if (!token.googleId) token.googleId = resolvedId;
         try {
-          const res  = await fetch(`http://localhost:4000/api/auth/check/${resolvedId}`);
+          const res  = await fetch(`${API_INTERNAL}/api/auth/check/${resolvedId}`);
           const data = await res.json();
           token.dbId          = data.exists ? data.user.id    : null;
           token.imagen        = data.exists ? data.user.imagen : null;
