@@ -1,11 +1,25 @@
 "use client";
 
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: hooks/usePublicProfile.js — perfil de OTRO usuario
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: pide el perfil por id al backend. Si resulta que el perfil que
+// estás mirando es el TUYO, te manda solo a /perfil (el perfil propio tiene
+// su propia página con edición, este solo muestra). También escucha en vivo
+// el evento de "alguien visitó este perfil" para actualizar el contador de
+// visitas sin recargar la página.
+//
+// PARA QUÉ SIRVE: es el hook de app/perfil/[id]/page.js.
+//
+// CON QUÉ SE CONECTA:
+//   - backend: GET /api/perfil/:userId (vía el rewrite /api/perfil/* de
+//     next.config.js, no llamando directo al puerto 4000).
+//   - Socket.io: profile:visit (lo emite perfil.controller.js del backend).
+//   - Lo consume: app/perfil/[id]/page.js.
+// ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect } from "react";
 import { io } from "socket.io-client";
 import { API } from "@/lib/api";
-
-// Estado y carga del perfil público (/perfil/[id]): fetch por id, redirect a
-// /perfil si es el propio, y refresco de "visitas" por socket.
 export default function usePublicProfile({ userId, status, session, router }) {
   const [perfil,      setPerfil]      = useState(null);
   const [loading,     setLoading]     = useState(true);

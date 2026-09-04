@@ -1,11 +1,26 @@
 "use client";
 
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: hooks/useOwnProfile.js — TU perfil (edición incluida)
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: carga tu perfil completo, guarda cambios (bio, intereses,
+// links...), borra tus posts, y muestra un "toast" (mensajito temporal) al
+// guardar. Tiene una recuperación automática importante: si el backend
+// responde 401 (cookie de sesión vencida o perdida, por ejemplo porque el
+// backend se reinició), en vez de mostrar error redirige solo a
+// /api/auth/sync-backend para conseguir una cookie nueva y vuelve a esta
+// misma página — el usuario ni se entera.
+//
+// PARA QUÉ SIRVE: es el hook de app/perfil/page.js (el perfil PROPIO, no
+// el público — ese usa usePublicProfile).
+//
+// CON QUÉ SE CONECTA:
+//   - backend: GET/PUT /api/perfil, DELETE /api/posts/:id.
+//   - app/api/auth/sync-backend/route.js → a donde redirige si hay 401.
+//   - Lo consume: app/perfil/page.js.
+// ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect } from "react";
 import { API } from "@/lib/api";
-
-// Estado y acciones del perfil propio (/perfil): carga, guardado del modal,
-// borrado de posts y toast. Incluye la recuperación de sesión de Fase 1
-// (401 -> /api/auth/sync-backend). Sin cambios de comportamiento.
 export default function useOwnProfile({ status, session }) {
   const [perfil,      setPerfil]      = useState(null);
   const [loading,     setLoading]     = useState(true);

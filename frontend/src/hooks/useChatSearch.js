@@ -1,9 +1,19 @@
 "use client";
 
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: hooks/useChatSearch.js — buscador de usuarios del chat
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: el buscador que aparece al tocar "+ nueva conversación". Espera
+// 400ms sin que sigas tipeando (debounce) antes de preguntarle al backend,
+// para no mandar una petición por cada letra.
+//
+// CON QUÉ SE CONECTA:
+//   - backend: GET /api/amigos/buscar?q=... (reutiliza el buscador de
+//     amigos, no es un endpoint propio del chat).
+//   - Lo consume: app/chat/page.js.
+// ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect } from "react";
 import { API } from "@/lib/api";
-
-// Búsqueda de usuarios para iniciar conversación (con debounce de 400ms).
 export default function useChatSearch() {
   const [showBuscar, setShowBuscar] = useState(false);
   const [busqueda,   setBusqueda]   = useState("");

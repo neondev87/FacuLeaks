@@ -1,11 +1,26 @@
 "use client";
 
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: hooks/useChatImage.js — mandar una imagen por chat
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: recibe el archivo elegido por el usuario, lo valida en el
+// cliente (que sea imagen, que pese menos de 10MB — un primer filtro rápido,
+// la validación de verdad la hace el backend con magic bytes), lo manda por
+// HTTP normal (no por socket, porque es un archivo) y, cuando el backend
+// contesta con el mensaje ya creado, lo agrega a la conversación.
+//
+// PARA QUÉ SIRVE: es el mismo patrón que useAudioRecorder pero para
+// imágenes — se separó en su propio hook chico en vez de meterlo dentro de
+// useChat.js para mantener cada cosa en su lugar.
+//
+// CON QUÉ SE CONECTA:
+//   - backend: POST /api/chat/imagen/:receptorId (chat.controller.js —
+//     ahí sí se valida en serio con magic bytes + se comprime con Sharp).
+//   - Lo consume: app/chat/page.js, pasándole `onImageSent: chat.addMensaje`
+//     (la función de useChat.js) para que la imagen aparezca al toque.
+// ════════════════════════════════════════════════════════════════════════
 import { useState } from "react";
 import { API } from "@/lib/api";
-
-// B4 · Envío de imágenes por chat. Sube a POST /api/chat/imagen/:id (multer +
-// magic bytes + Sharp→webp en el backend) y notifica el mensaje creado por
-// onImageSent, igual que useAudioRecorder con el audio.
 export default function useChatImage({ activeChat, onImageSent }) {
   const [sending, setSending] = useState(false);
   const [error,   setError]   = useState("");

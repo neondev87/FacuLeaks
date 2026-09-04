@@ -1,5 +1,28 @@
 "use client";
 
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: hooks/useFeedPosts.js — cerebro del feed (muro)
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE:
+//   - Carga los posts según la pestaña activa (RECIENTES/TRENDING/SIGUIENDO).
+//   - Abre UN socket compartido para todo el feed y escucha en vivo:
+//     post:new, post:deleted, post:react (cuenta de likes/dislikes de
+//     CUALQUIER usuario) y post:comment (contador de comentarios).
+//   - toggleReaction(): cuando VOS reaccionás a un post, actualiza el
+//     número al toque en pantalla ("optimista", sin esperar al servidor) y
+//     después confirma con la respuesta real — si algo falla, recarga para
+//     no quedar con un número mentiroso.
+//
+// PARA QUÉ SIRVE: es el hook que usa app/feed/page.js para no tener toda
+// esta lógica mezclada con el JSX de la página.
+//
+// CON QUÉ SE CONECTA:
+//   - backend: GET /api/posts/feed/{recientes,trending,siguiendo},
+//     POST /api/posts/:id/react (posts.controller.js).
+//   - Socket.io: eventos emitidos desde posts.controller.js en el backend.
+//   - Lo consume: app/feed/page.js, que pasa `toggleReaction` a
+//     components/feed/PostCard.js.
+// ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback, useRef } from "react";
 import { io } from "socket.io-client";
 import { API } from "@/lib/api";

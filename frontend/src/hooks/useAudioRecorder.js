@@ -1,11 +1,25 @@
 "use client";
 
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: hooks/useAudioRecorder.js — grabar y mandar un audio de chat
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: usa la API del navegador `MediaRecorder` para grabar el
+// micrófono. Mientras graba, avisa por socket a la otra persona
+// (audio:start/stop) para que vea el indicador de "grabando audio...". Al
+// terminar y confirmar el envío, manda el archivo por HTTP y notifica el
+// mensaje ya creado. Tiene un límite de 60 segundos por las dudas.
+//
+// PARA QUÉ SIRVE: separa toda la parte "hablarle al hardware del
+// micrófono" de la lógica general del chat (useChat.js).
+//
+// CON QUÉ SE CONECTA:
+//   - navigator.mediaDevices (API del navegador, no del proyecto).
+//   - backend: POST /api/chat/audio/:receptorId (chat.controller.js).
+//   - Socket.io: audio:start/stop.
+//   - Lo consume: app/chat/page.js, pasándole el socket de useChat.js.
+// ════════════════════════════════════════════════════════════════════════
 import { useState, useRef } from "react";
 import { API } from "@/lib/api";
-
-// Grabación de mensajes de voz con MediaRecorder. Emite audio:start/stop por
-// socket y, al enviar, hace POST a /api/chat/audio/:id y notifica el mensaje
-// creado vía onAudioSent. Sin cambios de comportamiento.
 export default function useAudioRecorder({ activeChat, socketRef, onAudioSent }) {
   const [recording, setRecording] = useState(false);
   const audioTimer       = useRef(null);

@@ -1,13 +1,34 @@
 "use client";
 
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: hooks/useChat.js — cerebro de la página de chat
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: es el hook más grande del frontend porque el chat tiene mucho
+// estado en vivo. Junta: la lista de conversaciones, la conversación
+// abierta y sus mensajes, el socket (UN solo socket para toda la sesión de
+// chat), quién está online, quién está escribiendo o grabando un audio
+// ahora mismo, la racha de mensajes con esa persona, y mandar/leer/borrar
+// mensajes. Todo lo que llega por socket (mensaje nuevo, audio, imagen,
+// borrado) pasa por acá y actualiza el estado que ve la pantalla.
+//
+// PARA QUÉ SIRVE: app/chat/page.js usa este hook (+ useChatSearch para
+// buscar gente, + useAudioRecorder para grabar, + useChatImage para mandar
+// fotos) para no tener 700 líneas de lógica mezcladas con el JSX.
+//
+// CON QUÉ SE CONECTA:
+//   - backend: GET /api/chat/conversaciones, GET /api/chat/:userId,
+//     DELETE /api/chat/mensaje/:id, y el streak (si existe el endpoint).
+//   - Socket.io: message:send/receive/sent/error, messages:read,
+//     typing:start/stop, audio:start/stop, message:receive:audio,
+//     message:receive:image, message:deleted — todo esto lo maneja
+//     backend/src/modules/chat/chat.socket.js del otro lado.
+//   - Lo consume: app/chat/page.js, que le pasa el socket (`socketRef`) y
+//     `addMensaje` a useAudioRecorder y useChatImage para que ellos también
+//     puedan agregar mensajes a la lista.
+// ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useRef, useCallback } from "react";
 import { io } from "socket.io-client";
 import { API } from "@/lib/api";
-
-// Estado y lógica de la página de chat: conversaciones, chat activo, mensajes,
-// socket en tiempo real, indicadores (typing/audio), racha, envío y borrado.
-// La búsqueda vive en useChatSearch y la grabación en useAudioRecorder.
-// Sin cambios de comportamiento respecto al inline de chat/page.js.
 export default function useChat({ session, status, inputRef }) {
   const [recientes,   setRecientes]   = useState([]);
   const [amigos,      setAmigos]      = useState([]);

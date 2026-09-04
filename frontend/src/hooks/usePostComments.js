@@ -1,13 +1,27 @@
 "use client";
 
+// ════════════════════════════════════════════════════════════════════════
+// MÓDULO: hooks/usePostComments.js — comentarios de UN post
+// ════════════════════════════════════════════════════════════════════════
+// QUÉ HACE: recibe un `postId` y un `enabled` (true cuando el usuario abrió
+// ese hilo de comentarios). Mientras está abierto: carga los comentarios,
+// permite agregar/borrar, y abre un socket para enterarse en vivo si otro
+// usuario comenta o borra un comentario de ESE post. Al cerrarse, corta el
+// socket (no tiene sentido escuchar algo que no se está mostrando).
+//
+// PARA QUÉ SIRVE: es un hook COMPARTIDO — tanto la PostCard del feed
+// (components/feed/PostCard.js) como la del perfil (components/PostCard.js)
+// lo usan, así la lógica de comentarios está escrita una sola vez aunque
+// haya dos diseños distintos de tarjeta.
+//
+// CON QUÉ SE CONECTA:
+//   - backend: GET/POST/DELETE /api/posts/:id/comments (posts.controller.js).
+//   - Socket.io: post:comment / post:comment:deleted.
+//   - Lo consumen: components/feed/PostComments.js y components/PostCard.js.
+// ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback } from "react";
 import { io } from "socket.io-client";
 import { API } from "@/lib/api";
-
-// B3 · Comentarios de un post. Compartido por la PostCard del feed y la de perfil.
-// Carga bajo demanda (cuando `enabled` pasa a true), envía/borra contra el backend
-// y se mantiene en vivo por socket (post:comment / post:comment:deleted) mientras
-// el hilo está abierto.
 export default function usePostComments(postId, enabled) {
   const [comments, setComments] = useState([]);
   const [loading,  setLoading]  = useState(false);
