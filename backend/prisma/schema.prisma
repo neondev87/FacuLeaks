@@ -59,11 +59,14 @@ model messages {
   audioUrl                         String?   @db.VarChar(300)
   imageUrl                         String?   @db.VarChar(300)
   replyToId                        Int?
-  users_messages_emisorIdTousers   users     @relation("messages_emisorIdTousers", fields: [emisorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "messages_ibfk_1")
-  users_messages_receptorIdTousers users     @relation("messages_receptorIdTousers", fields: [receptorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "messages_ibfk_2")
+  users_messages_emisorIdTousers   users      @relation("messages_emisorIdTousers", fields: [emisorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "messages_ibfk_1")
+  users_messages_receptorIdTousers users      @relation("messages_receptorIdTousers", fields: [receptorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "messages_ibfk_2")
+  replyTo                          messages?  @relation("messages_reply", fields: [replyToId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "messages_replyToId_fkey")
+  replies                          messages[] @relation("messages_reply")
 
   @@index([emisorId, receptorId], map: "idx_messages_chat")
   @@index([receptorId, leido], map: "idx_messages_no_leidos")
+  @@index([replyToId], map: "idx_messages_replyTo")
 }
 
 model notifications {
@@ -78,7 +81,7 @@ model notifications {
   mensaje                                String?            @db.VarChar(200)
   creadoEn                               DateTime           @default(now()) @db.DateTime(0)
   users_notifications_usuarioIdTousers   users              @relation("notifications_usuarioIdTousers", fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "notifications_ibfk_1")
-  users_notifications_generadorIdTousers users?             @relation("notifications_generadorIdTousers", fields: [generadorId], references: [id], onUpdate: NoAction, map: "notifications_ibfk_2")
+  users_notifications_generadorIdTousers users?             @relation("notifications_generadorIdTousers", fields: [generadorId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "notifications_ibfk_2")
 
   @@index([generadorId], map: "generadorId")
   @@index([creadoEn], map: "idx_notif_creadoEn")
@@ -140,7 +143,7 @@ model profile_visits {
   visitanteId                             Int?
   creadoEn                                DateTime @default(now()) @db.DateTime(0)
   users_profile_visits_perfilIdTousers    users    @relation("profile_visits_perfilIdTousers", fields: [perfilId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "profile_visits_ibfk_1")
-  users_profile_visits_visitanteIdTousers users?   @relation("profile_visits_visitanteIdTousers", fields: [visitanteId], references: [id], onUpdate: NoAction, map: "profile_visits_ibfk_2")
+  users_profile_visits_visitanteIdTousers users?   @relation("profile_visits_visitanteIdTousers", fields: [visitanteId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "profile_visits_ibfk_2")
 
   @@index([creadoEn], map: "idx_visits_creadoEn")
   @@index([perfilId], map: "idx_visits_perfil")
