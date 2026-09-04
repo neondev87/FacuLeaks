@@ -1,5 +1,24 @@
 const prisma = require('../../config/db');
 
+// Normaliza un post del feed: expone `autor` y `myReaction` ("LIKE" | "DISLIKE" | null)
+// y quita el array crudo `post_likes` (solo se usaba para calcular la reacción propia).
+const mapPost = (p) => {
+  const { post_likes, users, ...rest } = p;
+  return {
+    ...rest,
+    autor: users,
+    myReaction: post_likes?.[0]?.tipo || null,
+  };
+};
+
+const feedInclude = (userId) => ({
+  users: { select: { id: true, username: true, nombre: true } },
+  _count: { select: { comments: true } },
+  post_likes: userId
+    ? { where: { userId }, select: { tipo: true } }
+    : false,
+});
+
 const createPost = async (autorId, { titulo, contenido = "", privacidad = 'PUBLICA', imagen = null }) => {
   const post = await prisma.posts.create({
     data: { autorId, titulo, contenido, privacidad, imagen },
@@ -14,26 +33,20 @@ const getFeedRecientes = async (userId, page = 1, limit = 20) => {
   const skip = (page - 1) * limit;
   const posts = await prisma.posts.findMany({
     where: { privacidad: 'PUBLICA' },
-    include: {
-      users: { select: { id: true, username: true, nombre: true } },
-      _count: { select: { post_likes: true, comments: true } }
-    },
+    include: feedInclude(userId),
     orderBy: { creadoEn: 'desc' },
     skip,
     take: limit,
   });
-  return posts.map(p => ({ ...p, autor: p.users }));
+  return posts.map(mapPost);
 };
 
-const getFeedTrending = async (page = 1, limit = 20) => {
+const getFeedTrending = async (userId, page = 1, limit = 20) => {
   const skip = (page - 1) * limit;
   const hace72h = new Date(Date.now() - 72 * 60 * 60 * 1000);
   const posts = await prisma.posts.findMany({
     where: { privacidad: 'PUBLICA', creadoEn: { gte: hace72h } },
-    include: {
-      users: { select: { id: true, username: true, nombre: true } },
-      _count: { select: { post_likes: true, comments: true } }
-    },
+    include: feedInclude(userId),
     orderBy: [
       { totalLikes: 'desc' },
       { totalComentarios: 'desc' },
@@ -43,7 +56,7 @@ const getFeedTrending = async (page = 1, limit = 20) => {
     skip,
     take: limit,
   });
-  return posts.map(p => ({ ...p, autor: p.users }));
+  return posts.map(mapPost);
 };
 
 const getFeedSiguiendo = async (userId, page = 1, limit = 20) => {
@@ -64,15 +77,12 @@ const getFeedSiguiendo = async (userId, page = 1, limit = 20) => {
       autorId: { in: amigoIds },
       privacidad: { in: ['PUBLICA', 'AMIGOS'] }
     },
-    include: {
-      users: { select: { id: true, username: true, nombre: true } },
-      _count: { select: { post_likes: true, comments: true } }
-    },
+    include: feedInclude(userId),
     orderBy: { creadoEn: 'desc' },
     skip,
     take: limit,
   });
-  return posts.map(p => ({ ...p, autor: p.users }));
+  return posts.map(mapPost);
 };
 
 const feedRecientes = async (req, res) => {
@@ -87,7 +97,7 @@ const feedRecientes = async (req, res) => {
 
 const feedTrending = async (req, res) => {
   try {
-    const posts = await getFeedTrending(parseInt(req.query.page) || 1);
+    const posts = await getFeedTrending(req.userId, parseInt(req.query.page) || 1);
     res.json({ posts, page: parseInt(req.query.page) || 1 });
   } catch (err) {
     console.error(err);
@@ -139,4 +149,164 @@ const deletePost = async (req, res) => {
   }
 };
 
-module.exports = { feedRecientes, feedTrending, feedSiguiendo, nuevoPost, deletePost };
+// ── B2 · Reacciones (LIKE / DISLIKE) ─────────────────────────────────────────
+// POST /api/posts/:id/react  body: { tipo: "LIKE" | "DISLIKE" }
+// Toggle: misma reacción => la quita; distinta => la cambia; ninguna => la crea.
+// Mantiene posts.totalLikes / posts.totalDislikes y user_stats.totalLikesRecibidos
+// del autor, y emite `post:react` con los totales.
+const toggleReaction = async (req, res) => {
+  const postId = parseInt(req.params.id);
+  const userId = req.userId;
+  const tipo   = req.body?.tipo === 'DISLIKE' ? 'DISLIKE' : 'LIKE';
+
+  try {
+    const post = await prisma.posts.findUnique({
+      where: { id: postId },
+      select: { id: true, autorId: true },
+    });
+    if (!post) return res.status(404).json({ error: 'Post no encontrado' });
+
+    const existing = await prisma.post_likes.findFirst({ where: { postId, userId } });
+
+    // delta de "likes" para las stats del autor
+    let likeDelta = 0;
+    let myReaction;
+
+    await prisma.$transaction(async (tx) => {
+      if (!existing) {
+        await tx.post_likes.create({ data: { postId, userId, tipo } });
+        myReaction = tipo;
+        if (tipo === 'LIKE') likeDelta = 1;
+      } else if (existing.tipo === tipo) {
+        await tx.post_likes.delete({ where: { id: existing.id } });
+        myReaction = null;
+        if (tipo === 'LIKE') likeDelta = -1;
+      } else {
+        await tx.post_likes.update({ where: { id: existing.id }, data: { tipo } });
+        myReaction = tipo;
+        likeDelta = tipo === 'LIKE' ? 1 : -1;
+      }
+
+      const [likes, dislikes] = await Promise.all([
+        tx.post_likes.count({ where: { postId, tipo: 'LIKE' } }),
+        tx.post_likes.count({ where: { postId, tipo: 'DISLIKE' } }),
+      ]);
+      await tx.posts.update({
+        where: { id: postId },
+        data: { totalLikes: likes, totalDislikes: dislikes },
+      });
+
+      if (likeDelta !== 0) {
+        await tx.user_stats.updateMany({
+          where: { userId: post.autorId },
+          data:  { totalLikesRecibidos: { increment: likeDelta } },
+        });
+      }
+    });
+
+    const totals = await prisma.posts.findUnique({
+      where: { id: postId },
+      select: { totalLikes: true, totalDislikes: true },
+    });
+
+    req.io.emit('post:react', {
+      postId,
+      totalLikes: totals.totalLikes,
+      totalDislikes: totals.totalDislikes,
+    });
+
+    res.json({ myReaction, ...totals });
+  } catch (err) {
+    console.error('toggleReaction error:', err.message);
+    res.status(500).json({ error: 'Error al reaccionar' });
+  }
+};
+
+// ── B3 · Comentarios ────────────────────────────────────────────────────────
+// GET /api/posts/:id/comments
+const listComments = async (req, res) => {
+  const postId = parseInt(req.params.id);
+  try {
+    const comments = await prisma.comments.findMany({
+      where: { postId },
+      include: { users: { select: { id: true, username: true, nombre: true, imagen: true } } },
+      orderBy: { creadoEn: 'asc' },
+    });
+    res.json({ comments: comments.map(c => ({ ...c, autor: c.users })) });
+  } catch (err) {
+    console.error('listComments error:', err.message);
+    res.status(500).json({ error: 'Error al obtener comentarios' });
+  }
+};
+
+// POST /api/posts/:id/comments  body: { contenido }
+const createComment = async (req, res) => {
+  const postId    = parseInt(req.params.id);
+  const autorId   = req.userId;
+  const contenido = String(req.body?.contenido || '').trim();
+
+  if (!contenido) return res.status(400).json({ error: 'Comentario vacío' });
+  if (contenido.length > 500) return res.status(400).json({ error: 'Máximo 500 caracteres' });
+
+  try {
+    const post = await prisma.posts.findUnique({ where: { id: postId }, select: { id: true } });
+    if (!post) return res.status(404).json({ error: 'Post no encontrado' });
+
+    const [comment] = await prisma.$transaction([
+      prisma.comments.create({
+        data: { postId, autorId, contenido },
+        include: { users: { select: { id: true, username: true, nombre: true, imagen: true } } },
+      }),
+      prisma.posts.update({
+        where: { id: postId },
+        data: { totalComentarios: { increment: 1 } },
+      }),
+    ]);
+
+    const payload = { ...comment, autor: comment.users };
+    const totals  = await prisma.posts.findUnique({ where: { id: postId }, select: { totalComentarios: true } });
+
+    req.io.emit('post:comment', { postId, totalComentarios: totals.totalComentarios, comment: payload });
+    res.status(201).json({ comment: payload, totalComentarios: totals.totalComentarios });
+  } catch (err) {
+    console.error('createComment error:', err.message);
+    res.status(500).json({ error: 'Error al comentar' });
+  }
+};
+
+// DELETE /api/posts/:postId/comments/:commentId — autor del comentario o dueño del post
+const deleteComment = async (req, res) => {
+  const postId    = parseInt(req.params.postId);
+  const commentId = parseInt(req.params.commentId);
+  const userId    = req.userId;
+
+  try {
+    const comment = await prisma.comments.findUnique({
+      where: { id: commentId },
+      include: { posts: { select: { autorId: true } } },
+    });
+    if (!comment || comment.postId !== postId) return res.status(404).json({ error: 'Comentario no encontrado' });
+    if (comment.autorId !== userId && comment.posts.autorId !== userId)
+      return res.status(403).json({ error: 'No autorizado' });
+
+    await prisma.$transaction([
+      prisma.comments.delete({ where: { id: commentId } }),
+      prisma.posts.update({
+        where: { id: postId },
+        data: { totalComentarios: { decrement: 1 } },
+      }),
+    ]);
+
+    const totals = await prisma.posts.findUnique({ where: { id: postId }, select: { totalComentarios: true } });
+    req.io.emit('post:comment:deleted', { postId, commentId, totalComentarios: totals.totalComentarios });
+    res.json({ ok: true, totalComentarios: totals.totalComentarios });
+  } catch (err) {
+    console.error('deleteComment error:', err.message);
+    res.status(500).json({ error: 'Error al eliminar comentario' });
+  }
+};
+
+module.exports = {
+  feedRecientes, feedTrending, feedSiguiendo, nuevoPost, deletePost,
+  toggleReaction, listComments, createComment, deleteComment,
+};

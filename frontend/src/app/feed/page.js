@@ -25,7 +25,7 @@ export default function FeedPage() {
   const [dlTrigger,  setDlTrigger]  = useState(0);
   const [dlFilename, setDlFilename] = useState("");
 
-  const { posts, loading, newCount, resetNewCount, removePost } =
+  const { posts, loading, newCount, resetNewCount, removePost, toggleReaction } =
     useFeedPosts({ activeTab, status, session });
 
   const {
@@ -109,6 +109,7 @@ export default function FeedPage() {
               accent={ac}
               currentUserId={session?.user?.dbId}
               onDelete={removePost}
+              onReact={toggleReaction}
             />
           ))
         )}

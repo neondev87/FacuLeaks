@@ -3,17 +3,20 @@
 import { useState, useEffect, useRef } from "react";
 import PixelHeart from "./pixel/PixelHeart";
 
-// ── HEART ICON ──
-export default function HeartIcon({ count = 0, reaction, setReaction }) {
-  const liked = reaction === "heart";
+// ── HEART ICON (reacción LIKE) ──
+// Controlado por el padre: `active` = el usuario tiene esta reacción,
+// `count` = total autoritativo del backend, `onToggle` = alterna la reacción.
+// `disabled` opcional para bloquear (no se usa hoy: las reacciones se cambian
+// entre sí). La animación de "muerte" del corazón es puramente visual.
+export default function HeartIcon({ active = false, count = 0, disabled = false, onToggle }) {
   const [phase, setPhase] = useState("idle");
   const resetRef = useRef();
 
   const trigger = () => {
+    if (disabled) return;
     clearTimeout(resetRef.current);
-    if (liked) { setReaction(null); setPhase("idle"); return; }
-    if (reaction === "skull") return; // bloqueado
-    setReaction("heart");
+    onToggle?.();
+    if (active) { setPhase("idle"); return; }
     setPhase("white");
     setTimeout(() => setPhase("dead"), 280);
     setTimeout(() => setPhase("gone"), 620);
@@ -21,8 +24,6 @@ export default function HeartIcon({ count = 0, reaction, setReaction }) {
   };
 
   useEffect(() => () => clearTimeout(resetRef.current), []);
-
-  const disabled = reaction === "skull";
 
   return (
     <button onClick={trigger} disabled={disabled}
@@ -39,8 +40,8 @@ export default function HeartIcon({ count = 0, reaction, setReaction }) {
       }}>
         <PixelHeart s={3} white={phase === "white"} />
       </div>
-      <span style={{ fontSize:10, fontFamily:"'Space Mono',monospace", color: liked ? "#c00000" : "#444", letterSpacing:".1em", transition:"color .3s" }}>
-        {count + (liked ? 1 : 0)}
+      <span style={{ fontSize:10, fontFamily:"'Space Mono',monospace", color: active ? "#c00000" : "#444", letterSpacing:".1em", transition:"color .3s" }}>
+        {count}
       </span>
     </button>
   );

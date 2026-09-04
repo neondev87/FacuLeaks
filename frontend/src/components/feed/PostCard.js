@@ -4,15 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { API } from "@/lib/api";
 import Lightbox from "@/components/Lightbox";
-import HeartIcon from "./HeartIcon";
-import SkullIcon from "./SkullIcon";
+import { REACTIONS } from "./reactions";
 import TrashIcon from "./TrashIcon";
 
 // ── POST CARD ──
-export default function PostCard({ post, currentUserId, onDelete, accent = "#ffffff" }) {
+export default function PostCard({ post, currentUserId, onDelete, onReact, accent = "#ffffff" }) {
   const [lightbox, setLightbox] = useState(false);
   const [removing, setRemoving] = useState(false);
-  const [reaction, setReaction] = useState(null); // "heart" | "skull" | null
   const router = useRouter();
   const ac = accent;
 
@@ -22,8 +20,10 @@ export default function PostCard({ post, currentUserId, onDelete, accent = "#fff
     : "";
   const titulo   = post.titulo || post.title || "";
   const cuerpo   = post.contenido || post.body || "";
-  const likes    = post._count?.post_likes ?? post._count?.likes ?? 0;
-  const comments = post._count?.comments ?? post._count?.comentarios ?? 0;
+  const likes    = post.totalLikes ?? post._count?.post_likes ?? 0;
+  const dislikes = post.totalDislikes ?? 0;
+  const comments = post.totalComentarios ?? post._count?.comments ?? 0;
+  const counts   = { LIKE: likes, DISLIKE: dislikes };
   const vistas   = post.totalVistas ?? 0;
   const isOwner  = currentUserId && post.autor?.id === currentUserId;
   const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -99,8 +99,14 @@ export default function PostCard({ post, currentUserId, onDelete, accent = "#fff
         {/* Footer */}
         <div style={{ padding:"8px 14px", borderTop:"1px solid rgba(255,255,255,.04)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div style={{ display:"flex", gap:4, alignItems:"center" }}>
-            <HeartIcon count={likes} reaction={reaction} setReaction={setReaction} />
-            <SkullIcon count={0} reaction={reaction} setReaction={setReaction} />
+            {REACTIONS.map(({ key, Icon }) => (
+              <Icon
+                key={key}
+                active={post.myReaction === key}
+                count={counts[key] ?? 0}
+                onToggle={() => onReact?.(post.id, key)}
+              />
+            ))}
             <span style={{ cursor:"pointer", letterSpacing:".1em", color:`${ac}66`, fontSize:11, marginLeft:8, fontFamily:"'Space Mono',monospace" }}>† {comments} replies</span>
           </div>
           <span style={{ color:"rgba(255,255,255,.2)", fontSize:11, fontFamily:"'Inter',sans-serif" }}>{vistas}v</span>
