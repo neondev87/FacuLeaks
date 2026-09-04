@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
-import { API } from "@/lib/api";
+import useInjectedStyles from "@/hooks/useInjectedStyles";
+import useAuth from "@/hooks/useAuth";
+import GothicCross from "@/components/auth/GothicCross";
+import NeonDevMark from "@/components/auth/NeonDevMark";
+import { authStyles } from "./authStyles";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: app/auth/page.js — la pantalla de login
@@ -12,228 +15,19 @@ import { API } from "@/lib/api";
 // estética "cyberpunk/glitch" del proyecto (arte gótico en blanco y negro,
 // branding NEONDEV) y por regla del proyecto NO se toca en el rediseño de
 // Fase 3 — todo el resto de la app va a un estilo distinto (minimalista
-// underground/Y2K), pero esta pantalla se queda como está.
+// underground/Y2K), pero esta pantalla se queda como está. Parejada con el
+// patrón de Fase 2 el 2026-09-04 (hook + componentes + useInjectedStyles) —
+// SOLO reorganización de código, cero cambio visual ni de comportamiento.
 //
-// CON QUÉ SE CONECTA: next-auth/react (signIn) → arranca el flujo que
-// termina resolviéndose en lib/authOptions.js.
+// CON QUÉ SE CONECTA: hooks/useAuth.js (toda la lógica), components/auth/*
+// (arte visual), next-auth/react (signIn) → arranca el flujo que termina
+// resolviéndose en lib/authOptions.js.
 // ════════════════════════════════════════════════════════════════════════
-function GothicCross({ size = 54, opacity = 0.38, style = {} }) {
-  return (
-    <svg width={size} height={size * 1.78} viewBox="0 0 80 140" fill="none" style={{ opacity, ...style }}>
-      <g stroke="white" strokeWidth="0.5" fill="none" strokeLinecap="round">
-        <line x1="40" y1="5" x2="40" y2="135" />
-        <line x1="10" y1="38" x2="70" y2="38" />
-        <line x1="18" y1="52" x2="62" y2="52" />
-        <path d="M40 5 C37 2 34 3 35 6 C36 8 38 8 40 7 C42 8 44 8 45 6 C46 3 43 2 40 5" />
-        <path d="M10 38 C6 34 4 30 7 28 C9 27 11 29 10 32" />
-        <path d="M7 28 C4 24 5 20 8 20 C10 20 11 23 9 25" />
-        <path d="M10 38 C8 42 6 44 8 47 C10 48 12 46 11 43" />
-        <path d="M70 38 C74 34 76 30 73 28 C71 27 69 29 70 32" />
-        <path d="M73 28 C76 24 75 20 72 20 C70 20 69 23 71 25" />
-        <path d="M70 38 C72 42 74 44 72 47 C70 48 68 46 69 43" />
-        <circle cx="40" cy="38" r="2.5" strokeWidth="0.4" />
-        <circle cx="40" cy="38" r="1" fill="white" stroke="none" />
-        <path d="M40 15L37 10" /><path d="M40 15L43 10" />
-        <path d="M40 22L36 18" /><path d="M40 22L44 18" />
-        <path d="M40 60L37 55" /><path d="M40 60L43 55" />
-        <path d="M40 75L36 70" /><path d="M40 75L44 70" />
-        <path d="M40 90L37 85" /><path d="M40 90L43 85" />
-        <path d="M32 30 C28 26 26 22 28 18" />
-        <path d="M48 30 C52 26 54 22 52 18" />
-        <path d="M32 46 C28 50 26 54 28 58" />
-        <path d="M48 46 C52 50 54 54 52 58" />
-        <path d="M40 135 C37 138 34 137 35 134 C36 132 38 132 40 133 C42 132 44 132 45 134 C46 137 43 138 40 135" />
-      </g>
-    </svg>
-  );
-}
-
-function NeonDevMark() {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5, pointerEvents: "none", userSelect: "none" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-          <rect x="2" y="2" width="20" height="20" rx="2" stroke="rgba(255,255,255,.75)" strokeWidth="1"/>
-          <path d="M7 12 L10 8 L13 12 L16 8" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M7 16 L17 16" stroke="rgba(255,255,255,.35)" strokeWidth="1" strokeLinecap="round"/>
-          <circle cx="19" cy="5" r="2.2" fill="#fff"/>
-        </svg>
-        <span style={{
-          fontFamily: "'Space Mono', monospace",
-          fontSize: 18, fontWeight: 700,
-          letterSpacing: ".3em", color: "#fff",
-          textTransform: "uppercase",
-          textShadow: "0 0 30px rgba(255,255,255,.4)",
-        }}>NeonDev</span>
-      </div>
-      <span style={{
-        fontFamily: "'Space Mono', monospace",
-        fontSize: 8, letterSpacing: ".25em",
-        color: "rgba(255,255,255,.3)",
-      }}>neondev studio</span>
-    </div>
-  );
-}
-
 export default function AuthPage() {
   const { data: session, status } = useSession();
-  const [white,    setWhite]    = useState(true);
-  const [ready,    setReady]    = useState(false);
-  const [checking, setChecking] = useState(false);
+  const { white, ready, checking, tcD, tcF } = useAuth({ status, session });
 
-  const tcD = white ? "rgba(0,0,0,.35)"  : "rgba(232,228,217,.35)";
-  const tcF = white ? "rgba(0,0,0,.18)"  : "rgba(232,228,217,.18)";
-
-  // ── Animación blanco→negro ──
-  useEffect(() => {
-    const t1 = setTimeout(() => setWhite(false), 1440);
-    const t2 = setTimeout(() => setReady(true),  1600);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
-
-  // ── Cuando NextAuth tiene sesión → setear cookie backend → redirigir ──
-  useEffect(() => {
-    if (status !== "authenticated" || !session?.user) return;
-
-    const googleId = session.user.googleId || session.user.id;
-    if (!googleId) return;
-
-    setChecking(true);
-
-    const doLogin = async () => {
-      try {
-        // 1. Verificar si existe en BD
-        const checkRes  = await fetch(`${API}/api/auth/check/${googleId}`);
-        const checkData = await checkRes.json();
-
-        if (!checkData.exists) {
-          // Usuario nuevo → registro
-          window.location.href = "/register";
-          return;
-        }
-
-        // 2. Setear la cookie JWT del backend vía el route server de Next.
-        //    /api/auth/login ya no acepta llamadas del browser (requiere
-        //    secreto interno); sync-backend la hace server-to-server.
-        window.location.href = "/api/auth/sync-backend?callbackUrl=/feed";
-
-      } catch (err) {
-        console.error("Error en login:", err);
-        setChecking(false);
-      }
-    };
-
-    doLogin();
-  }, [status, session]);
-
-  // ── Estilos ──
-  useEffect(() => {
-    const s = document.createElement("style");
-    s.id = "auth-styles";
-    s.textContent = `
-      @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Space+Mono:wght@400;700&display=swap');
-
-      @keyframes bgW2B {
-        0%,35% { background:#fff; }
-        100%   { background:#000; }
-      }
-      @keyframes textW2B {
-        0%,35% { color:#000; }
-        80%,100% { color:#e8e4d9; }
-      }
-      @keyframes fadeUp {
-        from { opacity:0; transform:translateY(12px); }
-        to   { opacity:1; transform:translateY(0); }
-      }
-      @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-      @keyframes girlIn {
-        from { opacity:0; transform:translateY(14px); }
-        to   { opacity:1; transform:translateY(0); }
-      }
-      @keyframes flicker {
-        0%,100%{opacity:1} 92%{opacity:1} 93%{opacity:.6} 94%{opacity:1}
-      }
-      @keyframes spin {
-        from { transform: rotate(0deg); }
-        to   { transform: rotate(360deg); }
-      }
-
-      body::before {
-        content:''; position:fixed; inset:0;
-        background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-        opacity:.05; pointer-events:none; z-index:9998;
-      }
-      body::after {
-        content:''; position:fixed; inset:0;
-        background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.15) 2px,rgba(0,0,0,.15) 4px);
-        pointer-events:none; z-index:9999;
-      }
-
-      ::-webkit-scrollbar{width:4px}
-      ::-webkit-scrollbar-track{background:#000}
-      ::-webkit-scrollbar-thumb{background:#222}
-
-      .logo-title {
-        font-family:'DM Serif Display',serif;
-        font-weight:400;
-        font-size:clamp(56px,7vw,82px);
-        line-height:.9;
-        letter-spacing:.01em;
-        animation: textW2B 2.4s ease forwards, flicker 9s infinite 3s;
-      }
-
-      .btn-google {
-        background:transparent;
-        color:rgba(232,228,217,.5);
-        font-family:'Space Mono',monospace;
-        font-size:11px; letter-spacing:.2em;
-        padding:14px 32px; cursor:pointer; width:100%;
-        border:1px solid rgba(232,228,217,.2);
-        transition:all .25s;
-        display:flex; align-items:center; justify-content:center; gap:12px;
-        margin-top: 8px;
-      }
-      .btn-google:hover {
-        border-color:rgba(232,228,217,.6);
-        color:#e8e4d9;
-        background: rgba(232,228,217,.04);
-        box-shadow: 0 0 20px rgba(232,228,217,.05);
-      }
-      .btn-google:disabled {
-        opacity: .4;
-        cursor: not-allowed;
-      }
-
-      .form-wrap { animation: fadeUp .5s ease .4s both; }
-
-      .girl-img {
-        position:absolute; bottom:0; right:5%;
-        width:80%; max-height:100vh;
-        object-fit:contain; object-position:bottom;
-        filter:contrast(1.1) brightness(.9);
-        mix-blend-mode:lighten; z-index:1;
-        animation: girlIn 1.2s ease 1.6s both;
-        pointer-events:none; user-select:none;
-      }
-
-      .checking-indicator {
-        font-family:'Space Mono',monospace;
-        font-size:9px; letter-spacing:.2em;
-        color:rgba(232,228,217,.35);
-        display:flex; align-items:center; gap:8px;
-        margin-top:12px;
-      }
-      .spinner {
-        width:10px; height:10px;
-        border:1px solid rgba(232,228,217,.2);
-        border-top-color:rgba(232,228,217,.6);
-        border-radius:50%;
-        animation:spin .8s linear infinite;
-      }
-    `;
-    document.head.appendChild(s);
-    return () => document.getElementById("auth-styles")?.remove();
-  }, []);
+  useInjectedStyles("auth-styles", authStyles);
 
   return (
     <div style={{
