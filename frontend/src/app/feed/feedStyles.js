@@ -7,19 +7,19 @@
 // de lib/theme.js — ver ese archivo si hay que cambiar alguno.
 //
 // Fase 3 (2026-09): el feed pasó de fondo negro plano a la dirección
-// "Holographic" — fondo casi negro + borde iridiscente animado en composer
-// y posts. Se probaron también Mixtape (cassette) y Newsprint (semitono) y
-// una mezcla de las tres, pero Holographic fue la elegida al final. Perfil
-// y Chat siguen con la paleta vieja hasta que les toque su rediseño.
-import { FONT_IMPORT_MAIN, SCROLLBAR_THIN, KF, FEED_HOLO, HOLO_PROPERTY } from "@/lib/theme";
+// "Holographic" — fondo casi negro, sin el cassette/semitono de las otras
+// direcciones probadas. El borde iridiscente animado se probó en composer y
+// posts pero se sacó de los dos ("mucha estela de neón") — el único efecto
+// animado que quedó es el brillo "chrome aero" del recuadro de perfil
+// (avatar). Perfil y Chat siguen con la paleta vieja hasta que les toque su
+// rediseño.
+import { FONT_IMPORT_MAIN, SCROLLBAR_THIN, KF, FEED_HOLO } from "@/lib/theme";
 
 export const feedStyles = `
       ${FONT_IMPORT_MAIN}
-      ${HOLO_PROPERTY}
       ${KF.fadeIn}
       ${KF.spin}
       ${KF.sheen}
-      ${KF.holoSpin}
       body {
         background: ${FEED_HOLO.bg};
         color: ${FEED_HOLO.text};
@@ -46,16 +46,6 @@ export const feedStyles = `
         background-size:250% 250%;
         animation: sheen 5s ease-in-out infinite;
         pointer-events:none;
-      }
-
-      /* ── Panel con borde holográfico animado (composer + posts) ── */
-      .holo-panel { position:relative; }
-      .holo-panel::before {
-        content:''; position:absolute; inset:0; padding:1.5px; border-radius:inherit;
-        background:${FEED_HOLO.holo};
-        -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-        -webkit-mask-composite:xor; mask-composite:exclude;
-        animation:holoSpin 5s linear infinite; pointer-events:none;
       }
 
       .post-title-input { width:100%; background:transparent; border:none; outline:none; font-family:'Inter',sans-serif; font-size:14px; font-weight:500; color:rgba(242,240,248,.55); padding:4px 0; margin-bottom:6px; border-bottom:1px solid ${FEED_HOLO.hairlineSoft}; }

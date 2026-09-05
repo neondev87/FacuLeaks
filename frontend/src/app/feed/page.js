@@ -76,7 +76,7 @@ export default function FeedPage() {
           </div>
         </div>
 
-        <div className="holo-panel" style={{ padding:16, marginBottom:28, background:FEED_HOLO.panel, borderRadius:10 }}>
+        <div style={{ padding:16, marginBottom:28, background:FEED_HOLO.panel, borderRadius:10, border:`1px solid ${FEED_HOLO.hairlineSoft}` }}>
           <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
             <div className="composer-avatar" style={{ width:34, height:34, backgroundImage: avatarSrc(ownImagen) ? `url(${avatarSrc(ownImagen)})` : "none", backgroundSize:"cover", backgroundPosition:"center", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, color:FEED_HOLO.textDim }}>{!avatarSrc(ownImagen) && "◈"}</div>
             <div style={{ flex:1 }}>

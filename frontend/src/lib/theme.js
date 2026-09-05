@@ -108,25 +108,20 @@ export const KF = {
   pulse:   `@keyframes pulse { 0%,100%{opacity:.35} 50%{opacity:.55} }`,
   wave:    `@keyframes wave { 0%,100%{transform:scaleY(0.3)} 50%{transform:scaleY(1)} }`,
   // Barrido de brillo diagonal ("chrome aero") — usado en el recuadro de
-  // usuario del composer del feed (Fase 3).
+  // perfil (avatar) del feed y del perfil propio (Fase 3). Es el único
+  // efecto animado en cajas — se probó también un borde holográfico
+  // (conic-gradient) en composer y posts, pero se sacó por pedido explícito
+  // ("esa estela de neón no me gusta") — el aero se queda, pero solo en el
+  // recuadro de perfil, no en tarjetas enteras.
   sheen:   `@keyframes sheen { 0%,100%{background-position:120% 0} 50%{background-position:-20% 100%} }`,
-  // Borde holográfico animado — requiere @property --holo-angle (ver abajo)
-  // para que el navegador interpole el ángulo en vez de saltar de golpe.
-  holoSpin:`@keyframes holoSpin { to{--holo-angle:360deg} }`,
 };
-
-// Necesario para que KF.holoSpin anime suave (sin esto, un custom property
-// sin tipo declarado no se interpola: el borde saltaría de golpe en vez de
-// girar). Soportado en todos los navegadores evergreen actuales.
-export const HOLO_PROPERTY = `
-      @property --holo-angle { syntax:'<angle>'; inherits:false; initial-value:0deg; }`;
 
 // ════════════════════════════════════════════════════════════════════════
 // Paleta "Holographic" — Fase 3, dirección visual del Muro (fondo casi
-// negro + borde iridiscente animado, sin cassette ni semitono — esas
-// quedaron descartadas en la comparación de las 4 direcciones). Tokens
-// propios (no tocan COLORS/FONTS de arriba) para no afectar chat/perfil,
-// que siguen con la paleta anterior hasta que les toque su turno de Fase 3.
+// negro, sin cassette ni semitono — esas quedaron descartadas en la
+// comparación de las 4 direcciones). Tokens propios (no tocan COLORS/FONTS
+// de arriba) para no afectar chat/perfil, que siguen con la paleta anterior
+// hasta que les toque su turno de Fase 3.
 // ════════════════════════════════════════════════════════════════════════
 export const FEED_HOLO = {
   bg:         "#0a0a0d",
@@ -135,7 +130,6 @@ export const FEED_HOLO = {
   textDim:    "#8a87a0",
   hairline:   "rgba(255,255,255,.12)",
   hairlineSoft: "rgba(255,255,255,.08)",
-  holo:       "conic-gradient(from var(--holo-angle,0deg), #ff9fe0, #9fe0ff, #c9ff9f, #ff9fe0)",
   star:       "#ffd23d",
   marker:     "#c0524a",
 };

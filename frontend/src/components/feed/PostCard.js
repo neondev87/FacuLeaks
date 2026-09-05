@@ -68,14 +68,17 @@ export default function PostCard({ post, currentUserId, onDelete, onReact }) {
   return (
     <>
       {lightbox && post.imagen && <Lightbox src={post.imagen} onClose={() => setLightbox(false)} />}
-      <div className="holo-panel" style={{
+      <div style={{
         marginBottom: 16, borderRadius:10,
+        border: `1px solid ${FEED_HOLO.hairlineSoft}`,
         transition: "all .4s ease",
         animation: "fadeIn .3s ease",
         opacity: removing ? 0 : 1,
         transform: removing ? "translateY(-8px) scale(.98)" : "none",
         background: FEED_HOLO.panel,
       }}
+        onMouseEnter={e => e.currentTarget.style.borderColor = FEED_HOLO.hairline}
+        onMouseLeave={e => e.currentTarget.style.borderColor = FEED_HOLO.hairlineSoft}
       >
         {/* Header */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", borderBottom:`1px solid ${FEED_HOLO.hairlineSoft}` }}>
