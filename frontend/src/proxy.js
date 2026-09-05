@@ -25,6 +25,7 @@
 // ════════════════════════════════════════════════════════════════════════
 import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
+import { SITE_URL } from "@/lib/api";
 
 const PROTECTED = ["/feed", "/perfil", "/post", "/chat"];
 
@@ -46,12 +47,12 @@ export async function proxy(req) {
   const googleId = token?.googleId || token?.sub;
 
   if (!googleId) {
-    return NextResponse.redirect(new URL("/auth", req.url));
+    return NextResponse.redirect(new URL("/auth", SITE_URL));
   }
 
   // Usuario autenticado con Google pero sin cuenta en BD → registro
   if (token?.needsRegister) {
-    return NextResponse.redirect(new URL("/register", req.url));
+    return NextResponse.redirect(new URL("/register", SITE_URL));
   }
 
   // Anti-loop: si ya pasamos por sync en esta navegación, dejar pasar
@@ -63,7 +64,7 @@ export async function proxy(req) {
   const backendCookie = req.cookies.get("token");
 
   if (!backendCookie) {
-    const syncUrl = new URL("/api/auth/sync-backend", req.url);
+    const syncUrl = new URL("/api/auth/sync-backend", SITE_URL);
     syncUrl.searchParams.set("callbackUrl", pathname + (req.nextUrl.search || ""));
     return NextResponse.redirect(syncUrl);
   }

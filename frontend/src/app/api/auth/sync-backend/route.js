@@ -26,7 +26,7 @@
 // ════════════════════════════════════════════════════════════════════════
 import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
-import { API_INTERNAL } from "@/lib/api";
+import { API_INTERNAL, SITE_URL } from "@/lib/api";
 
 // GET /api/auth/sync-backend?callbackUrl=/perfil
 export async function GET(req) {
@@ -39,11 +39,13 @@ export async function GET(req) {
   const googleId = token?.googleId || token?.sub;
 
   if (!googleId) {
-    return NextResponse.redirect(new URL("/auth", req.url));
+    return NextResponse.redirect(new URL("/auth", SITE_URL));
   }
 
-  // Construir la URL de destino con el flag anti-loop
-  const destination = new URL(callbackUrl, req.url);
+  // Construir la URL de destino con el flag anti-loop. Base = SITE_URL, NO
+  // req.url — detrás de un proxy/túnel, Next 16.3 puede resolver req.url al
+  // host/puerto interno (localhost:3000) en vez del dominio público real.
+  const destination = new URL(callbackUrl, SITE_URL);
   destination.searchParams.set("_sync_done", "1");
 
   const response = NextResponse.redirect(destination);

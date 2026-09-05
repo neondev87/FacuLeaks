@@ -31,7 +31,7 @@
 // ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useRef, useCallback } from "react";
 import { io } from "socket.io-client";
-import { API } from "@/lib/api";
+import { API, SOCKET_URL } from "@/lib/api";
 export default function useChat({ session, status, inputRef }) {
   const [recientes,   setRecientes]   = useState([]);
   const [amigos,      setAmigos]      = useState([]);
@@ -99,7 +99,7 @@ export default function useChat({ session, status, inputRef }) {
 
   useEffect(() => {
     if (status !== "authenticated" || !session?.user?.dbId) return;
-    const socket = io(API);
+    const socket = io(SOCKET_URL);
     socketRef.current = socket;
     socket.emit("user:connect", session.user.dbId);
     socket.on("users:online",    users => setOnlineUsers(users));

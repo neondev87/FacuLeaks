@@ -21,7 +21,7 @@
 // ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback } from "react";
 import { io } from "socket.io-client";
-import { API } from "@/lib/api";
+import { API, SOCKET_URL } from "@/lib/api";
 export default function usePostComments(postId, enabled) {
   const [comments, setComments] = useState([]);
   const [loading,  setLoading]  = useState(false);
@@ -53,7 +53,7 @@ export default function usePostComments(postId, enabled) {
 
   useEffect(() => {
     if (!enabled || !postId) return;
-    const socket = io(API);
+    const socket = io(SOCKET_URL);
     socket.on("post:comment", ({ postId: pid, comment }) => {
       if (pid === postId && comment) upsert(comment);
     });

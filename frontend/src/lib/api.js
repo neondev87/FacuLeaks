@@ -24,6 +24,22 @@
 export const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 export const API_INTERNAL = process.env.API_INTERNAL_URL || API;
 
+// A dónde conecta el cliente de Socket.io. Normalmente es lo mismo que API
+// (browser habla directo con el backend), PERO cuando el REST pasa por los
+// rewrites de next.config.js (API apunta al propio frontend, para que las
+// cookies de sesión sean same-site — ver next.config.js), el socket sigue
+// necesitando ir DIRECTO al backend, así que se puede separar con
+// NEXT_PUBLIC_SOCKET_URL.
+export const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || API;
+
+// URL pública del frontend, para construir redirects absolutos en código de
+// servidor (proxy.js, route handlers) SIN confiar en el header Host de la
+// petición — Next 16.3 endurece cómo resuelve ese header detrás de un proxy
+// (túnel, balanceador, etc.) y `new URL(path, req.url)` puede terminar
+// devolviendo "localhost:PORT" en vez del dominio real. Usar esta constante
+// como base evita ese problema.
+export const SITE_URL = process.env.NEXTAUTH_URL || "http://localhost:3000";
+
 // URL completa de una imagen (avatar, foto de post, etc.) guardada como
 // ruta relativa (`/uploads/...`) o ya absoluta (viene de una URL externa).
 export const avatarSrc = (imagen) =>

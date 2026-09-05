@@ -25,7 +25,7 @@
 // ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback, useRef } from "react";
 import { io } from "socket.io-client";
-import { API } from "@/lib/api";
+import { API, SOCKET_URL } from "@/lib/api";
 
 let feedSocket = null;
 
@@ -86,7 +86,7 @@ export default function useFeedPosts({ activeTab, status, session }) {
 
   useEffect(() => {
     if (status !== "authenticated" || !session?.user?.dbId) return;
-    feedSocket = io(API);
+    feedSocket = io(SOCKET_URL);
     feedSocket.emit("user:connect", session.user.dbId);
     // Alguien (vos u otro usuario cuyos posts están en el feed) cambió su
     // foto de perfil — actualizar en vivo sin recargar.
