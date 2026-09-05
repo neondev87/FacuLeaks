@@ -22,11 +22,6 @@ const nextConfig = {
   // Oculta el indicador de desarrollo de Next (el círculo con la "N").
   // Antes estaba en next.config.mjs, que Next ignora porque gana el .js.
   devIndicators: false,
-  // Preview temporal por túnel (cloudflared): sin esto, Next dev rechaza el
-  // WebSocket de HMR viniendo de un origen que no sea localhost (hardening
-  // agregado en 16.3.x) — se reconecta en loop y la página nunca termina de
-  // montar. Borrar esta línea cuando termine la demo.
-  allowedDevOrigins: ['throwing-sullivan-expansion-comparative.trycloudflare.com'],
   async rewrites() {
     return [
       { source: '/api/auth/check/:path*',    destination: `${API}/api/auth/check/:path*` },
