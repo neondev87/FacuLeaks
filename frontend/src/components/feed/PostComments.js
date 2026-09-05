@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import usePostComments from "@/hooks/usePostComments";
 import { API } from "@/lib/api";
-import { FEED_HOLO } from "@/lib/theme";
+import { HOLO_THEME } from "@/lib/theme";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: components/feed/PostComments.js — hilo de comentarios (diseño feed)
@@ -36,12 +36,12 @@ export default function PostComments({ postId, currentUserId }) {
     : "";
 
   return (
-    <div style={{ borderTop:`1px solid ${FEED_HOLO.hairlineSoft}`, padding:"10px 14px", background:"rgba(10,10,13,.4)" }}>
+    <div style={{ borderTop:`1px solid ${HOLO_THEME.hairlineSoft}`, padding:"10px 14px", background:"rgba(10,10,13,.4)" }}>
 
       {loading ? (
         <div style={{ textAlign:"center", padding:"12px 0" }}><span className="spinner" /></div>
       ) : comments.length === 0 ? (
-        <div style={{ fontSize:11, color:FEED_HOLO.textDim, fontFamily:"'Space Mono',monospace", letterSpacing:".08em", padding:"4px 0 10px" }}>
+        <div style={{ fontSize:11, color:HOLO_THEME.textDim, fontFamily:"'Space Mono',monospace", letterSpacing:".08em", padding:"4px 0 10px" }}>
           † sin comentarios todavía
         </div>
       ) : (
@@ -53,20 +53,22 @@ export default function PostComments({ postId, currentUserId }) {
               <div key={c.id} style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
                 <div
                   onClick={() => autor.id && router.push(`/perfil/${autor.id}`)}
-                  style={{ width:24, height:24, borderRadius:"50%", flexShrink:0, backgroundColor:"#1c1c24", backgroundImage: autor.imagen ? `url(${autor.imagen.startsWith("http") ? autor.imagen : `${API}${autor.imagen}`})` : "none", backgroundSize:"cover", backgroundPosition:"center", border:`1px solid ${FEED_HOLO.hairline}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:8, color:FEED_HOLO.textDim, cursor: autor.id ? "pointer" : "default" }}>{!autor.imagen && "◈"}</div>
+                  style={{ width:26, height:26, borderRadius:"50%", flexShrink:0, backgroundColor:"#1c1c24", backgroundImage: autor.imagen ? `url(${autor.imagen.startsWith("http") ? autor.imagen : `${API}${autor.imagen}`})` : "none", backgroundSize:"cover", backgroundPosition:"center", border:`1px solid ${HOLO_THEME.hairline}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:8, color:HOLO_THEME.textDim, cursor: autor.id ? "pointer" : "default" }}>{!autor.imagen && "◈"}</div>
                 <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ display:"flex", alignItems:"baseline", gap:8 }}>
-                    <span style={{ fontSize:12, color:FEED_HOLO.text, fontFamily:"'Inter',sans-serif", fontWeight:500 }}>{autor.username || "unknown"}</span>
-                    <span style={{ fontSize:10, color:FEED_HOLO.textDim, fontFamily:"'Space Mono',monospace" }}>{fmt(c.creadoEn)}</span>
-                    {mine && (
-                      <span onClick={() => remove(c.id)}
-                        style={{ marginLeft:"auto", fontSize:10, color:FEED_HOLO.textDim, cursor:"pointer", fontFamily:"'Space Mono',monospace", transition:"color .15s" }}
-                        onMouseEnter={e => e.currentTarget.style.color = "#c0524a"}
-                        onMouseLeave={e => e.currentTarget.style.color = FEED_HOLO.textDim}>✕</span>
-                    )}
-                  </div>
-                  <div style={{ fontSize:13, color:"rgba(242,240,248,.65)", lineHeight:1.6, fontFamily:"'Inter',sans-serif", whiteSpace:"pre-wrap", marginTop:2 }}>
-                    {c.contenido}
+                  <div style={{ background:HOLO_THEME.panel, border:`1px solid ${HOLO_THEME.hairlineSoft}`, borderRadius:10, padding:"8px 12px" }}>
+                    <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom:3 }}>
+                      <span style={{ fontSize:12, color:HOLO_THEME.text, fontFamily:"'Inter',sans-serif", fontWeight:500 }}>{autor.username || "unknown"}</span>
+                      <span style={{ fontSize:10, color:HOLO_THEME.textDim, fontFamily:"'Space Mono',monospace" }}>{fmt(c.creadoEn)}</span>
+                      {mine && (
+                        <span onClick={() => remove(c.id)}
+                          style={{ marginLeft:"auto", fontSize:10, color:HOLO_THEME.textDim, cursor:"pointer", fontFamily:"'Space Mono',monospace", transition:"color .15s" }}
+                          onMouseEnter={e => e.currentTarget.style.color = "#c0524a"}
+                          onMouseLeave={e => e.currentTarget.style.color = HOLO_THEME.textDim}>✕</span>
+                      )}
+                    </div>
+                    <div style={{ fontSize:13, color:"rgba(242,240,248,.65)", lineHeight:1.6, fontFamily:"'Inter',sans-serif", whiteSpace:"pre-wrap" }}>
+                      {c.contenido}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -83,24 +85,24 @@ export default function PostComments({ postId, currentUserId }) {
           placeholder="escribir un comentario..."
           maxLength={500}
           style={{
-            flex:1, background:"#0a0a0d", border:`1px solid ${FEED_HOLO.hairline}`,
-            padding:"7px 10px", fontSize:12, color:FEED_HOLO.text, fontFamily:"'Inter',sans-serif",
+            flex:1, background:"#0a0a0d", border:`1px solid ${HOLO_THEME.hairline}`,
+            padding:"7px 10px", fontSize:12, color:HOLO_THEME.text, fontFamily:"'Inter',sans-serif",
             outline:"none",
           }}
           onFocus={e => e.target.style.borderColor = "rgba(255,255,255,.4)"}
-          onBlur={e => e.target.style.borderColor = FEED_HOLO.hairline}
+          onBlur={e => e.target.style.borderColor = HOLO_THEME.hairline}
         />
         <button
           onClick={submit}
           disabled={sending || !text.trim()}
           style={{
-            background:"none", border:`1px solid ${FEED_HOLO.hairline}`, color: text.trim() ? FEED_HOLO.text : FEED_HOLO.textDim,
+            background:"none", border:`1px solid ${HOLO_THEME.hairline}`, color: text.trim() ? HOLO_THEME.text : HOLO_THEME.textDim,
             fontFamily:"'Space Mono',monospace", fontSize:10, letterSpacing:".1em",
             padding:"7px 14px", cursor: sending || !text.trim() ? "default" : "pointer",
             transition:"all .15s", opacity: sending ? .5 : 1,
           }}
           onMouseEnter={e => { if (text.trim()) e.currentTarget.style.borderColor = "rgba(255,255,255,.4)"; }}
-          onMouseLeave={e => e.currentTarget.style.borderColor = FEED_HOLO.hairline}
+          onMouseLeave={e => e.currentTarget.style.borderColor = HOLO_THEME.hairline}
         >{sending ? "..." : "† enviar"}</button>
       </div>
     </div>

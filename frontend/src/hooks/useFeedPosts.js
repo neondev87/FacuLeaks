@@ -172,5 +172,39 @@ export default function useFeedPosts({ activeTab, status, session }) {
     }
   }, [loadPosts]);
 
-  return { posts, loading, newCount, resetNewCount, removePost, toggleReaction, ownImagen };
+  // Compartir (toggle): solo posts públicos — el backend rechaza el resto.
+  // No hay socket ni recuento local de "en qué feeds aparece": compartir no
+  // cambia nada en el muro, solo en el perfil del que comparte. Si el
+  // request falla, revierte SOLO ese post (no recarga todo el feed como
+  // toggleReaction — recargar toda la lista se sentía como que "la página
+  // se recarga" ante cualquier error, por ejemplo mientras el backend
+  // todavía no tiene la migración de post_shares aplicada).
+  const toggleShare = useCallback(async (postId) => {
+    const previo = { myShared: false, totalCompartidos: 0 };
+    setPosts(prev => prev.map(p => {
+      if (p.id !== postId) return p;
+      previo.myShared = !!p.myShared;
+      previo.totalCompartidos = p.totalCompartidos ?? 0;
+      const myShared = !p.myShared;
+      const totalCompartidos = Math.max(0, previo.totalCompartidos + (myShared ? 1 : -1));
+      return { ...p, myShared, totalCompartidos };
+    }));
+    try {
+      const res = await fetch(`${API}/api/posts/${postId}/share`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setPosts(prev => prev.map(p =>
+        p.id === postId ? { ...p, myShared: data.shared, totalCompartidos: data.totalCompartidos } : p
+      ));
+    } catch {
+      setPosts(prev => prev.map(p =>
+        p.id === postId ? { ...p, myShared: previo.myShared, totalCompartidos: previo.totalCompartidos } : p
+      ));
+    }
+  }, []);
+
+  return { posts, loading, newCount, resetNewCount, removePost, toggleReaction, toggleShare, ownImagen };
 }

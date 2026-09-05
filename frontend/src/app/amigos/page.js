@@ -9,6 +9,7 @@ import useInjectedStyles from "@/hooks/useInjectedStyles";
 import useAmigos from "@/hooks/useAmigos";
 import UserCard from "@/components/amigos/UserCard";
 import { amigosStyles } from "./amigosStyles";
+import { HOLO_THEME } from "@/lib/theme";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: app/amigos/page.js — buscar gente y manejar solicitudes
@@ -64,7 +65,7 @@ export default function AmigosPage() {
           </div>
 
           {resultados.length > 0 && (
-            <div style={{ marginTop: 8, border: "1px solid rgba(255,255,255,.08)", padding: 8 }}>
+            <div style={{ marginTop: 8, border: `1px solid ${HOLO_THEME.hairlineSoft}`, borderRadius: 10, padding: 8 }}>
               {resultados.map(u => (
                 <UserCard
                   key={u.id}
@@ -137,7 +138,7 @@ export default function AmigosPage() {
         <div style={{ marginTop: 40 }}>
           <div className="section-header">
             † MIS AMIGOS
-            <span style={{ fontSize: 11, color: "#555", letterSpacing: ".1em" }}>{amigos.length}</span>
+            <span style={{ fontSize: 11, color: HOLO_THEME.textDim, letterSpacing: ".1em" }}>{amigos.length}</span>
           </div>
           {loading ? (
             <div className="empty-state"><span className="spinner" /></div>

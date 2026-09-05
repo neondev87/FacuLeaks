@@ -17,6 +17,7 @@
 // ════════════════════════════════════════════════════════════════════════
 import { useState, useRef, useEffect } from 'react';
 import { API } from '@/lib/api';
+import { HOLO_THEME } from '@/lib/theme';
 
 export default function PicturesGrid({ userId, initialPhotos = [], canEdit = true }) {
   const [photos, setPhotos] = useState(initialPhotos);
@@ -84,14 +85,15 @@ export default function PicturesGrid({ userId, initialPhotos = [], canEdit = tru
 
   return (
     <>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         {slots.map((photo, idx) => (
           <div
             key={photo?.id || `empty-${idx}`}
             style={{
               aspectRatio: '1',
-              background: '#080808',
-              border: '1px solid rgba(255,255,255,.05)',
+              background: HOLO_THEME.panel,
+              border: `1px solid ${HOLO_THEME.hairlineSoft}`,
+              borderRadius: 8,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -103,12 +105,12 @@ export default function PicturesGrid({ userId, initialPhotos = [], canEdit = tru
             onMouseEnter={(e) => {
               if (photo) {
                 setHoveredPhotoId(photo.id);
-                e.currentTarget.style.borderColor = 'rgba(255,255,255,.15)';
+                e.currentTarget.style.borderColor = HOLO_THEME.hairline;
               }
             }}
             onMouseLeave={(e) => {
               setHoveredPhotoId(null);
-              e.currentTarget.style.borderColor = 'rgba(255,255,255,.05)';
+              e.currentTarget.style.borderColor = HOLO_THEME.hairlineSoft;
             }}
           >
             {photo ? (

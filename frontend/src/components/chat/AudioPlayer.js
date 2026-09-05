@@ -32,10 +32,10 @@ export default function AudioPlayer({ src, esPropio }) {
         onTimeUpdate={e => setProgress(e.target.currentTime)}
         onLoadedMetadata={e => setDuration(e.target.duration)}
         onEnded={() => { setPlaying(false); setProgress(0); }} />
-      <button onClick={toggle} style={{ background:"none", border:"none", cursor:"pointer", padding:0, color:textCol, fontSize:14, flexShrink:0, lineHeight:1 }}>
+      <button onClick={toggle} style={{ background:"none", border:"none", cursor:"pointer", padding:0, color:textCol, fontSize:17, flexShrink:0, lineHeight:1 }}>
         {playing ? "⏸" : "▶"}
       </button>
-      <div style={{ flex:1, height:2, background:barBg, borderRadius:1, cursor:"pointer", position:"relative" }}
+      <div style={{ flex:1, height:3, background:barBg, borderRadius:1, cursor:"pointer", position:"relative" }}
         onClick={e => {
           const rect = e.currentTarget.getBoundingClientRect();
           const pct  = (e.clientX - rect.left) / rect.width;
@@ -43,7 +43,7 @@ export default function AudioPlayer({ src, esPropio }) {
         }}>
         <div style={{ height:"100%", width: duration ? `${(progress/duration)*100}%` : "0%", background:barFill, borderRadius:1, transition:"width .1s linear" }} />
       </div>
-      <span style={{ fontSize:9, fontFamily:"'IBM Plex Mono',monospace", color:textCol, flexShrink:0 }}>
+      <span style={{ fontSize:12, fontFamily:"'Space Mono',monospace", color:textCol, flexShrink:0 }}>
         {fmt(progress)} / {fmt(duration)}
       </span>
     </div>

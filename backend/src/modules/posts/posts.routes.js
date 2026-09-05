@@ -13,7 +13,7 @@ const express = require('express');
 const router = express.Router();
 const {
   feedRecientes, feedTrending, feedSiguiendo, nuevoPost, deletePost,
-  toggleReaction, listComments, createComment, deleteComment,
+  toggleReaction, toggleShare, listComments, createComment, deleteComment,
 } = require('./posts.controller');
 const { authMiddleware } = require('../../middleware/auth');
 
@@ -25,6 +25,9 @@ router.delete('/:id',          authMiddleware, deletePost);
 
 // B2 · reacciones
 router.post('/:id/react',      authMiddleware, toggleReaction);
+
+// Compartir (toggle: solo posts públicos, solo visible en el perfil del que comparte)
+router.post('/:id/share',      authMiddleware, toggleShare);
 
 // B3 · comentarios
 router.get('/:id/comments',                 authMiddleware, listComments);

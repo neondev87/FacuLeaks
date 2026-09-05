@@ -82,6 +82,49 @@ export default function useOwnProfile({ status, session }) {
     } catch {}
   };
 
+  // Descompartir: mismo endpoint toggle que compartir (POST /api/posts/:id/share)
+  // — postId acá es el id del post ORIGINAL, no del registro de share.
+  const handleUnshare = async postId => {
+    try {
+      await fetch(`${API}/api/posts/${postId}/share`, { method: "POST", credentials: "include" });
+      setLocalPosts(prev => prev.filter(p => p.id !== postId || !p.isShared));
+    } catch {}
+  };
+
+  // LIKE/DISLIKE en los posts del perfil — mismo endpoint y misma lógica
+  // optimista que hooks/useFeedPosts.js (toggleReaction), solo que acá el
+  // estado local es `localPosts` en vez de la lista del muro.
+  const toggleReaction = async (postId, tipo) => {
+    const posts = localPosts ?? perfil?.posts ?? [];
+    let previo = { myReaction: null, totalLikes: 0, totalDislikes: 0 };
+    const next = posts.map(p => {
+      if (p.id !== postId) return p;
+      previo = { myReaction: p.myReaction ?? null, totalLikes: p.totalLikes ?? 0, totalDislikes: p.totalDislikes ?? 0 };
+      let { totalLikes, totalDislikes } = previo;
+      if (previo.myReaction === "LIKE")    totalLikes--;
+      if (previo.myReaction === "DISLIKE") totalDislikes--;
+      const myReaction = previo.myReaction === tipo ? null : tipo;
+      if (myReaction === "LIKE")    totalLikes++;
+      if (myReaction === "DISLIKE") totalDislikes++;
+      return { ...p, myReaction, totalLikes: Math.max(0, totalLikes), totalDislikes: Math.max(0, totalDislikes) };
+    });
+    setLocalPosts(next);
+    try {
+      const res = await fetch(`${API}/api/posts/${postId}/react`, {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo }),
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setLocalPosts(prev => prev.map(p =>
+        p.id === postId ? { ...p, myReaction: data.myReaction, totalLikes: data.totalLikes, totalDislikes: data.totalDislikes } : p
+      ));
+    } catch {
+      setLocalPosts(prev => prev.map(p => p.id === postId ? { ...p, ...previo } : p));
+    }
+  };
+
   const posts = localPosts ?? perfil?.posts ?? [];
 
   return {
@@ -92,6 +135,6 @@ export default function useOwnProfile({ status, session }) {
     posts,
     lightboxSrc, setLightboxSrc,
     photos,
-    handleSave, handleDeletePost,
+    handleSave, handleDeletePost, handleUnshare, toggleReaction,
   };
 }

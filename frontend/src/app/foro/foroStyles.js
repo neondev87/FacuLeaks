@@ -1,54 +1,61 @@
 // MÓDULO: app/foro/foroStyles.js
 // CSS de la página de foro. Se inyecta con hooks/useInjectedStyles.js
-// ("foro-styles", …) desde app/foro/page.js. Antes vivía a mano dentro de
-// la página — parejado con el mismo patrón de Fase 2 el 2026-09-04.
-// Comparte fuente y textura de fondo con amigos (misma familia visual) vía
-// lib/theme.js. Este archivo es CSS nomás — la página en sí sigue siendo
-// mock, eso no cambió.
-import { FONT_IMPORT_MONO_DISPLAY, NOISE_TEXTURE_SCANLINE, COLORS } from "@/lib/theme";
+// ("foro-styles", …) desde app/foro/page.js. Este archivo es CSS nomás —
+// la página en sí sigue siendo mock, eso no cambió.
+//
+// Fase 3 (2026-09-05): pasa a la paleta "Holographic" (HOLO_THEME) y al
+// trío de fuentes Cinzel/Inter/Space Mono de Muro/Perfil/Amigos — misma
+// estructura visual que esas páginas (esquinas redondeadas, hairlines
+// finos). Antes compartía paleta/ruido "scanline" con amigos, que ya tuvo
+// su turno de Fase 3 y se separó de acá.
+import { FONT_IMPORT_MAIN, NOISE_TEXTURE, HOLO_THEME } from "@/lib/theme";
 
 export const foroStyles = `
-      ${FONT_IMPORT_MONO_DISPLAY}
-      body { background:${COLORS.bg}; color:${COLORS.text}; font-family:'Space Mono',monospace; font-size:13px; overflow:hidden; }
-      ${NOISE_TEXTURE_SCANLINE}
+      ${FONT_IMPORT_MAIN}
+      body { background:${HOLO_THEME.bg}; color:${HOLO_THEME.text}; font-family:'Inter',sans-serif; font-size:13px; overflow:hidden; }
+      ${NOISE_TEXTURE}
       ::-webkit-scrollbar { width:4px }
       ::-webkit-scrollbar-track { background:#000 }
       ::-webkit-scrollbar-thumb { background:#222 }
 
       .channel-item {
         padding: 7px 16px;
+        margin: 0 8px 2px;
+        border-radius: 8px;
         cursor: pointer;
         border-left: 2px solid transparent;
         transition: all .15s;
       }
       .channel-item:hover { background: rgba(255,255,255,.03); }
-      .channel-item.active { background: rgba(255,255,255,.07); border-left-color: #fff; }
+      .channel-item.active { background: rgba(255,255,255,.07); border-left-color: ${HOLO_THEME.text}; }
 
       .msg-input {
         flex: 1;
-        background: rgba(255,255,255,.06);
-        border: 1px solid rgba(255,255,255,.08);
-        color: #e8e4d9;
-        font-family: 'Space Mono', monospace;
-        font-size: 12px;
+        background: ${HOLO_THEME.panel};
+        border: 1px solid ${HOLO_THEME.hairlineSoft};
+        color: ${HOLO_THEME.text};
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
         padding: 11px 16px;
         outline: none;
-        letter-spacing: .03em;
+        border-radius: 20px;
         transition: border-color .2s;
       }
-      .msg-input:focus { border-color: rgba(255,255,255,.3); }
-      .msg-input::placeholder { color: rgba(255,255,255,.2); }
+      .msg-input:focus { border-color: ${HOLO_THEME.hairline}; }
+      .msg-input::placeholder { color: rgba(242,240,248,.28); }
 
       .send-btn {
-        background: rgba(255,255,255,.1);
-        border: 1px solid rgba(255,255,255,.25);
-        color: #fff;
+        background: ${HOLO_THEME.text};
+        border: none;
+        color: ${HOLO_THEME.bg};
         font-family: 'Space Mono', monospace;
+        font-weight: 700;
         font-size: 11px;
-        padding: 11px 18px;
+        padding: 11px 20px;
         cursor: pointer;
-        letter-spacing: .15em;
-        transition: all .2s;
+        letter-spacing: .14em;
+        border-radius: 20px;
+        transition: opacity .2s;
       }
-      .send-btn:hover { background: rgba(255,255,255,.18); }
+      .send-btn:hover { opacity: .85; }
     `;

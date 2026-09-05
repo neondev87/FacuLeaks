@@ -21,8 +21,11 @@
 //   - Lo consume: app/perfil/page.js y app/perfil/[id]/page.js.
 // ════════════════════════════════════════════════════════════════════════
 import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import usePostComments from '@/hooks/usePostComments';
 import { API } from '@/lib/api';
+import { HOLO_THEME } from '@/lib/theme';
+import { REACTIONS } from '@/components/feed/reactions';
 
 // ── Pixel Trash (ícono de basura pixel art) ──
 const TRASH_LID_C = [[0,0,1,1,1,0,0],[0,1,1,1,1,1,0],[0,0,1,1,1,0,0]];
@@ -75,7 +78,7 @@ function TrashBtn({ onDelete, s = 2 }) {
 }
 
 // ── Componente PostCard ──
-export default function PostCard({ post, currentUser, viewerId, canDelete = false, onDelete, onImageClick }) {
+export default function PostCard({ post, currentUser, viewerId, canDelete = false, onDelete, onImageClick, onReact }) {
   // viewerId = id del usuario logueado (para "es mío"). En el perfil público
   // `currentUser` es el DUEÑO del perfil, no el que mira — por eso va aparte.
   const uid = viewerId ?? currentUser?.id;
@@ -105,36 +108,43 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
 
   return (
     <div style={{
-      background: "#050505",
-      border: "1px solid rgba(255,255,255,.07)",
-      borderRadius: 8,
-      padding: 16,
-      marginBottom: 12,
+      background: HOLO_THEME.panel,
+      border: `1px solid ${HOLO_THEME.hairlineSoft}`,
+      borderRadius: 10,
+      padding: 24,
+      marginBottom: 14,
       fontFamily: "'Inter',sans-serif"
     }}>
-      
+
+      {/* Compartido: post ajeno que quedó fijado en ESTE perfil (nunca en el muro) */}
+      {post.isShared && (
+        <div style={{ fontSize: 11, color: HOLO_THEME.textDim, fontFamily: "'Space Mono',monospace", letterSpacing: ".05em", marginBottom: 10 }}>
+          ↻ {currentUser?.username || currentUser?.nombre} compartió esto
+        </div>
+      )}
+
       {/* Header del post */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           {/* Avatar */}
           <div style={{
             width: 40,
             height: 40,
             borderRadius: "50%",
-            backgroundColor: "rgba(255,255,255,.1)",
+            backgroundColor: "#1c1c24",
             backgroundImage: post.autor?.imagen
               ? `url(${post.autor.imagen.startsWith('http') ? post.autor.imagen : `${API}${post.autor.imagen}`})`
               : "none",
             backgroundSize: "cover",
             backgroundPosition: "center",
-            border: "1px solid rgba(255,255,255,.08)"
+            border: `1px solid ${HOLO_THEME.hairline}`
           }} />
-          
+
           <div>
-            <div style={{ fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,.85)" }}>
+            <div style={{ fontSize: 14, fontWeight: 500, color: HOLO_THEME.text, fontFamily: "'Cinzel',serif" }}>
               {post.autor?.nombre || post.autor?.username || currentUser.username}
             </div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)" }}>
+            <div style={{ fontSize: 11, color: HOLO_THEME.textDim, fontFamily: "'Space Mono',monospace" }}>
               {formatDate(post.creadoEn)}
             </div>
           </div>
@@ -150,8 +160,8 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
       {post.titulo && (
         <div style={{
           fontSize: 15,
-          fontWeight: 500,
-          color: "rgba(255,255,255,.9)",
+          fontWeight: 600,
+          color: HOLO_THEME.text,
           marginBottom: 8,
           lineHeight: 1.4
         }}>
@@ -163,25 +173,26 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
       {post.contenido && (
         <div style={{
           fontSize: 14,
-          color: "rgba(232,228,217,.75)",
-          lineHeight: 1.6,
-          marginBottom: post.imagen ? 12 : 0,
+          color: "rgba(242,240,248,.7)",
+          lineHeight: 1.7,
+          marginBottom: post.imagen ? 14 : 0,
           whiteSpace: "pre-wrap"
         }}>
           {post.contenido}
         </div>
       )}
 
-      {/* Imagen */}
+      {/* Imagen — sin límite chico de alto: se muestra grande, solo se
+          achica si de verdad no entra en la pantalla del usuario. */}
       {post.imagen && (
         <div
           onClick={() => onImageClick && onImageClick(post.imagen)}
           style={{
-            marginTop: 12,
-            borderRadius: 6,
+            marginTop: 14,
+            borderRadius: 8,
             overflow: "hidden",
             cursor: onImageClick ? "pointer" : "default",
-            border: "1px solid rgba(255,255,255,.05)"
+            border: `1px solid ${HOLO_THEME.hairlineSoft}`
           }}
         >
           <img
@@ -189,9 +200,9 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
             alt=""
             style={{
               width: "100%",
-              maxHeight: 480,
+              maxHeight: "85vh",
               objectFit: "contain",
-              background: "#000",
+              background: HOLO_THEME.bg,
               display: "block"
             }}
           />
@@ -201,54 +212,55 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
       {/* Separador */}
       <div style={{
         height: 1,
-        background: "rgba(255,255,255,.04)",
-        margin: "12px 0"
+        background: HOLO_THEME.hairlineSoft,
+        margin: "14px 0"
       }} />
 
-      {/* Barra de acciones */}
-      <div style={{
-        display: "flex",
-        gap: 16,
-        fontSize: 12,
-        color: "rgba(255,255,255,.4)"
-      }}>
-        {/* Botón comentarios */}
-        <button
-          onClick={() => setShowComments(!showComments)}
-          style={{
-            background: "none",
-            border: "none",
-            color: "rgba(255,255,255,.4)",
-            cursor: "pointer",
-            fontSize: 12,
-            fontFamily: "'Inter',sans-serif",
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "4px 8px",
-            borderRadius: 4,
-            transition: "all .15s"
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.background = "rgba(255,255,255,.05)";
-            e.currentTarget.style.color = "rgba(255,255,255,.7)";
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background = "none";
-            e.currentTarget.style.color = "rgba(255,255,255,.4)";
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-          <span>{(showComments ? comments.length : (post.totalComentarios ?? comments.length)) || 0} comentarios</span>
-        </button>
+      {/* Reacciones (LIKE/DISLIKE) — mismos íconos y mismo endpoint que el muro */}
+      <div style={{ display:"flex", alignItems:"center", gap:4, marginBottom:8 }}>
+        {REACTIONS.map(({ key, Icon }) => (
+          <Icon
+            key={key}
+            active={post.myReaction === key}
+            count={key === "LIKE" ? (post.totalLikes ?? 0) : (post.totalDislikes ?? 0)}
+            onToggle={() => onReact?.(post.id, key)}
+          />
+        ))}
+      </div>
+
+      {/* Barrita: click para desplegar el hilo de comentarios con animación */}
+      <div
+        onClick={() => setShowComments(v => !v)}
+        style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, padding:"6px 0", cursor:"pointer", transition:"background .15s", borderRadius:6 }}
+        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.03)"}
+        onMouseLeave={e => e.currentTarget.style.background = "none"}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={showComments ? "rgba(255,255,255,.7)" : "rgba(255,255,255,.4)"} strokeWidth="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+        <span style={{ fontSize:12, color: showComments ? "rgba(255,255,255,.7)" : "rgba(255,255,255,.4)", fontFamily:"'Inter',sans-serif" }}>
+          {(showComments ? comments.length : (post.totalComentarios ?? comments.length)) || 0} comentarios
+        </span>
+        <motion.span
+          animate={{ rotate: showComments ? 180 : 0 }}
+          transition={{ duration: .25, ease: "easeOut" }}
+          style={{ fontSize:10, color: showComments ? "rgba(255,255,255,.7)" : "rgba(255,255,255,.4)", display:"inline-block" }}
+        >▾</motion.span>
       </div>
 
       {/* Sección de comentarios */}
+      <AnimatePresence initial={false}>
       {showComments && (
+        <motion.div
+          key="comments"
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: .3, ease: "easeInOut" }}
+          style={{ overflow: "hidden" }}
+        >
         <div style={{ marginTop: 12 }}>
-          
+
           {/* Lista de comentarios */}
           {comments.length > 0 && (
             <div style={{
@@ -411,7 +423,9 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
             </div>
           </div>
         </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }

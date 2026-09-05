@@ -117,13 +117,14 @@ export const KF = {
 };
 
 // ════════════════════════════════════════════════════════════════════════
-// Paleta "Holographic" — Fase 3, dirección visual del Muro (fondo casi
-// negro, sin cassette ni semitono — esas quedaron descartadas en la
-// comparación de las 4 direcciones). Tokens propios (no tocan COLORS/FONTS
-// de arriba) para no afectar chat/perfil, que siguen con la paleta anterior
-// hasta que les toque su turno de Fase 3.
+// Paleta "Holographic" — Fase 3, dirección visual nueva (fondo casi negro,
+// sin cassette ni semitono — esas quedaron descartadas en la comparación de
+// las 4 direcciones). La usan Muro, Perfil, Amigos, Foro y Chat — las 5
+// páginas ya pasaron por su turno de Fase 3 (2026-09-05). Tokens propios
+// (no tocan COLORS/FONTS de arriba, que sigue usando app/register/ — la
+// única pantalla que todavía no tuvo su turno de rediseño).
 // ════════════════════════════════════════════════════════════════════════
-export const FEED_HOLO = {
+export const HOLO_THEME = {
   bg:         "#0a0a0d",
   panel:      "#111117",
   text:       "#f2f0f8",

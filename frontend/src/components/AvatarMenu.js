@@ -21,6 +21,7 @@
 // ════════════════════════════════════════════════════════════════════════
 import { useState, useRef, useEffect } from 'react';
 import { API } from '@/lib/api';
+import { HOLO_THEME } from '@/lib/theme';
 
 export default function AvatarMenu({ currentAvatar, canEdit = true, onAvatarChange, onViewClick }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -119,22 +120,37 @@ export default function AvatarMenu({ currentAvatar, canEdit = true, onAvatarChan
 
   return (
     <>
+      {/* El brillo "chrome aero" vive SOLO acá — es el único recuadro de la
+          app que lo lleva ("el rectángulo de perfil"), a propósito no está
+          en ningún avatar chico (composer del muro, posts, comentarios). */}
+      <style>{`
+        .avatar-frame::after {
+          content:''; position:absolute; inset:0;
+          background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.3) 45%, transparent 60%);
+          background-size:250% 250%;
+          animation: avatarSheen 6s ease-in-out infinite;
+          pointer-events:none;
+        }
+        @keyframes avatarSheen { 0%,100%{background-position:120% 0} 50%{background-position:-20% 100%} }
+      `}</style>
       <div ref={menuRef} style={{ position: 'relative', width: '100%', aspectRatio: '1' }}>
         {/* Avatar */}
         <div
+          className="avatar-frame"
           onClick={() => canEdit ? setMenuOpen(!menuOpen) : handleView()}
           style={{
             width: '100%',
             height: '100%',
-            background: '#0a0a0a',
-            border: '1px solid rgba(255,255,255,.07)',
+            background: '#1c1c24',
+            border: `1px solid ${HOLO_THEME.hairline}`,
+            borderRadius: 14,
             overflow: 'hidden',
             cursor: 'pointer',
             position: 'relative',
             transition: 'border-color .2s'
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,.15)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,.07)'; }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,.35)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = HOLO_THEME.hairline; }}
         >
           {avatarUrl ? (
             <img

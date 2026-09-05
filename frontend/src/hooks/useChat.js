@@ -4,7 +4,9 @@
 // MÓDULO: hooks/useChat.js — cerebro de la página de chat
 // ════════════════════════════════════════════════════════════════════════
 // QUÉ HACE: es el hook más grande del frontend porque el chat tiene mucho
-// estado en vivo. Junta: la lista de conversaciones, la conversación
+// estado en vivo. Junta: la lista de conversaciones (`recientes`, más
+// `solicitudes` — conversaciones de gente que no es tu amigo y todavía no le
+// respondiste, ver chat.controller.js → getConversaciones), la conversación
 // abierta y sus mensajes, el socket (UN solo socket para toda la sesión de
 // chat), quién está online, quién está escribiendo o grabando un audio
 // ahora mismo, la racha de mensajes con esa persona, y mandar/leer/borrar
@@ -34,6 +36,7 @@ import { io } from "socket.io-client";
 import { API, SOCKET_URL } from "@/lib/api";
 export default function useChat({ session, status, inputRef }) {
   const [recientes,   setRecientes]   = useState([]);
+  const [solicitudes, setSolicitudes] = useState([]);
   const [amigos,      setAmigos]      = useState([]);
   const [activeChat,  setActiveChat]  = useState(null);
   const [mensajes,    setMensajes]    = useState([]);
@@ -58,6 +61,7 @@ export default function useChat({ session, status, inputRef }) {
       const res  = await fetch(`${API}/api/chat/conversaciones`, { credentials:"include" });
       const data = await res.json();
       setRecientes(data.recientes || []);
+      setSolicitudes(data.solicitudes || []);
       setAmigos(data.amigos       || []);
     } catch {}
   }, []);
@@ -112,7 +116,9 @@ export default function useChat({ session, status, inputRef }) {
       setActiveChat(prev => prev && prev.userId === userId ? { ...prev, imagen } : prev);
     });
     socket.on("message:receive", msg   => { addMensaje(msg); loadConversaciones(); });
-    socket.on("message:sent",    msg   => { addMensaje(msg); });
+    // Si le respondías a una solicitud, del lado del backend esa conversación
+    // ya pasó a "recientes" — hay que refrescar para que la vea así también.
+    socket.on("message:sent",    msg   => { addMensaje(msg); loadConversaciones(); });
     socket.on("typing:start",    ({ userId }) => { setIsTyping(String(userId)); setIsAudio(false); });
     socket.on("typing:stop",     ({ userId }) => { setIsTyping(prev => prev === String(userId) ? false : prev); });
     socket.on("audio:start",     ({ userId }) => { setIsAudio(String(userId)); setIsTyping(false); });
@@ -191,7 +197,7 @@ export default function useChat({ session, status, inputRef }) {
   const showAudioIndicator  = isAudio  && String(isAudio)  === String(activeChat?.userId);
 
   return {
-    recientes, amigos, onlineUsers, isOnline, isActive,
+    recientes, solicitudes, amigos, onlineUsers, isOnline, isActive,
     activeChat, mensajes, loading, openChat,
     input, setInput, handleInputChange, sendMessage,
     replyingTo, setReplyingTo,

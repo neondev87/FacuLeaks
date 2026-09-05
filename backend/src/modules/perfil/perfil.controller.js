@@ -51,20 +51,76 @@ const getFotos = (userId) =>
     select:  { id: true, photoUrl: true, uploadedAt: true },
   }).then(rows => rows.map(r => ({ id: r.id, url: r.photoUrl, uploadedAt: r.uploadedAt })));
 
+// Normaliza los datos de reacciones de un post para el VIEWER (quien está
+// mirando el perfil, no necesariamente su dueño) — mismo criterio que
+// mapPost() en posts.controller.js, para que el perfil pueda usar el mismo
+// botón de LIKE/DISLIKE que ya existe en el muro.
+const conReacciones = (post, viewerId) => {
+  const { post_likes, totalLikes, totalDislikes, ...rest } = post;
+  return {
+    ...rest,
+    totalLikes:    totalLikes ?? 0,
+    totalDislikes: totalDislikes ?? 0,
+    myReaction:    viewerId ? (post_likes?.[0]?.tipo || null) : null,
+  };
+};
+
 // Posts del perfil (propio o público): siempre con el autor incluido —
 // como acá el autor es SIEMPRE el dueño del perfil, esto evita el bug de
 // tarjetas de post sin avatar (PostCard.js pinta `post.autor?.imagen`, que
-// sin este include quedaba undefined).
-const getPostsConAutor = (userId, privacidadFiltro) =>
+// sin este include quedaba undefined). `viewerId` es quien está mirando
+// (para saber si YA reaccionó a cada post — puede ser distinto del dueño).
+const getPostsConAutor = (userId, privacidadFiltro, viewerId) =>
   prisma.posts.findMany({
     where:   privacidadFiltro ? { autorId: userId, privacidad: privacidadFiltro } : { autorId: userId },
     orderBy: { creadoEn: 'desc' },
     take:    5,
     select: {
       id: true, titulo: true, contenido: true, imagen: true, creadoEn: true, totalVistas: true,
+      totalLikes: true, totalDislikes: true,
       users: { select: { id: true, username: true, nombre: true, imagen: true } },
+      post_likes: viewerId ? { where: { userId: viewerId }, select: { tipo: true } } : false,
     },
-  }).then(rows => rows.map(({ users, ...p }) => ({ ...p, autor: users })));
+  }).then(rows => rows.map(({ users, ...p }) => conReacciones({ ...p, autor: users }, viewerId)));
+
+// Posts que `userId` compartió (no los que escribió) — para que aparezcan
+// SOLO en su perfil, nunca en el muro (feedRecientes/Trending/Siguiendo no
+// tocan `post_shares`). `onlyPublicOriginal` se usa en el perfil PÚBLICO:
+// si el post original dejó de ser público (o nunca lo fue), no se lista acá
+// para no filtrar contenido de amigos a un visitante cualquiera.
+const getSharedPosts = (userId, onlyPublicOriginal, viewerId) =>
+  prisma.post_shares.findMany({
+    where:   { userId },
+    orderBy: { creadoEn: 'desc' },
+    take:    5,
+    include: {
+      posts: {
+        select: {
+          id: true, titulo: true, contenido: true, imagen: true, creadoEn: true, totalVistas: true, privacidad: true,
+          totalLikes: true, totalDislikes: true,
+          users: { select: { id: true, username: true, nombre: true, imagen: true } },
+          post_likes: viewerId ? { where: { userId: viewerId }, select: { tipo: true } } : false,
+        },
+      },
+    },
+  }).then(rows => rows
+    .filter(s => s.posts && (!onlyPublicOriginal || s.posts.privacidad === 'PUBLICA'))
+    .map(s => {
+      const { users, privacidad, ...p } = s.posts;
+      return conReacciones({ ...p, autor: users, isShared: true, shareId: s.id, sharedEn: s.creadoEn }, viewerId);
+    }));
+
+// Junta posts propios + compartidos, ordenados por fecha (creadoEn del post
+// propio vs. sharedEn del compartido), recortado a 5 en total.
+const getPostsYCompartidos = async (userId, privacidadFiltro, onlyPublicOriginal, viewerId) => {
+  const [propios, compartidos] = await Promise.all([
+    getPostsConAutor(userId, privacidadFiltro, viewerId),
+    getSharedPosts(userId, onlyPublicOriginal, viewerId),
+  ]);
+  return [...propios, ...compartidos]
+    .sort((a, b) => new Date(b.sharedEn || b.creadoEn) - new Date(a.sharedEn || a.creadoEn))
+    .slice(0, 5);
+};
 
 // GET /api/perfil — perfil propio
 const getPerfil = async (req, res) => {
@@ -89,7 +145,7 @@ const getPerfil = async (req, res) => {
       visitas = await prisma.profile_visits.count({ where: { perfilId: userId } });
     } catch (e) { console.error('[VISITAS] error:', e.message); }
 
-    const posts = await getPostsConAutor(userId);
+    const posts = await getPostsYCompartidos(userId, undefined, false, userId);
 
     let photos = [];
     try {
@@ -127,7 +183,7 @@ const getPerfilPublico = async (req, res) => {
     });
     const vlogs = await prisma.posts.count({ where:{ autorId:profileUserId } });
 
-    const posts = await getPostsConAutor(profileUserId, 'PUBLICA');
+    const posts = await getPostsYCompartidos(profileUserId, 'PUBLICA', true, visitorId);
 
     let visitas = 0;
     try {

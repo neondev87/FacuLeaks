@@ -10,6 +10,7 @@ import useForo from "@/hooks/useForo";
 import ChannelItem from "@/components/foro/ChannelItem";
 import MessageRow from "@/components/foro/MessageRow";
 import { foroStyles } from "./foroStyles";
+import { HOLO_THEME } from "@/lib/theme";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: app/foro/page.js — foro (100% MOCK, no funcional)
@@ -30,7 +31,7 @@ import { foroStyles } from "./foroStyles";
 export default function ForoPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const ac = "#ffffff";
+  const ac = HOLO_THEME.text;
   const messagesEndRef = useRef(null);
 
   const {
@@ -58,8 +59,8 @@ export default function ForoPage() {
       <div style={{ display: "flex", height: "calc(100vh - 48px)", marginTop: 48 }}>
 
         {/* ── SIDEBAR ── */}
-        <div style={{ width: 210, borderRight: "1px solid rgba(255,255,255,.07)", background: "rgba(0,0,0,.5)", display: "flex", flexDirection: "column", flexShrink: 0 }}>
-          <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,.07)", fontFamily: "'Cinzel', serif", fontSize: 13, color: ac, letterSpacing: ".2em" }}>
+        <div style={{ width: 210, borderRight: `1px solid ${HOLO_THEME.hairlineSoft}`, background: HOLO_THEME.panel, display: "flex", flexDirection: "column", flexShrink: 0 }}>
+          <div style={{ padding: "14px 16px", borderBottom: `1px solid ${HOLO_THEME.hairlineSoft}`, fontFamily: "'Cinzel', serif", fontSize: 13, color: ac, letterSpacing: ".2em" }}>
             VOID_CHANNELS
           </div>
 
@@ -75,11 +76,11 @@ export default function ForoPage() {
             ))}
           </div>
 
-          <div style={{ padding: "10px 14px", borderTop: "1px solid rgba(255,255,255,.07)", display: "flex", gap: 10, alignItems: "center" }}>
-            <div style={{ width: 26, height: 26, background: "#0a0a0a", border: `1px solid ${ac}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: `${ac}55`, flexShrink: 0 }}>◈</div>
+          <div style={{ padding: "10px 14px", borderTop: `1px solid ${HOLO_THEME.hairlineSoft}`, display: "flex", gap: 10, alignItems: "center" }}>
+            <div style={{ width: 26, height: 26, borderRadius: "50%", backgroundColor: "#1c1c24", border: `1px solid ${HOLO_THEME.hairline}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: HOLO_THEME.textDim, flexShrink: 0 }}>◈</div>
             <div>
-              <div style={{ fontSize: 12, color: "#e8e4d9" }}>{session?.user?.name?.split(" ")[0] || "user"}</div>
-              <div style={{ fontSize: 10, color: "#3ddc84", display: "flex", alignItems: "center", gap: 4 }}>
+              <div style={{ fontSize: 12, color: HOLO_THEME.text, fontFamily: "'Inter',sans-serif" }}>{session?.user?.name?.split(" ")[0] || "user"}</div>
+              <div style={{ fontSize: 10, color: "#3ddc84", display: "flex", alignItems: "center", gap: 4, fontFamily: "'Inter',sans-serif" }}>
                 <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#3ddc84", display: "inline-block" }} />
                 online
               </div>
@@ -90,10 +91,10 @@ export default function ForoPage() {
         {/* ── MENSAJES ── */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
 
-          <div style={{ padding: "12px 24px", borderBottom: "1px solid rgba(255,255,255,.07)", display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
+          <div style={{ padding: "12px 24px", borderBottom: `1px solid ${HOLO_THEME.hairlineSoft}`, display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
             <span style={{ color: ac, fontFamily: "'Cinzel', serif", fontSize: 15 }}>{currentChannel?.name}</span>
-            <span style={{ color: "rgba(255,255,255,.1)" }}>|</span>
-            <span style={{ fontSize: 12, color: "#444" }}>{currentChannel?.desc}</span>
+            <span style={{ color: HOLO_THEME.hairline }}>|</span>
+            <span style={{ fontSize: 12, color: HOLO_THEME.textDim, fontFamily: "'Inter',sans-serif" }}>{currentChannel?.desc}</span>
           </div>
 
           <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
@@ -103,7 +104,7 @@ export default function ForoPage() {
             <div ref={messagesEndRef} />
           </div>
 
-          <div style={{ padding: "14px 24px", borderTop: "1px solid rgba(255,255,255,.07)", display: "flex", gap: 10, flexShrink: 0 }}>
+          <div style={{ padding: "14px 24px", borderTop: `1px solid ${HOLO_THEME.hairlineSoft}`, display: "flex", gap: 10, flexShrink: 0 }}>
             <input
               className="msg-input"
               placeholder={`mensaje en ${currentChannel?.name}...`}

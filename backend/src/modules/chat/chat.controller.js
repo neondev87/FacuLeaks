@@ -62,6 +62,7 @@ const getConversaciones = async (req, res) => {
         ? a.users_amistades_receptorIdTousers.imagen
         : a.users_amistades_solicitanteIdTousers.imagen,
     }));
+    const amigoIds = new Set(todosAmigos.map(a => a.userId));
 
     const mensajes = await prisma.messages.findMany({
       where: { OR: [{ emisorId: userId }, { receptorId: userId }] },
@@ -72,12 +73,18 @@ const getConversaciones = async (req, res) => {
       orderBy: { creadoEn: 'desc' },
     });
 
+    // yoEnvie: true si en ALGÚN momento el usuario logueado le escribió a esa
+    // persona — no hace falta un campo "aceptada" en la BD: si nunca le
+    // escribiste y no son amigos, es una "solicitud" pendiente para vos; en
+    // cuanto respondés una vez, deja de filtrar acá y pasa a "recientes" sola
+    // (mismo comportamiento que las solicitudes de mensaje de Instagram).
     const convMap = new Map();
     for (const msg of mensajes) {
       const otherId   = msg.emisorId === userId ? msg.receptorId : msg.emisorId;
       const otherUser = msg.emisorId === userId
         ? msg.users_messages_receptorIdTousers
         : msg.users_messages_emisorIdTousers;
+      const yoLoEnvie = msg.emisorId === userId;
       if (!convMap.has(otherId)) {
         convMap.set(otherId, {
           userId:   otherId,
@@ -86,14 +93,22 @@ const getConversaciones = async (req, res) => {
           lastMsg:  msg.tipo === 'audio' ? '🎤 Audio' : msg.tipo === 'imagen' ? '📷 Imagen' : msg.contenido,
           lastTime: msg.creadoEn,
           unread:   msg.receptorId === userId && !msg.leido ? 1 : 0,
+          yoEnvie:  yoLoEnvie,
         });
-      } else if (msg.receptorId === userId && !msg.leido) {
-        convMap.get(otherId).unread++;
+      } else {
+        const conv = convMap.get(otherId);
+        if (msg.receptorId === userId && !msg.leido) conv.unread++;
+        if (yoLoEnvie) conv.yoEnvie = true;
       }
     }
 
-    const recientes = Array.from(convMap.values());
-    res.json({ recientes, amigos: todosAmigos });
+    const recientes   = [];
+    const solicitudes = [];
+    for (const { yoEnvie, ...conv } of convMap.values()) {
+      (amigoIds.has(conv.userId) || yoEnvie ? recientes : solicitudes).push(conv);
+    }
+
+    res.json({ recientes, solicitudes, amigos: todosAmigos });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error al obtener conversaciones' });

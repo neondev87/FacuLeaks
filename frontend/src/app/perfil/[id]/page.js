@@ -34,7 +34,7 @@ export default function PerfilPublicoPage() {
 
   const {
     perfil, loading, notFound, photos,
-    lightboxSrc, setLightboxSrc,
+    lightboxSrc, setLightboxSrc, toggleReaction,
   } = usePublicProfile({ userId, status, session, router });
 
   const border = "1px solid rgba(255,255,255,.07)";
@@ -177,6 +177,7 @@ export default function PerfilPublicoPage() {
                     viewerId={session?.user?.dbId}
                     canDelete={false}
                     onImageClick={(src) => setLightboxSrc(src)}
+                    onReact={toggleReaction}
                   />
                 ))}
               </div>

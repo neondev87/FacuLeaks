@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { API } from "@/lib/api";
+import { HOLO_THEME } from "@/lib/theme";
 import Lightbox from "@/components/Lightbox";
 import MicIcon from "./MicIcon";
 import AudioPlayer from "./AudioPlayer";
@@ -59,7 +60,7 @@ export default function Bubble({ msg, esPropio, replyMsg, onReply, onDelete }) {
                 transform: delPhase==="shrink" ? "scale(.05) perspective(200px) translateZ(-80px)" : delPhase==="open" ? "scale(1.15)" : "scale(1)",
                 opacity: delPhase==="gone" ? 0 : 1,
               }}>
-                <svg width="12" height="14" viewBox="0 0 12 14" fill="none">
+                <svg width="14" height="16" viewBox="0 0 12 14" fill="none">
                   <rect x="1" y="3" width="10" height="10" rx="1" stroke={trashCol} strokeWidth="1"/>
                   <path d="M4 3V2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1" stroke={trashCol} strokeWidth="1"/>
                   <line x1="0" y1="3" x2="12" y2="3" stroke={trashCol} strokeWidth="1"/>
@@ -74,15 +75,15 @@ export default function Bubble({ msg, esPropio, replyMsg, onReply, onDelete }) {
 
       {lightbox && isImageMsg && <Lightbox src={msg.imageUrl} onClose={() => setLightbox(false)} />}
 
-      <div className={esPropio ? "bubble-me" : "bubble-other"} style={ isAudioMsg ? { background: esPropio ? "#fff" : "#141414" } : isImageMsg ? { background: "transparent", padding: 0 } : {} }>
+      <div className={esPropio ? "bubble-me" : "bubble-other"} style={ isAudioMsg ? { background: esPropio ? HOLO_THEME.text : HOLO_THEME.panel } : isImageMsg ? { background: "transparent", padding: 0 } : {} }>
         {replyMsg && (
           <div className={esPropio ? "reply-bar-me" : "reply-bar-other"}>
-            <div style={{ width:2.5, borderRadius:2, background: esPropio ? "rgba(0,0,0,.22)" : "rgba(255,255,255,.28)", alignSelf:"stretch", flexShrink:0 }} />
+            <div style={{ width:2.5, borderRadius:2, background: esPropio ? "rgba(10,10,13,.22)" : "rgba(255,255,255,.28)", alignSelf:"stretch", flexShrink:0 }} />
             <div style={{ minWidth:0 }}>
-              <div style={{ fontSize:8, fontFamily:"'IBM Plex Mono',monospace", color: esPropio ? "rgba(0,0,0,.6)" : "rgba(255,255,255,.58)", marginBottom:1, letterSpacing:".04em" }}>
+              <div style={{ fontSize:11, fontFamily:"'Space Mono',monospace", color: esPropio ? "rgba(10,10,13,.6)" : "rgba(255,255,255,.58)", marginBottom:2, letterSpacing:".04em" }}>
                 {replyMsg.emisor?.username || "Tú"}
               </div>
-              <div style={{ fontSize:10, fontFamily:"'IBM Plex Sans',sans-serif", color: esPropio ? "rgba(0,0,0,.42)" : "rgba(255,255,255,.36)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:240 }}>
+              <div style={{ fontSize:13, fontFamily:"'Inter',sans-serif", color: esPropio ? "rgba(10,10,13,.42)" : "rgba(255,255,255,.36)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:280 }}>
                 {replyMsg.tipo === "audio" && replyMsg.audioUrl
                   ? <AudioReplyPreview src={replyMsg.audioUrl} />
                   : replyMsg.contenido}
@@ -92,10 +93,10 @@ export default function Bubble({ msg, esPropio, replyMsg, onReply, onDelete }) {
         )}
 
         {isAudioMsg ? (
-          <div style={{ padding:"10px 14px", display:"flex", flexDirection:"column", gap:6, width:600 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:2 }}>
-              <MicIcon size={12} recording={false} />
-              <span style={{ fontFamily:"'IBM Plex Sans',sans-serif", fontSize:10, color: esPropio ? "rgba(0,0,0,.5)" : "rgba(255,255,255,.4)", letterSpacing:".04em" }}>
+          <div style={{ padding:"12px 16px", display:"flex", flexDirection:"column", gap:7, width:600 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:2 }}>
+              <MicIcon size={14} recording={false} />
+              <span style={{ fontFamily:"'Inter',sans-serif", fontSize:13, color: esPropio ? "rgba(10,10,13,.5)" : "rgba(255,255,255,.4)", letterSpacing:".04em" }}>
                 mensaje de voz
               </span>
             </div>
@@ -105,19 +106,19 @@ export default function Bubble({ msg, esPropio, replyMsg, onReply, onDelete }) {
             </div>
           </div>
         ) : isImageMsg ? (
-          <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+          <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
             <img
               src={`${API}${msg.imageUrl}`}
               alt="imagen"
               onClick={() => setLightbox(true)}
-              style={{ display:"block", maxWidth:280, maxHeight:320, width:"auto", objectFit:"cover", border:"1px solid rgba(255,255,255,.1)", cursor:"pointer" }}
+              style={{ display:"block", maxWidth:340, maxHeight:380, width:"auto", objectFit:"cover", border:"1px solid rgba(255,255,255,.1)", borderRadius:16, cursor:"pointer" }}
             />
             <div className={esPropio ? "bubble-time-me" : "bubble-time-other"} style={{ alignSelf:"flex-end" }}>
               {formatTime(msg.creadoEn)}
             </div>
           </div>
         ) : (
-          <div style={{ padding:"9px 14px", display:"flex", alignItems:"flex-end", gap:10 }}>
+          <div style={{ padding:"11px 16px", display:"flex", alignItems:"flex-end", gap:12 }}>
             <div className={esPropio ? "bubble-text-me" : "bubble-text-other"}>{msg.contenido}</div>
             <div className={esPropio ? "bubble-time-me" : "bubble-time-other"}>{formatTime(msg.creadoEn)}</div>
           </div>

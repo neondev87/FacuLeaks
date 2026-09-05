@@ -99,6 +99,19 @@ model post_images {
   @@index([postId], map: "idx_post_images_postId")
 }
 
+model post_shares {
+  id       Int      @id @default(autoincrement())
+  postId   Int
+  userId   Int
+  creadoEn DateTime @default(now()) @db.DateTime(0)
+  posts    posts    @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "post_shares_ibfk_1")
+  users    users    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "post_shares_ibfk_2")
+
+  @@unique([postId, userId], map: "uk_share")
+  @@index([postId], map: "idx_post_shares_postId")
+  @@index([userId], map: "userId")
+}
+
 model post_likes {
   id       Int             @id @default(autoincrement())
   postId   Int
@@ -123,6 +136,7 @@ model posts {
   totalDislikes    Int              @default(0)
   totalComentarios Int              @default(0)
   totalVistas      Int              @default(0)
+  totalCompartidos Int              @default(0)
   editado          Boolean          @default(false)
   creadoEn         DateTime         @default(now()) @db.DateTime(0)
   actualizadoEn    DateTime         @default(now()) @db.DateTime(0)
@@ -130,6 +144,7 @@ model posts {
   comments         comments[]
   post_images      post_images[]
   post_likes       post_likes[]
+  post_shares      post_shares[]
   users            users            @relation(fields: [autorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "posts_ibfk_1")
 
   @@index([autorId], map: "idx_posts_autorId")
@@ -212,6 +227,7 @@ model users {
   notifications_notifications_usuarioIdTousers     notifications[]  @relation("notifications_usuarioIdTousers")
   notifications_notifications_generadorIdTousers   notifications[]  @relation("notifications_generadorIdTousers")
   post_likes                                       post_likes[]
+  post_shares                                      post_shares[]
   posts                                            posts[]
   profile_visits_profile_visits_perfilIdTousers    profile_visits[] @relation("profile_visits_perfilIdTousers")
   profile_visits_profile_visits_visitanteIdTousers profile_visits[] @relation("profile_visits_visitanteIdTousers")

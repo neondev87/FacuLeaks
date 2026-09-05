@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { HOLO_THEME } from "@/lib/theme";
 
 // MÓDULO: components/perfil/TerminalCounter.js
 // Fila de estadística del perfil (ej. "amigos: 12") con el número animando
@@ -22,11 +23,11 @@ export default function TerminalCounter({ label, value, text }) {
     return () => clearInterval(t);
   }, [value]);
   return (
-    <div style={{ fontSize: 12, color: "#555", display: "flex", justifyContent: "space-between", padding: "3px 0", fontFamily: "'Inter',sans-serif" }}>
+    <div style={{ fontSize: 12, color: HOLO_THEME.textDim, display: "flex", justifyContent: "space-between", padding: "7px 0", fontFamily: "'Inter',sans-serif" }}>
       <span>{label}</span>
-      <span style={{ color: "#e8e4d9", fontWeight: 500 }}>
+      <span style={{ color: HOLO_THEME.text, fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>
         {text || display.toLocaleString()}
-        {!text && <span style={{ animation: "blink 1s step-end infinite", color: "#333" }}>_</span>}
+        {!text && <span style={{ animation: "blink 1s step-end infinite", color: "#4a4858" }}>_</span>}
       </span>
     </div>
   );

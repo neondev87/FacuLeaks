@@ -34,6 +34,7 @@ import Lightbox from "@/components/Lightbox";
 // por proxy.js.
 // ════════════════════════════════════════════════════════════════════════
 import { profileStyles } from "./profileStyles";
+import { HOLO_THEME } from "@/lib/theme";
 
 // ════════════════════════════════════════════════════════════════
 // ── PÁGINA PRINCIPAL DE PERFIL (perfil propio, /perfil) ──
@@ -45,12 +46,11 @@ export default function ProfilePage() {
 
   const {
     perfil, setPerfil, loading, showEdit, setShowEdit, saveMsg,
-    posts, lightboxSrc, setLightboxSrc, photos, handleSave, handleDeletePost,
+    posts, lightboxSrc, setLightboxSrc, photos, handleSave, handleDeletePost, handleUnshare, toggleReaction,
   } = useOwnProfile({ status, session });
 
   // ── Estilos ──
-  const border = "1px solid rgba(255,255,255,.07)";
-  const card   = { border, padding: 16, background: "#050505" };
+  const card = { border: `1px solid ${HOLO_THEME.hairlineSoft}`, borderRadius: 12, padding: 24, background: HOLO_THEME.panel };
 
   useInjectedStyles("profile-styles", profileStyles);
 
@@ -91,23 +91,23 @@ export default function ProfilePage() {
       <div className="profile-wrap">
 
         {/* ── Header ── */}
-        <div style={{ borderBottom:"1px solid rgba(255,255,255,.06)", paddingBottom:18, marginBottom:24 }}>
-          <div style={{ fontFamily:"'Cinzel',serif", fontSize:30, color:"#e8e4d9", letterSpacing:".06em", lineHeight:1.1 }}>
+        <div style={{ borderBottom:`1px solid ${HOLO_THEME.hairlineSoft}`, paddingBottom:20, marginBottom:26 }}>
+          <div style={{ fontFamily:"'Cinzel',serif", fontSize:30, fontWeight:600, color:HOLO_THEME.text, letterSpacing:".06em", lineHeight:1.1 }}>
             {user.nombre || user.username}
           </div>
           {profile.statusText && (
-            <div style={{ fontFamily:"'Inter',sans-serif", fontSize:12, color:"#555", marginTop:5, fontStyle:"italic" }}>
+            <div style={{ fontFamily:"'Inter',sans-serif", fontSize:12, color:HOLO_THEME.textDim, marginTop:6, fontStyle:"italic" }}>
               {profile.statusText}
             </div>
           )}
         </div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"210px 1fr 230px", gap:12 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"220px 1fr 240px", gap:18 }}>
 
           {/* ════════════════════════════════════════════════ */}
           {/* ── COLUMNA IZQUIERDA ── */}
           {/* ════════════════════════════════════════════════ */}
-          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
 
             {/* ── Avatar con menú contextual ── */}
             <AvatarMenu
@@ -144,14 +144,14 @@ export default function ProfilePage() {
           {/* ════════════════════════════════════════════════ */}
           {/* ── COLUMNA CENTRAL ── */}
           {/* ════════════════════════════════════════════════ */}
-          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
 
             {/* ── Sobre mí ── */}
             <div style={card}>
               <div className="sec-title">† Sobre mí</div>
               {profile.bio
-                ? <div style={{ fontSize:13, color:"rgba(232,228,217,.65)", lineHeight:1.75, fontFamily:"'Inter',sans-serif" }}>{profile.bio}</div>
-                : <div style={{ fontSize:12, color:"#222", cursor:"pointer" }} onClick={() => setShowEdit(true)}>+ agregar bio...</div>
+                ? <div style={{ fontSize:13, color:"rgba(242,240,248,.65)", lineHeight:1.9, fontFamily:"'Inter',sans-serif" }}>{profile.bio}</div>
+                : <div style={{ fontSize:12, color:HOLO_THEME.textDim, cursor:"pointer" }} onClick={() => setShowEdit(true)}>+ agregar bio...</div>
               }
             </div>
 
@@ -166,11 +166,12 @@ export default function ProfilePage() {
                       currentUser={user}
                       viewerId={session?.user?.dbId}
                       canDelete={true}
-                      onDelete={() => handleDeletePost(p.id)}
+                      onDelete={() => p.isShared ? handleUnshare(p.id) : handleDeletePost(p.id)}
                       onImageClick={(src) => setLightboxSrc(src)}
+                      onReact={toggleReaction}
                     />
                   ))
-                : <div style={{ fontSize:12, color:"#222" }}>no hay posts aún</div>
+                : <div style={{ fontSize:12, color:HOLO_THEME.textDim }}>no hay posts aún</div>
               }
             </div>
           </div>
@@ -178,7 +179,7 @@ export default function ProfilePage() {
           {/* ════════════════════════════════════════════════ */}
           {/* ── COLUMNA DERECHA ── */}
           {/* ════════════════════════════════════════════════ */}
-          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
 
             {/* ── Pictures (Grid de fotos) ── */}
             <div style={card}>
@@ -199,14 +200,14 @@ export default function ProfilePage() {
                   const url = typeof l === "string" ? "#" : (l.url || "#");
                   return (
                     <a key={i} href={url} target="_blank" rel="noopener noreferrer"
-                      style={{ display:"flex", gap:8, padding:"5px 0", fontSize:12, color:"#555", cursor:"pointer", transition:"color .2s", textDecoration:"none", fontFamily:"'Inter',sans-serif" }}
-                      onMouseEnter={e => e.currentTarget.style.color = "#e8e4d9"}
-                      onMouseLeave={e => e.currentTarget.style.color = "#555"}>
-                      <span style={{ color:"rgba(255,255,255,.15)" }}>→</span> {lbl}
+                      style={{ display:"flex", gap:8, padding:"9px 0", fontSize:12, color:HOLO_THEME.textDim, cursor:"pointer", transition:"color .2s", textDecoration:"none", fontFamily:"'Inter',sans-serif" }}
+                      onMouseEnter={e => e.currentTarget.style.color = HOLO_THEME.text}
+                      onMouseLeave={e => e.currentTarget.style.color = HOLO_THEME.textDim}>
+                      <span style={{ color:"rgba(159,224,255,.5)" }}>→</span> {lbl}
                     </a>
                   );
                 })
-                : <div style={{ fontSize:12, color:"#222" }}>+ agregar links...</div>
+                : <div style={{ fontSize:12, color:HOLO_THEME.textDim }}>+ agregar links...</div>
               }
             </div>
           </div>

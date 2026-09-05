@@ -83,5 +83,41 @@ export default function usePublicProfile({ userId, status, session, router }) {
     return () => socket.disconnect();
   }, [session?.user?.dbId]);
 
-  return { perfil, loading, notFound, photos, lightboxSrc, setLightboxSrc, fetchPerfil };
+  // LIKE/DISLIKE en los posts de un perfil ajeno — mismo endpoint y misma
+  // lógica optimista que hooks/useFeedPosts.js/useOwnProfile.js, acá contra
+  // `perfil.posts` (el estado vive adentro de `perfil`, no aparte).
+  const toggleReaction = async (postId, tipo) => {
+    let previo = { myReaction: null, totalLikes: 0, totalDislikes: 0 };
+    setPerfil(prev => {
+      if (!prev) return prev;
+      const posts = prev.posts.map(p => {
+        if (p.id !== postId) return p;
+        previo = { myReaction: p.myReaction ?? null, totalLikes: p.totalLikes ?? 0, totalDislikes: p.totalDislikes ?? 0 };
+        let { totalLikes, totalDislikes } = previo;
+        if (previo.myReaction === "LIKE")    totalLikes--;
+        if (previo.myReaction === "DISLIKE") totalDislikes--;
+        const myReaction = previo.myReaction === tipo ? null : tipo;
+        if (myReaction === "LIKE")    totalLikes++;
+        if (myReaction === "DISLIKE") totalDislikes++;
+        return { ...p, myReaction, totalLikes: Math.max(0, totalLikes), totalDislikes: Math.max(0, totalDislikes) };
+      });
+      return { ...prev, posts };
+    });
+    try {
+      const res = await fetch(`${API}/api/posts/${postId}/react`, {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo }),
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setPerfil(prev => prev ? { ...prev, posts: prev.posts.map(p =>
+        p.id === postId ? { ...p, myReaction: data.myReaction, totalLikes: data.totalLikes, totalDislikes: data.totalDislikes } : p
+      ) } : prev);
+    } catch {
+      setPerfil(prev => prev ? { ...prev, posts: prev.posts.map(p => p.id === postId ? { ...p, ...previo } : p) } : prev);
+    }
+  };
+
+  return { perfil, loading, notFound, photos, lightboxSrc, setLightboxSrc, fetchPerfil, toggleReaction };
 }

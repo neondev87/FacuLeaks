@@ -32,13 +32,18 @@ const prisma = require('../../config/db');
 // Normaliza un post del feed: expone `autor` y `myReaction` ("LIKE" | "DISLIKE" | null),
 // y usa el conteo real de comentarios (_count) como fuente de verdad —
 // `posts.totalComentarios` puede estar desfasado por comentarios previos a B3.
+// `previewComments`: los primeros 2 comentarios (los más viejos, mismo orden
+// que el hilo completo) para mostrar una vista previa en el muro sin tener
+// que desplegar el hilo entero — ver feedInclude() más abajo.
 const mapPost = (p) => {
-  const { post_likes, users, _count, ...rest } = p;
+  const { post_likes, post_shares, comments, users, _count, ...rest } = p;
   return {
     ...rest,
     autor: users,
     myReaction: post_likes?.[0]?.tipo || null,
+    myShared: !!post_shares?.length,
     totalComentarios: _count?.comments ?? rest.totalComentarios ?? 0,
+    previewComments: (comments || []).map(c => ({ ...c, autor: c.users })),
   };
 };
 
@@ -48,6 +53,18 @@ const feedInclude = (userId) => ({
   post_likes: userId
     ? { where: { userId }, select: { tipo: true } }
     : false,
+  post_shares: userId
+    ? { where: { userId }, select: { id: true } }
+    : false,
+  // Primeros 2 comentarios del post, para la vista previa del muro (Fase 3).
+  comments: {
+    take: 2,
+    orderBy: { creadoEn: 'asc' },
+    select: {
+      id: true, contenido: true, creadoEn: true,
+      users: { select: { id: true, username: true, imagen: true } },
+    },
+  },
 });
 
 const createPost = async (autorId, { titulo, contenido = "", privacidad = 'PUBLICA', imagen = null }) => {
@@ -242,6 +259,51 @@ const toggleReaction = async (req, res) => {
   }
 };
 
+// ── Compartir ────────────────────────────────────────────────────────────────
+// POST /api/posts/:id/share — toggle: compartir de nuevo = descompartir.
+// Solo se pueden compartir posts PÚBLICOS: un post compartido se lista en el
+// perfil del que comparte (getPerfil/getPerfilPublico, perfil.controller.js),
+// incluso en el perfil público visto por cualquiera — si se permitiera
+// compartir un post de AMIGOS, terminaría filtrándose a gente que no es
+// amiga del autor original. Nunca aparece en el muro (feedRecientes/
+// Trending/Siguiendo solo consultan `posts`, jamás `post_shares`).
+const toggleShare = async (req, res) => {
+  const postId = parseInt(req.params.id);
+  const userId = req.userId;
+
+  if (!Number.isInteger(postId)) return res.status(400).json({ error: 'ID inválido' });
+
+  try {
+    const post = await prisma.posts.findUnique({
+      where: { id: postId },
+      select: { id: true, privacidad: true },
+    });
+    if (!post) return res.status(404).json({ error: 'Post no encontrado' });
+    if (post.privacidad !== 'PUBLICA') return res.status(403).json({ error: 'Solo se pueden compartir posts públicos' });
+
+    const existing = await prisma.post_shares.findFirst({ where: { postId, userId } });
+    let shared;
+
+    await prisma.$transaction(async (tx) => {
+      if (existing) {
+        await tx.post_shares.delete({ where: { id: existing.id } });
+        shared = false;
+      } else {
+        await tx.post_shares.create({ data: { postId, userId } });
+        shared = true;
+      }
+      const total = await tx.post_shares.count({ where: { postId } });
+      await tx.posts.update({ where: { id: postId }, data: { totalCompartidos: total } });
+    });
+
+    const totals = await prisma.posts.findUnique({ where: { id: postId }, select: { totalCompartidos: true } });
+    res.json({ shared, ...totals });
+  } catch (err) {
+    console.error('toggleShare error:', err.message);
+    res.status(500).json({ error: 'Error al compartir' });
+  }
+};
+
 // ── B3 · Comentarios ────────────────────────────────────────────────────────
 // GET /api/posts/:id/comments
 const listComments = async (req, res) => {
@@ -330,5 +392,5 @@ const deleteComment = async (req, res) => {
 
 module.exports = {
   feedRecientes, feedTrending, feedSiguiendo, nuevoPost, deletePost,
-  toggleReaction, listComments, createComment, deleteComment,
+  toggleReaction, toggleShare, listComments, createComment, deleteComment,
 };
