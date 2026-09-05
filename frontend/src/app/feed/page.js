@@ -15,6 +15,7 @@ import LinkPreview from "@/components/feed/LinkPreview";
 import EmptyState from "@/components/feed/EmptyState";
 import PostCard from "@/components/feed/PostCard";
 import { feedStyles } from "./feedStyles";
+import { FEED_MIX } from "@/lib/theme";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: app/feed/page.js — el MURO (feed principal)
@@ -36,7 +37,6 @@ import { feedStyles } from "./feedStyles";
 export default function FeedPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const ac = "#ffffff";
 
   const [activeTab,  setActiveTab]  = useState("RECIENTES");
   const [dlTrigger,  setDlTrigger]  = useState(0);
@@ -67,22 +67,19 @@ export default function FeedPage() {
       <BgCross />
       <div className="feed-wrap">
 
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24, borderBottom:`1px solid ${ac}22`, paddingBottom:14 }}>
-          <div style={{ fontFamily:"'Cinzel',serif", fontSize:16, color:ac, letterSpacing:".2em" }}>† MURO · {activeTab}</div>
-          <div style={{ display:"flex", gap:20, fontSize:12, color:"#444", fontFamily:"'Inter',sans-serif" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24, borderBottom:`1px solid ${FEED_MIX.hairlineSoft}`, paddingBottom:14 }}>
+          <div style={{ fontFamily:"'Cinzel',serif", fontSize:16, color:FEED_MIX.text, letterSpacing:".2em" }}>† MURO · {activeTab}</div>
+          <div style={{ display:"flex", gap:20, fontSize:12, fontFamily:"'Inter',sans-serif" }}>
             {["RECIENTES", "TRENDING", "SIGUIENDO"].map(t => (
-              <span key={t} onClick={() => setActiveTab(t)}
-                style={{ cursor:"pointer", transition:"color .2s", color: activeTab === t ? "#fff" : "#444", fontWeight: activeTab === t ? 500 : 400 }}
-                onMouseEnter={e => e.currentTarget.style.color = "#fff"}
-                onMouseLeave={e => e.currentTarget.style.color = activeTab === t ? "#fff" : "#444"}
-              >{t}</span>
+              <span key={t} onClick={() => setActiveTab(t)} className={`feed-tab${activeTab === t ? " active" : ""}`}>{t}</span>
             ))}
           </div>
         </div>
 
-        <div style={{ border:`1px solid ${ac}18`, padding:16, marginBottom:28, background:`${ac}03` }}>
+        <div className="holo-panel" style={{ border:`1px solid ${FEED_MIX.hairline}`, padding:16, marginBottom:28, background:FEED_MIX.panel, borderRadius:9 }}>
+          <div className="composer-reel" />
           <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
-            <div style={{ width:34, height:34, backgroundColor:"#0a0a0a", backgroundImage: avatarSrc(ownImagen) ? `url(${avatarSrc(ownImagen)})` : "none", backgroundSize:"cover", backgroundPosition:"center", border:`1px solid ${ac}22`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, color:`${ac}44`, flexShrink:0 }}>{!avatarSrc(ownImagen) && "◈"}</div>
+            <div className="composer-avatar" style={{ width:34, height:34, borderRadius:6, backgroundImage: avatarSrc(ownImagen) ? `url(${avatarSrc(ownImagen)})` : "linear-gradient(160deg, #3a2c19, #241a10)", backgroundSize:"cover", backgroundPosition:"center", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, color:FEED_MIX.textDim }}>{!avatarSrc(ownImagen) && "◈"}</div>
             <div style={{ flex:1 }}>
               <input className="post-title-input" placeholder="Título (opcional)" value={postTitle} onChange={e => setPostTitle(e.target.value)} />
               <textarea className="post-body-input" placeholder="¿Qué está pasando en tu realidad?" value={postContent} onChange={handleContentChange} rows={2} />
@@ -123,7 +120,6 @@ export default function FeedPage() {
             <PostCard
               key={p.id || i}
               post={p}
-              accent={ac}
               currentUserId={session?.user?.dbId}
               onDelete={removePost}
               onReact={toggleReaction}

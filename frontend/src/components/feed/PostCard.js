@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { API } from "@/lib/api";
+import { FEED_MIX } from "@/lib/theme";
 import Lightbox from "@/components/Lightbox";
 import { REACTIONS } from "./reactions";
 import PostComments from "./PostComments";
@@ -30,12 +31,11 @@ import TrashIcon from "./TrashIcon";
 //     backend para reaccionar ni conoce el estado global, eso lo maneja
 //     hooks/useFeedPosts.js en app/feed/page.js.
 // ════════════════════════════════════════════════════════════════════════
-export default function PostCard({ post, currentUserId, onDelete, onReact, accent = "#ffffff" }) {
+export default function PostCard({ post, currentUserId, onDelete, onReact }) {
   const [lightbox, setLightbox] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const router = useRouter();
-  const ac = accent;
 
   const username = post.autor?.username || post.user || "unknown";
   const tiempo   = post.creadoEn
@@ -69,31 +69,32 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, accen
     <>
       {lightbox && post.imagen && <Lightbox src={post.imagen} onClose={() => setLightbox(false)} />}
       <div style={{
-        border: "1px solid rgba(255,255,255,.08)", marginBottom: 16,
+        border: `1px solid ${FEED_MIX.hairlineSoft}`, marginBottom: 16, borderRadius:8,
         transition: "all .4s ease",
         animation: "fadeIn .3s ease",
         opacity: removing ? 0 : 1,
         transform: removing ? "translateY(-8px) scale(.98)" : "none",
+        background: FEED_MIX.panelSolid,
       }}
-        onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(255,255,255,.18)"}
-        onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,.08)"}
+        onMouseEnter={e => e.currentTarget.style.borderColor = FEED_MIX.hairline}
+        onMouseLeave={e => e.currentTarget.style.borderColor = FEED_MIX.hairlineSoft}
       >
         {/* Header */}
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", borderBottom:"1px solid rgba(255,255,255,.04)" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", borderBottom:`1px solid ${FEED_MIX.hairlineSoft}` }}>
           <div style={{ display:"flex", gap:10, alignItems:"center", cursor: post.autor?.id ? "pointer" : "default" }}
             onClick={() => post.autor?.id && router.push(`/perfil/${post.autor.id}`)}>
-            <div style={{ width:30, height:30, backgroundColor:"#0a0a0a", backgroundImage: post.autor?.imagen ? `url(${post.autor.imagen.startsWith("http") ? post.autor.imagen : `${API}${post.autor.imagen}`})` : "none", backgroundSize:"cover", backgroundPosition:"center", border:`1px solid ${ac}33`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, color:`${ac}55`, transition:"border-color .2s", flexShrink:0 }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = `${ac}88`}
-              onMouseLeave={e => e.currentTarget.style.borderColor = `${ac}33`}>{!post.autor?.imagen && "◈"}</div>
+            <div style={{ width:30, height:30, borderRadius:5, backgroundColor:"#241a10", backgroundImage: post.autor?.imagen ? `url(${post.autor.imagen.startsWith("http") ? post.autor.imagen : `${API}${post.autor.imagen}`})` : "none", backgroundSize:"cover", backgroundPosition:"center", border:`1px solid ${FEED_MIX.hairline}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, color:FEED_MIX.textDim, transition:"border-color .2s", flexShrink:0 }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(255,207,159,.6)"}
+              onMouseLeave={e => e.currentTarget.style.borderColor = FEED_MIX.hairline}>{!post.autor?.imagen && "◈"}</div>
             <div>
-              <div style={{ fontSize:13, color:"#e8e4d9", fontFamily:"'Inter',sans-serif", fontWeight:500, transition:"color .15s" }}
-                onMouseEnter={e => e.currentTarget.style.color = "#fff"}
-                onMouseLeave={e => e.currentTarget.style.color = "#e8e4d9"}>{username}</div>
-              <div style={{ fontSize:11, color:"#444", fontFamily:"'Inter',sans-serif" }}>{tiempo}</div>
+              <div style={{ fontSize:13, color:FEED_MIX.text, fontFamily:"'Cinzel',serif", fontWeight:600, transition:"color .15s" }}
+                onMouseEnter={e => e.currentTarget.style.color = "#fff3dc"}
+                onMouseLeave={e => e.currentTarget.style.color = FEED_MIX.text}>{username}</div>
+              <div style={{ fontSize:11, color:FEED_MIX.textDim, fontFamily:"'Space Mono',monospace" }}>{tiempo}</div>
             </div>
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            <div style={{ fontSize:11, color:`${ac}55`, fontFamily:"'Inter',sans-serif" }}>
+            <div style={{ fontSize:11, color:FEED_MIX.textDim, fontFamily:"'Inter',sans-serif" }}>
               {post.privacidad === "PUBLICA" ? "#público" : post.privacidad === "AMIGOS" ? "#amigos" : "#privado"}
             </div>
             {isOwner && <TrashIcon onDelete={handleDelete} />}
@@ -102,25 +103,25 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, accen
 
         {/* Imagen */}
         {post.imagen && (
-          <div onClick={() => setLightbox(true)} style={{ borderBottom:"1px solid rgba(255,255,255,.04)", background:"#050505", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", maxHeight:480, overflow:"hidden" }}>
+          <div onClick={() => setLightbox(true)} style={{ borderBottom:`1px solid ${FEED_MIX.hairlineSoft}`, background:"#100b06", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", maxHeight:480, overflow:"hidden" }}>
             <img src={`${API}${post.imagen}`} alt="post" style={{ width:"100%", maxHeight:480, objectFit:"contain", display:"block" }} />
           </div>
         )}
 
         {/* Contenido */}
         <div style={{ padding:"12px 14px" }}>
-          {titulo && <div style={{ fontFamily:"'Inter',sans-serif", fontWeight:600, fontSize:15, color:"#e8e4d9", marginBottom:6, lineHeight:1.4 }}>{titulo}</div>}
-          <div style={{ fontSize:13, color:"rgba(232,228,217,.6)", lineHeight:1.75, whiteSpace:"pre-wrap", fontFamily:"'Inter',sans-serif" }}>
+          {titulo && <div style={{ fontFamily:"'Inter',sans-serif", fontWeight:600, fontSize:15, color:FEED_MIX.text, marginBottom:6, lineHeight:1.4 }}>{titulo}</div>}
+          <div style={{ fontSize:13, color:"rgba(243,230,200,.65)", lineHeight:1.75, whiteSpace:"pre-wrap", fontFamily:"'Inter',sans-serif" }}>
             {cuerpo.split(urlRegex).map((part, i) =>
               urlRegex.test(part)
-                ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color:"rgba(255,255,255,.55)", textDecoration:"underline", textUnderlineOffset:3 }}>{part}</a>
+                ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color:"rgba(255,207,159,.8)", textDecoration:"underline", textUnderlineOffset:3 }}>{part}</a>
                 : part
             )}
           </div>
         </div>
 
         {/* Footer */}
-        <div style={{ padding:"8px 14px", borderTop:"1px solid rgba(255,255,255,.04)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <div style={{ padding:"8px 14px", borderTop:`1px dashed ${FEED_MIX.dashed}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div style={{ display:"flex", gap:4, alignItems:"center" }}>
             {REACTIONS.map(({ key, Icon }) => (
               <Icon
@@ -132,16 +133,16 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, accen
             ))}
             <span
               onClick={() => setShowComments(v => !v)}
-              style={{ cursor:"pointer", letterSpacing:".1em", color: showComments ? "#e8e4d9" : `${ac}66`, fontSize:11, marginLeft:8, fontFamily:"'Space Mono',monospace", transition:"color .15s" }}
-              onMouseEnter={e => e.currentTarget.style.color = "#e8e4d9"}
-              onMouseLeave={e => e.currentTarget.style.color = showComments ? "#e8e4d9" : `${ac}66`}
+              style={{ cursor:"pointer", letterSpacing:".1em", color: showComments ? FEED_MIX.text : FEED_MIX.textDim, fontSize:11, marginLeft:8, fontFamily:"'Space Mono',monospace", transition:"color .15s" }}
+              onMouseEnter={e => e.currentTarget.style.color = FEED_MIX.text}
+              onMouseLeave={e => e.currentTarget.style.color = showComments ? FEED_MIX.text : FEED_MIX.textDim}
             >† {comments} replies</span>
           </div>
-          <span style={{ color:"rgba(255,255,255,.2)", fontSize:11, fontFamily:"'Inter',sans-serif" }}>{vistas}v</span>
+          <span style={{ color:"rgba(243,230,200,.3)", fontSize:11, fontFamily:"'Inter',sans-serif" }}>{vistas}v</span>
         </div>
 
         {showComments && (
-          <PostComments postId={post.id} currentUserId={currentUserId} accent={ac} />
+          <PostComments postId={post.id} currentUserId={currentUserId} />
         )}
       </div>
     </>

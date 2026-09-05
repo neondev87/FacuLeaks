@@ -107,4 +107,41 @@ export const KF = {
   blink:   `@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }`,
   pulse:   `@keyframes pulse { 0%,100%{opacity:.35} 50%{opacity:.55} }`,
   wave:    `@keyframes wave { 0%,100%{transform:scaleY(0.3)} 50%{transform:scaleY(1)} }`,
+  // Barrido de brillo diagonal ("chrome aero") — usado en el recuadro de
+  // usuario del composer del feed (Fase 3).
+  sheen:   `@keyframes sheen { 0%,100%{background-position:120% 0} 50%{background-position:-20% 100%} }`,
+  // Carrete de cassette girando — decoración del composer (dirección Mixtape).
+  reelSpin:`@keyframes reelSpin { to{transform:rotate(360deg)} }`,
+  // Borde holográfico animado — requiere @property --holo-angle (ver abajo)
+  // para que el navegador interpole el ángulo en vez de saltar de golpe.
+  holoSpin:`@keyframes holoSpin { to{--holo-angle:360deg} }`,
+};
+
+// Necesario para que KF.holoSpin anime suave (sin esto, un custom property
+// sin tipo declarado no se interpola: el borde saltaría de golpe en vez de
+// girar). Soportado en todos los navegadores evergreen actuales.
+export const HOLO_PROPERTY = `
+      @property --holo-angle { syntax:'<angle>'; inherits:false; initial-value:0deg; }`;
+
+// ════════════════════════════════════════════════════════════════════════
+// Paleta "Mezcla" — Fase 3, dirección visual del Muro (cassette + semitono +
+// borde holográfico). Ver detalle de la decisión en la memoria del proyecto.
+// Tokens propios (no tocan COLORS/FONTS de arriba) para no afectar
+// chat/perfil, que siguen con la paleta anterior hasta que les toque su
+// turno de Fase 3.
+// ════════════════════════════════════════════════════════════════════════
+export const FEED_MIX = {
+  bgTop:      "#1c150e",
+  bgBottom:   "#100b06",
+  panel:      "rgba(36,26,16,.85)",
+  panelSolid: "#241a10",
+  text:       "#f3e6c8",
+  textDim:    "#a78a5f",
+  hairline:   "rgba(217,154,78,.3)",
+  hairlineSoft: "rgba(217,154,78,.16)",
+  dashed:     "rgba(255,207,159,.25)",
+  holo:       "conic-gradient(from var(--holo-angle,0deg), #ffcf9f, #ff9fe0, #9fe0ff, #ffcf9f)",
+  sealGradient: "linear-gradient(120deg,#ffcf9f,#ff9fe0)",
+  star:       "#ffd23d",
+  marker:     "#c0524a",
 };
