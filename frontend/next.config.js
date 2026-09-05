@@ -6,13 +6,16 @@
 // NEXT_PUBLIC_API_URL (pensada para el navegador, puede ser un dominio
 // público distinto — ver la nota grande de SITE_URL/API en lib/api.js).
 // Ojo: NO reescribir /api/auth/* en general — eso lo maneja NextAuth en el
-// propio frontend. EXCEPCIÓN: /api/auth/check/:googleId es un endpoint
-// propio del backend (useAuth.js/useRegister.js lo llaman desde el navegador
-// con NEXT_PUBLIC_API_URL) que por nombrado comparte el prefijo /api/auth —
-// localmente no colisiona porque NEXT_PUBLIC_API_URL apunta directo al
-// backend (puerto 4000), pero cuando apunta al propio dominio del frontend
-// (túnel/demo, cookie same-site) el catch-all [...nextauth] lo intercepta y
-// devuelve 400 ("action not supported") en vez de HTML/JSON del backend.
+// propio frontend. EXCEPCIÓN: /api/auth/check/:googleId y /api/auth/register
+// son endpoints propios del backend (useAuth.js/useRegister.js los llaman
+// desde el navegador con NEXT_PUBLIC_API_URL) que por nombrado comparten el
+// prefijo /api/auth — localmente no colisionan porque NEXT_PUBLIC_API_URL
+// apunta directo al backend (puerto 4000), pero cuando apunta al propio
+// dominio del frontend (túnel/demo, cookie same-site) el catch-all
+// [...nextauth] los intercepta y devuelve 400 ("action not supported") en
+// vez de HTML/JSON del backend. (/api/auth/login NO necesita esto: solo se
+// llama server-to-server con API_INTERNAL desde sync-backend/route.js, nunca
+// desde el navegador.)
 const API = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 const nextConfig = {
@@ -26,7 +29,8 @@ const nextConfig = {
   allowedDevOrigins: ['throwing-sullivan-expansion-comparative.trycloudflare.com'],
   async rewrites() {
     return [
-      { source: '/api/auth/check/:path*', destination: `${API}/api/auth/check/:path*` },
+      { source: '/api/auth/check/:path*',    destination: `${API}/api/auth/check/:path*` },
+      { source: '/api/auth/register',        destination: `${API}/api/auth/register` },
       { source: '/api/perfil/:path*',  destination: `${API}/api/perfil/:path*` },
       { source: '/api/posts/:path*',   destination: `${API}/api/posts/:path*` },
       { source: '/api/chat/:path*',    destination: `${API}/api/chat/:path*` },
