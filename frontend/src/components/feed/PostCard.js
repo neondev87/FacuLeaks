@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { API } from "@/lib/api";
-import { FEED_MIX } from "@/lib/theme";
+import { FEED_HOLO } from "@/lib/theme";
 import Lightbox from "@/components/Lightbox";
 import { REACTIONS } from "./reactions";
 import PostComments from "./PostComments";
@@ -68,33 +68,31 @@ export default function PostCard({ post, currentUserId, onDelete, onReact }) {
   return (
     <>
       {lightbox && post.imagen && <Lightbox src={post.imagen} onClose={() => setLightbox(false)} />}
-      <div style={{
-        border: `1px solid ${FEED_MIX.hairlineSoft}`, marginBottom: 16, borderRadius:8,
+      <div className="holo-panel" style={{
+        marginBottom: 16, borderRadius:10,
         transition: "all .4s ease",
         animation: "fadeIn .3s ease",
         opacity: removing ? 0 : 1,
         transform: removing ? "translateY(-8px) scale(.98)" : "none",
-        background: FEED_MIX.panelSolid,
+        background: FEED_HOLO.panel,
       }}
-        onMouseEnter={e => e.currentTarget.style.borderColor = FEED_MIX.hairline}
-        onMouseLeave={e => e.currentTarget.style.borderColor = FEED_MIX.hairlineSoft}
       >
         {/* Header */}
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", borderBottom:`1px solid ${FEED_MIX.hairlineSoft}` }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", borderBottom:`1px solid ${FEED_HOLO.hairlineSoft}` }}>
           <div style={{ display:"flex", gap:10, alignItems:"center", cursor: post.autor?.id ? "pointer" : "default" }}
             onClick={() => post.autor?.id && router.push(`/perfil/${post.autor.id}`)}>
-            <div style={{ width:30, height:30, borderRadius:5, backgroundColor:"#241a10", backgroundImage: post.autor?.imagen ? `url(${post.autor.imagen.startsWith("http") ? post.autor.imagen : `${API}${post.autor.imagen}`})` : "none", backgroundSize:"cover", backgroundPosition:"center", border:`1px solid ${FEED_MIX.hairline}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, color:FEED_MIX.textDim, transition:"border-color .2s", flexShrink:0 }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(255,207,159,.6)"}
-              onMouseLeave={e => e.currentTarget.style.borderColor = FEED_MIX.hairline}>{!post.autor?.imagen && "◈"}</div>
+            <div style={{ width:30, height:30, borderRadius:"50%", backgroundColor:"#1c1c24", backgroundImage: post.autor?.imagen ? `url(${post.autor.imagen.startsWith("http") ? post.autor.imagen : `${API}${post.autor.imagen}`})` : "none", backgroundSize:"cover", backgroundPosition:"center", border:`1px solid ${FEED_HOLO.hairline}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, color:FEED_HOLO.textDim, transition:"border-color .2s", flexShrink:0 }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(255,255,255,.4)"}
+              onMouseLeave={e => e.currentTarget.style.borderColor = FEED_HOLO.hairline}>{!post.autor?.imagen && "◈"}</div>
             <div>
-              <div style={{ fontSize:13, color:FEED_MIX.text, fontFamily:"'Cinzel',serif", fontWeight:600, transition:"color .15s" }}
-                onMouseEnter={e => e.currentTarget.style.color = "#fff3dc"}
-                onMouseLeave={e => e.currentTarget.style.color = FEED_MIX.text}>{username}</div>
-              <div style={{ fontSize:11, color:FEED_MIX.textDim, fontFamily:"'Space Mono',monospace" }}>{tiempo}</div>
+              <div style={{ fontSize:13, color:FEED_HOLO.text, fontFamily:"'Cinzel',serif", fontWeight:600, transition:"color .15s" }}
+                onMouseEnter={e => e.currentTarget.style.color = "#fff"}
+                onMouseLeave={e => e.currentTarget.style.color = FEED_HOLO.text}>{username}</div>
+              <div style={{ fontSize:11, color:FEED_HOLO.textDim, fontFamily:"'Space Mono',monospace" }}>{tiempo}</div>
             </div>
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            <div style={{ fontSize:11, color:FEED_MIX.textDim, fontFamily:"'Inter',sans-serif" }}>
+            <div style={{ fontSize:11, color:FEED_HOLO.textDim, fontFamily:"'Inter',sans-serif" }}>
               {post.privacidad === "PUBLICA" ? "#público" : post.privacidad === "AMIGOS" ? "#amigos" : "#privado"}
             </div>
             {isOwner && <TrashIcon onDelete={handleDelete} />}
@@ -103,25 +101,25 @@ export default function PostCard({ post, currentUserId, onDelete, onReact }) {
 
         {/* Imagen */}
         {post.imagen && (
-          <div onClick={() => setLightbox(true)} style={{ borderBottom:`1px solid ${FEED_MIX.hairlineSoft}`, background:"#100b06", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", maxHeight:480, overflow:"hidden" }}>
+          <div onClick={() => setLightbox(true)} style={{ borderBottom:`1px solid ${FEED_HOLO.hairlineSoft}`, background:"#0a0a0d", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", maxHeight:480, overflow:"hidden" }}>
             <img src={`${API}${post.imagen}`} alt="post" style={{ width:"100%", maxHeight:480, objectFit:"contain", display:"block" }} />
           </div>
         )}
 
         {/* Contenido */}
         <div style={{ padding:"12px 14px" }}>
-          {titulo && <div style={{ fontFamily:"'Inter',sans-serif", fontWeight:600, fontSize:15, color:FEED_MIX.text, marginBottom:6, lineHeight:1.4 }}>{titulo}</div>}
-          <div style={{ fontSize:13, color:"rgba(243,230,200,.65)", lineHeight:1.75, whiteSpace:"pre-wrap", fontFamily:"'Inter',sans-serif" }}>
+          {titulo && <div style={{ fontFamily:"'Inter',sans-serif", fontWeight:600, fontSize:15, color:FEED_HOLO.text, marginBottom:6, lineHeight:1.4 }}>{titulo}</div>}
+          <div style={{ fontSize:13, color:"rgba(242,240,248,.65)", lineHeight:1.75, whiteSpace:"pre-wrap", fontFamily:"'Inter',sans-serif" }}>
             {cuerpo.split(urlRegex).map((part, i) =>
               urlRegex.test(part)
-                ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color:"rgba(255,207,159,.8)", textDecoration:"underline", textUnderlineOffset:3 }}>{part}</a>
+                ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color:"rgba(159,224,255,.85)", textDecoration:"underline", textUnderlineOffset:3 }}>{part}</a>
                 : part
             )}
           </div>
         </div>
 
         {/* Footer */}
-        <div style={{ padding:"8px 14px", borderTop:`1px dashed ${FEED_MIX.dashed}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <div style={{ padding:"8px 14px", borderTop:`1px solid ${FEED_HOLO.hairlineSoft}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div style={{ display:"flex", gap:4, alignItems:"center" }}>
             {REACTIONS.map(({ key, Icon }) => (
               <Icon
@@ -133,12 +131,12 @@ export default function PostCard({ post, currentUserId, onDelete, onReact }) {
             ))}
             <span
               onClick={() => setShowComments(v => !v)}
-              style={{ cursor:"pointer", letterSpacing:".1em", color: showComments ? FEED_MIX.text : FEED_MIX.textDim, fontSize:11, marginLeft:8, fontFamily:"'Space Mono',monospace", transition:"color .15s" }}
-              onMouseEnter={e => e.currentTarget.style.color = FEED_MIX.text}
-              onMouseLeave={e => e.currentTarget.style.color = showComments ? FEED_MIX.text : FEED_MIX.textDim}
+              style={{ cursor:"pointer", letterSpacing:".1em", color: showComments ? FEED_HOLO.text : FEED_HOLO.textDim, fontSize:11, marginLeft:8, fontFamily:"'Space Mono',monospace", transition:"color .15s" }}
+              onMouseEnter={e => e.currentTarget.style.color = FEED_HOLO.text}
+              onMouseLeave={e => e.currentTarget.style.color = showComments ? FEED_HOLO.text : FEED_HOLO.textDim}
             >† {comments} replies</span>
           </div>
-          <span style={{ color:"rgba(243,230,200,.3)", fontSize:11, fontFamily:"'Inter',sans-serif" }}>{vistas}v</span>
+          <span style={{ color:"rgba(242,240,248,.3)", fontSize:11, fontFamily:"'Inter',sans-serif" }}>{vistas}v</span>
         </div>
 
         {showComments && (

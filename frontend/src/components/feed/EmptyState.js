@@ -10,10 +10,10 @@ export default function EmptyState({ tab }) {
   };
   const m = msgs[tab] || msgs.RECIENTES;
   return (
-    <div style={{ textAlign:"center", padding:"60px 0", color:"#5c4d38" }}>
+    <div style={{ textAlign:"center", padding:"60px 0", color:"#4a4858" }}>
       <div style={{ fontSize:28, marginBottom:12 }}>◈</div>
-      <div style={{ fontSize:14, color:"#8a7350", marginBottom:6, fontFamily:"'Inter',sans-serif" }}>{m.title}</div>
-      <div style={{ fontSize:11, color:"#5c4d38", fontFamily:"'Inter',sans-serif" }}>{m.sub}</div>
+      <div style={{ fontSize:14, color:"#8a87a0", marginBottom:6, fontFamily:"'Inter',sans-serif" }}>{m.title}</div>
+      <div style={{ fontSize:11, color:"#4a4858", fontFamily:"'Inter',sans-serif" }}>{m.sub}</div>
     </div>
   );
 }

@@ -15,7 +15,7 @@ import LinkPreview from "@/components/feed/LinkPreview";
 import EmptyState from "@/components/feed/EmptyState";
 import PostCard from "@/components/feed/PostCard";
 import { feedStyles } from "./feedStyles";
-import { FEED_MIX } from "@/lib/theme";
+import { FEED_HOLO } from "@/lib/theme";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: app/feed/page.js — el MURO (feed principal)
@@ -67,8 +67,8 @@ export default function FeedPage() {
       <BgCross />
       <div className="feed-wrap">
 
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24, borderBottom:`1px solid ${FEED_MIX.hairlineSoft}`, paddingBottom:14 }}>
-          <div style={{ fontFamily:"'Cinzel',serif", fontSize:16, color:FEED_MIX.text, letterSpacing:".2em" }}>† MURO · {activeTab}</div>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24, borderBottom:`1px solid ${FEED_HOLO.hairlineSoft}`, paddingBottom:14 }}>
+          <div style={{ fontFamily:"'Cinzel',serif", fontSize:16, color:FEED_HOLO.text, letterSpacing:".2em" }}>† MURO · {activeTab}</div>
           <div style={{ display:"flex", gap:20, fontSize:12, fontFamily:"'Inter',sans-serif" }}>
             {["RECIENTES", "TRENDING", "SIGUIENDO"].map(t => (
               <span key={t} onClick={() => setActiveTab(t)} className={`feed-tab${activeTab === t ? " active" : ""}`}>{t}</span>
@@ -76,10 +76,9 @@ export default function FeedPage() {
           </div>
         </div>
 
-        <div className="holo-panel" style={{ border:`1px solid ${FEED_MIX.hairline}`, padding:16, marginBottom:28, background:FEED_MIX.panel, borderRadius:9 }}>
-          <div className="composer-reel" />
+        <div className="holo-panel" style={{ padding:16, marginBottom:28, background:FEED_HOLO.panel, borderRadius:10 }}>
           <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
-            <div className="composer-avatar" style={{ width:34, height:34, borderRadius:6, backgroundImage: avatarSrc(ownImagen) ? `url(${avatarSrc(ownImagen)})` : "linear-gradient(160deg, #3a2c19, #241a10)", backgroundSize:"cover", backgroundPosition:"center", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, color:FEED_MIX.textDim }}>{!avatarSrc(ownImagen) && "◈"}</div>
+            <div className="composer-avatar" style={{ width:34, height:34, backgroundImage: avatarSrc(ownImagen) ? `url(${avatarSrc(ownImagen)})` : "none", backgroundSize:"cover", backgroundPosition:"center", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, color:FEED_HOLO.textDim }}>{!avatarSrc(ownImagen) && "◈"}</div>
             <div style={{ flex:1 }}>
               <input className="post-title-input" placeholder="Título (opcional)" value={postTitle} onChange={e => setPostTitle(e.target.value)} />
               <textarea className="post-body-input" placeholder="¿Qué está pasando en tu realidad?" value={postContent} onChange={handleContentChange} rows={2} />
