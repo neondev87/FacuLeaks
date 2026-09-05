@@ -53,7 +53,7 @@ export default function PostComments({ postId, currentUserId, accent = "#ffffff"
               <div key={c.id} style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
                 <div
                   onClick={() => autor.id && router.push(`/perfil/${autor.id}`)}
-                  style={{ width:24, height:24, flexShrink:0, background: autor.imagen ? `url(${autor.imagen.startsWith("http") ? autor.imagen : `${API}${autor.imagen}`})` : "#0a0a0a", backgroundSize:"cover", backgroundPosition:"center", border:`1px solid ${ac}33`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:8, color:`${ac}55`, cursor: autor.id ? "pointer" : "default" }}>{!autor.imagen && "◈"}</div>
+                  style={{ width:24, height:24, flexShrink:0, backgroundColor:"#0a0a0a", backgroundImage: autor.imagen ? `url(${autor.imagen.startsWith("http") ? autor.imagen : `${API}${autor.imagen}`})` : "none", backgroundSize:"cover", backgroundPosition:"center", border:`1px solid ${ac}33`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:8, color:`${ac}55`, cursor: autor.id ? "pointer" : "default" }}>{!autor.imagen && "◈"}</div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ display:"flex", alignItems:"baseline", gap:8 }}>
                     <span style={{ fontSize:12, color:"#e8e4d9", fontFamily:"'Inter',sans-serif", fontWeight:500 }}>{autor.username || "unknown"}</span>

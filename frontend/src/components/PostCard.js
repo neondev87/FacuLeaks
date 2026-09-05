@@ -121,9 +121,10 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
             width: 40,
             height: 40,
             borderRadius: "50%",
-            background: post.autor?.imagen 
-              ? `url(${post.autor.imagen.startsWith('http') ? post.autor.imagen : `${API}${post.autor.imagen}`})` 
-              : "rgba(255,255,255,.1)",
+            backgroundColor: "rgba(255,255,255,.1)",
+            backgroundImage: post.autor?.imagen
+              ? `url(${post.autor.imagen.startsWith('http') ? post.autor.imagen : `${API}${post.autor.imagen}`})`
+              : "none",
             backgroundSize: "cover",
             backgroundPosition: "center",
             border: "1px solid rgba(255,255,255,.08)"
@@ -271,9 +272,10 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
                     width: 32,
                     height: 32,
                     borderRadius: "50%",
-                    background: avatar
+                    backgroundColor: "rgba(255,255,255,.1)",
+                    backgroundImage: avatar
                       ? `url(${avatar.startsWith('http') ? avatar : `${API}${avatar}`})`
-                      : "rgba(255,255,255,.1)",
+                      : "none",
                     backgroundSize: "cover",
                     backgroundPosition: "center",
                     flexShrink: 0,
@@ -345,9 +347,10 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
               width: 32,
               height: 32,
               borderRadius: "50%",
-              background: currentUser.imagen
+              backgroundColor: "rgba(255,255,255,.1)",
+              backgroundImage: currentUser.imagen
                 ? `url(${currentUser.imagen.startsWith('http') ? currentUser.imagen : `${API}${currentUser.imagen}`})`
-                : "rgba(255,255,255,.1)",
+                : "none",
               backgroundSize: "cover",
               backgroundPosition: "center",
               flexShrink: 0,

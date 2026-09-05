@@ -82,7 +82,7 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, accen
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", borderBottom:"1px solid rgba(255,255,255,.04)" }}>
           <div style={{ display:"flex", gap:10, alignItems:"center", cursor: post.autor?.id ? "pointer" : "default" }}
             onClick={() => post.autor?.id && router.push(`/perfil/${post.autor.id}`)}>
-            <div style={{ width:30, height:30, background: post.autor?.imagen ? `url(${post.autor.imagen.startsWith("http") ? post.autor.imagen : `${API}${post.autor.imagen}`})` : "#0a0a0a", backgroundSize:"cover", backgroundPosition:"center", border:`1px solid ${ac}33`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, color:`${ac}55`, transition:"border-color .2s", flexShrink:0 }}
+            <div style={{ width:30, height:30, backgroundColor:"#0a0a0a", backgroundImage: post.autor?.imagen ? `url(${post.autor.imagen.startsWith("http") ? post.autor.imagen : `${API}${post.autor.imagen}`})` : "none", backgroundSize:"cover", backgroundPosition:"center", border:`1px solid ${ac}33`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, color:`${ac}55`, transition:"border-color .2s", flexShrink:0 }}
               onMouseEnter={e => e.currentTarget.style.borderColor = `${ac}88`}
               onMouseLeave={e => e.currentTarget.style.borderColor = `${ac}33`}>{!post.autor?.imagen && "◈"}</div>
             <div>
