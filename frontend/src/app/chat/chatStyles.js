@@ -44,17 +44,23 @@ export const chatStyles = `
          en Cinzel, un resplandor suave desde arriba y la fila activa marcada
          con una barra iluminada + lavado. El único color de la pantalla lo
          pone el fondo red-letter del lienzo; la barra no compite. */
-      .chat-side { background:radial-gradient(120% 40% at 50% 0%, rgba(255,255,255,.05), transparent 70%), ${HOLO_THEME.panel}; }
-      .conv-sec { font-family:'Cinzel',serif; font-size:11px; letter-spacing:.22em; color:rgba(236,234,240,.42); padding:13px 18px 5px; }
-      .conv-sec--sm { padding:10px 14px 6px; font-size:10px; letter-spacing:.18em; }
-      .conv-name { font-family:'Cinzel',serif; font-size:13.5px; letter-spacing:.015em; }
-      .conv-half { flex:1; overflow-y:auto; min-height:0; padding:6px 0; }
-      .conv-item { padding:12px 18px; cursor:pointer; border-left:3px solid transparent; transition:background .14s, border-color .14s; display:flex; gap:12px; align-items:center; }
-      .conv-item:hover { background:rgba(255,255,255,.03); }
-      .conv-item.active { background:linear-gradient(90deg, rgba(184,179,194,.11), transparent); border-left-color:${TINTA}; }
-      .avatar { width:42px; height:42px; border-radius:7px; background:#17171b; border:1.5px solid rgba(184,179,194,.26); display:flex; align-items:center; justify-content:center; font-family:'Cinzel',serif; font-size:15px; text-transform:uppercase; color:rgba(236,234,240,.8); flex-shrink:0; position:relative; }
-      .avatar-sm { width:36px; height:36px; border-radius:6px; background:#17171b; border:1.5px solid rgba(184,179,194,.2); display:flex; align-items:center; justify-content:center; font-size:11px; color:${HOLO_THEME.textDim}; flex-shrink:0; font-family:'Space Mono',monospace; }
-      .status-dot { position:absolute; bottom:1px; right:1px; width:11px; height:11px; border-radius:50%; border:2px solid ${HOLO_THEME.panel}; }
+      .chat-side { background:radial-gradient(160% 46% at 50% -6%, rgba(184,179,194,.12), transparent 68%), #0c0c0e; }
+      .chat-side__hdr { position:relative; }
+      .chat-side__hdr::after { content:''; position:absolute; left:22px; right:22px; bottom:0; height:1px; background:linear-gradient(90deg, rgba(184,179,194,.35), rgba(184,179,194,.04)); }
+      .side-title { font-family:'Cinzel',serif; font-size:21px; color:${HOLO_THEME.text}; letter-spacing:.06em; }
+      .side-kicker { font-family:'Space Mono',monospace; font-size:9px; color:rgba(184,179,194,.4); letter-spacing:.24em; margin-top:5px; }
+      .conv-sec { font-family:'Cinzel',serif; font-size:12px; letter-spacing:.3em; color:${TINTA}; opacity:.72; padding:16px 18px 8px; }
+      .conv-sec--sm { padding:11px 14px 7px; font-size:10px; letter-spacing:.22em; }
+      .conv-name { font-family:'Cinzel',serif; font-size:14px; letter-spacing:.02em; }
+      .conv-half { flex:1; overflow-y:auto; min-height:0; padding:4px 0 8px; }
+      .conv-item { padding:11px 18px; cursor:pointer; border-left:3px solid transparent; transition:background .16s, border-color .16s; display:flex; gap:12px; align-items:center; }
+      .conv-item:hover { background:rgba(184,179,194,.04); }
+      .conv-item.active { background:linear-gradient(90deg, rgba(184,179,194,.18), rgba(184,179,194,.03) 55%, transparent); border-left-color:${TINTA}; }
+      .conv-item.active .conv-name { color:#fff; }
+      .avatar { width:42px; height:42px; border-radius:6px; background:#191920; border:1.5px solid rgba(184,179,194,.34); display:flex; align-items:center; justify-content:center; font-family:'Cinzel',serif; font-size:16px; text-transform:uppercase; color:rgba(238,235,242,.82); flex-shrink:0; position:relative; box-shadow:inset 0 1px 0 rgba(255,255,255,.04); }
+      .conv-item.active .avatar { border-color:rgba(184,179,194,.6); }
+      .avatar-sm { width:36px; height:36px; border-radius:6px; background:#191920; border:1.5px solid rgba(184,179,194,.24); display:flex; align-items:center; justify-content:center; font-size:11px; color:${HOLO_THEME.textDim}; flex-shrink:0; font-family:'Cinzel',serif; text-transform:uppercase; }
+      .status-dot { position:absolute; bottom:1px; right:1px; width:11px; height:11px; border-radius:50%; border:2px solid #0c0c0e; }
       .status-dot-hdr { position:absolute; bottom:1px; right:1px; width:12px; height:12px; border-radius:50%; border:2px solid ${HOLO_THEME.bg}; }
       /* Burbujas — rediseño de la conversación activa (paleta Tinta): propia en
          marfil frío, ajena en panel; esquina "doblada" del lado del emisor;

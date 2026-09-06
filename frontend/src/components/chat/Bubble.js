@@ -92,15 +92,15 @@ export default function Bubble({ msg, esPropio, replyMsg, onReply, onDelete }) {
         )}
 
         {isAudioMsg ? (
-          <div style={{ padding:"12px 16px", display:"flex", flexDirection:"column", gap:7, width:600 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:2 }}>
-              <MicIcon size={14} recording={false} />
-              <span style={{ fontFamily:"'Inter',sans-serif", fontSize:13, color: esPropio ? "rgba(10,10,13,.5)" : "rgba(255,255,255,.4)", letterSpacing:".04em" }}>
+          <div style={{ padding:"11px 15px", display:"flex", flexDirection:"column", gap:6, width:320 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:1 }}>
+              <MicIcon size={13} recording={false} />
+              <span style={{ fontFamily:"'EB Garamond',Georgia,serif", fontStyle:"italic", fontSize:13, color: esPropio ? "rgba(21,19,24,.5)" : "rgba(255,255,255,.42)" }}>
                 mensaje de voz
               </span>
             </div>
             <AudioPlayer src={`${API}${msg.audioUrl}`} esPropio={esPropio} />
-            <div className={esPropio ? "bubble-time-me" : "bubble-time-other"} style={{ alignSelf:"flex-end", marginTop:2 }}>
+            <div className={esPropio ? "bubble-time-me" : "bubble-time-other"} style={{ alignSelf:"flex-end", marginTop:1 }}>
               {formatTime(msg.creadoEn)}
             </div>
           </div>

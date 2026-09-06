@@ -87,10 +87,10 @@ export default function ChatPage() {
       <div style={{ display:"flex", height:"calc(100vh - 48px)", marginTop:48 }}>
 
         <div className="chat-side" style={{ width:300, borderRight:`1px solid ${HOLO_THEME.hairlineSoft}`, display:"flex", flexDirection:"column", flexShrink:0 }}>
-          <div style={{ padding:"20px 22px 18px", borderBottom:`1px solid ${HOLO_THEME.hairlineSoft}`, display:"flex", justifyContent:"space-between", alignItems:"flex-start", position:"relative" }}>
+          <div className="chat-side__hdr" style={{ padding:"20px 22px 18px", display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
             <div>
-              <div style={{ fontFamily:"'Cinzel',serif", fontSize:20, color:HOLO_THEME.text, letterSpacing:".02em" }}>Mensajes</div>
-              <div style={{ fontFamily:"'Space Mono',monospace", fontSize:10, color:"rgba(255,255,255,.25)", letterSpacing:".18em", marginTop:4 }}>// FacuLeaks</div>
+              <div className="side-title">Mensajes</div>
+              <div className="side-kicker">{"// FacuLeaks"}</div>
             </div>
 
             <RequestsIcon count={totalSolicitudes} active={showSolicitudes} onClick={() => setShowSolicitudes(v => !v)} />
@@ -132,7 +132,7 @@ export default function ChatPage() {
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
                       <span className="conv-name" style={{ color: chat.isActive(c.userId) ? HOLO_THEME.text : "rgba(255,255,255,.65)" }}>{c.username}</span>
-                      {c.unread > 0 && <span style={{ background:HOLO_THEME.text, color:HOLO_THEME.bg, fontSize:10, padding:"2px 7px", borderRadius:999, fontFamily:"'Space Mono',monospace", fontWeight:600 }}>{c.unread}</span>}
+                      {c.unread > 0 && <span style={{ background:"#b8b3c2", color:"#151318", fontSize:10, padding:"2px 7px", borderRadius:999, fontFamily:"'Space Mono',monospace", fontWeight:600 }}>{c.unread}</span>}
                     </div>
                     <div style={{ fontSize:12, color:"rgba(255,255,255,.22)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontFamily:"'Space Mono',monospace" }}>{c.lastMsg}</div>
                   </div>
@@ -206,7 +206,7 @@ export default function ChatPage() {
                             </div>
                           ) : <div style={{ width:36 }} />}
                         </div>
-                        <div style={{ display:"flex", flexDirection:"column", alignItems: esPropio ? "flex-end" : "flex-start", maxWidth: msg.tipo === "audio" ? "620px" : "65%" }}>
+                        <div style={{ display:"flex", flexDirection:"column", alignItems: esPropio ? "flex-end" : "flex-start", maxWidth: msg.tipo === "audio" ? "360px" : "65%" }}>
                           {!prevSame && (
                             <div style={{ fontSize:14, fontFamily:"'Cinzel',serif", color:"rgba(255,255,255,.48)", marginBottom:5, paddingLeft: esPropio ? 0 : 2, paddingRight: esPropio ? 2 : 0 }}>
                               {esPropio ? "Tú" : msg.emisor?.username}
