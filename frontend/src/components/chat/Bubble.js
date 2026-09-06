@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { API } from "@/lib/api";
-import { HOLO_THEME } from "@/lib/theme";
 import Lightbox from "@/components/Lightbox";
 import MicIcon from "./MicIcon";
 import AudioPlayer from "./AudioPlayer";
@@ -28,7 +27,6 @@ import AudioReplyPreview from "./AudioReplyPreview";
 //     app/chat/page.js, que a su vez usan hooks/useChat.js.
 // ════════════════════════════════════════════════════════════════════════
 export default function Bubble({ msg, esPropio, replyMsg, onReply, onDelete }) {
-  const [hov,      setHov]      = useState(false);
   const [delPhase, setDelPhase] = useState("idle");
   const [lightbox, setLightbox] = useState(false);
   const formatTime = d => d ? new Date(d).toLocaleTimeString("es-MX", { hour:"2-digit", minute:"2-digit" }) : "";
@@ -43,47 +41,48 @@ export default function Bubble({ msg, esPropio, replyMsg, onReply, onDelete }) {
     }, 320);
   };
 
-  const trashCol = delPhase === "idle" ? "rgba(255,255,255,.4)" : "rgba(255,80,80,.85)";
+  const trashCol = delPhase === "idle" ? "currentColor" : "rgba(255,80,80,.85)";
 
   return (
-    <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+    <div className="bubble-wrap"
       style={{ display:"flex", flexDirection:"column", alignItems: esPropio ? "flex-end" : "flex-start", gap:3 }}>
 
-      {hov && (
-        <div style={{ display:"flex", gap:4, alignItems:"center", marginBottom:2 }}>
-          <div className="reply-btn" onClick={() => onReply(msg)}>↩ responder</div>
-          {esPropio && (
-            <button onClick={handleDelete} title="Eliminar"
-              style={{ background:"none", border:"none", cursor:"pointer", padding:"2px 4px", display:"flex", alignItems:"center" }}>
-              <div style={{
-                transition: delPhase==="shrink" ? "all .28s cubic-bezier(.4,0,.6,1)" : "none",
-                transform: delPhase==="shrink" ? "scale(.05) perspective(200px) translateZ(-80px)" : delPhase==="open" ? "scale(1.15)" : "scale(1)",
-                opacity: delPhase==="gone" ? 0 : 1,
-              }}>
-                <svg width="14" height="16" viewBox="0 0 12 14" fill="none">
-                  <rect x="1" y="3" width="10" height="10" rx="1" stroke={trashCol} strokeWidth="1"/>
-                  <path d="M4 3V2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1" stroke={trashCol} strokeWidth="1"/>
-                  <line x1="0" y1="3" x2="12" y2="3" stroke={trashCol} strokeWidth="1"/>
-                  <line x1="4.5" y1="6" x2="4.5" y2="10" stroke={trashCol} strokeWidth="1"/>
-                  <line x1="7.5" y1="6" x2="7.5" y2="10" stroke={trashCol} strokeWidth="1"/>
-                </svg>
-              </div>
-            </button>
-          )}
-        </div>
-      )}
+      <div className="bubble-actions">
+        <button className="bubble-act" onClick={() => onReply(msg)} title="Responder">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 14 4 9 9 4"/><path d="M4 9h11a5 5 0 0 1 5 5v3"/>
+          </svg>
+        </button>
+        {esPropio && (
+          <button className="bubble-act del" onClick={handleDelete} title="Eliminar">
+            <div style={{
+              transition: delPhase==="shrink" ? "all .28s cubic-bezier(.4,0,.6,1)" : "none",
+              transform: delPhase==="shrink" ? "scale(.05) perspective(200px) translateZ(-80px)" : delPhase==="open" ? "scale(1.15)" : "scale(1)",
+              opacity: delPhase==="gone" ? 0 : 1,
+            }}>
+              <svg width="14" height="15" viewBox="0 0 12 14" fill="none">
+                <rect x="1" y="3" width="10" height="10" rx="1" stroke={trashCol} strokeWidth="1"/>
+                <path d="M4 3V2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1" stroke={trashCol} strokeWidth="1"/>
+                <line x1="0" y1="3" x2="12" y2="3" stroke={trashCol} strokeWidth="1"/>
+                <line x1="4.5" y1="6" x2="4.5" y2="10" stroke={trashCol} strokeWidth="1"/>
+                <line x1="7.5" y1="6" x2="7.5" y2="10" stroke={trashCol} strokeWidth="1"/>
+              </svg>
+            </div>
+          </button>
+        )}
+      </div>
 
       {lightbox && isImageMsg && <Lightbox src={msg.imageUrl} onClose={() => setLightbox(false)} />}
 
-      <div className={esPropio ? "bubble-me" : "bubble-other"} style={ isAudioMsg ? { background: esPropio ? HOLO_THEME.text : HOLO_THEME.panel } : isImageMsg ? { background: "transparent", padding: 0 } : {} }>
+      <div className={esPropio ? "bubble-me" : "bubble-other"} style={ isAudioMsg ? { background: esPropio ? "#ecebef" : "#16161b" } : isImageMsg ? { background: "transparent", padding: 0 } : {} }>
         {replyMsg && (
           <div className={esPropio ? "reply-bar-me" : "reply-bar-other"}>
-            <div style={{ width:2.5, borderRadius:2, background: esPropio ? "rgba(10,10,13,.22)" : "rgba(255,255,255,.28)", alignSelf:"stretch", flexShrink:0 }} />
+            <div style={{ width:2, borderRadius:2, background: esPropio ? "rgba(21,19,24,.28)" : "#b8b3c2", alignSelf:"stretch", flexShrink:0 }} />
             <div style={{ minWidth:0 }}>
-              <div style={{ fontSize:11, fontFamily:"'Space Mono',monospace", color: esPropio ? "rgba(10,10,13,.6)" : "rgba(255,255,255,.58)", marginBottom:2, letterSpacing:".04em" }}>
+              <div style={{ fontSize:11, fontFamily:"'Space Mono',monospace", color: esPropio ? "rgba(21,19,24,.55)" : "rgba(255,255,255,.5)", marginBottom:2, letterSpacing:".04em" }}>
                 {replyMsg.emisor?.username || "Tú"}
               </div>
-              <div style={{ fontSize:13, fontFamily:"'Inter',sans-serif", color: esPropio ? "rgba(10,10,13,.42)" : "rgba(255,255,255,.36)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:280 }}>
+              <div style={{ fontSize:13, fontFamily:"'EB Garamond',Georgia,serif", fontStyle:"italic", color: esPropio ? "rgba(21,19,24,.5)" : "rgba(255,255,255,.42)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:280 }}>
                 {replyMsg.tipo === "audio" && replyMsg.audioUrl
                   ? <AudioReplyPreview src={replyMsg.audioUrl} />
                   : replyMsg.contenido}

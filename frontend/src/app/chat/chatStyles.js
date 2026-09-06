@@ -68,8 +68,14 @@ export const chatStyles = `
       .bubble-time-other { font-size:11px; color:rgba(242,240,248,.3); white-space:nowrap; flex-shrink:0; font-family:'Space Mono',monospace; letter-spacing:.05em; margin-top:auto; }
       .reply-bar-me    { padding:8px 14px 7px; background:rgba(10,10,13,.07); border-bottom:1px solid rgba(10,10,13,.07); display:flex; gap:8px; }
       .reply-bar-other { padding:8px 14px 7px; background:rgba(255,255,255,.05); border-bottom:1px solid ${HOLO_THEME.hairlineSoft}; display:flex; gap:8px; }
-      .reply-btn { padding:3px 12px; background:rgba(255,255,255,.05); border-radius:999px; border:1px solid ${HOLO_THEME.hairlineSoft}; font-size:12px; font-family:'Space Mono',monospace; color:${HOLO_THEME.textDim}; cursor:pointer; display:inline-flex; gap:4px; align-items:center; animation:fadeIn .1s ease; letter-spacing:.06em; transition:all .15s; }
-      .reply-btn:hover { background:rgba(255,255,255,.1); color:${HOLO_THEME.text}; }
+      /* Acciones al pasar el mouse por un mensaje (responder / borrar) —
+         íconos que aparecen con un fundido corto, no un botón de texto. */
+      .bubble-actions { display:flex; gap:2px; margin-bottom:3px; opacity:0; transform:translateY(2px); transition:opacity .16s, transform .16s; }
+      .bubble-wrap:hover .bubble-actions { opacity:1; transform:none; }
+      .bubble-act { width:26px; height:26px; border-radius:7px; display:flex; align-items:center; justify-content:center; color:${HOLO_THEME.textDim}; background:none; border:0; cursor:pointer; padding:0; transition:color .14s, background .14s, transform .12s; }
+      .bubble-act:hover { background:rgba(255,255,255,.06); color:${HOLO_THEME.text}; }
+      .bubble-act:active { transform:scale(.86); }
+      .bubble-act.del:hover { color:rgba(255,80,80,.9); }
       .chat-input { flex:1; background:transparent; border:none; color:${HOLO_THEME.text}; font-family:'Inter',sans-serif; font-size:15px; padding:12px 8px 12px 16px; outline:none; letter-spacing:.02em; }
       .chat-input::placeholder { color:rgba(242,240,248,.28); }
       .input-wrap { flex:1; display:flex; background:${HOLO_THEME.panel}; border-radius:24px; overflow:hidden; border:1px solid ${HOLO_THEME.hairlineSoft}; transition:border-color .2s; align-items:center; }
