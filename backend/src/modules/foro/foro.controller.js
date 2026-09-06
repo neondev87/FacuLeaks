@@ -1,26 +1,25 @@
 // ════════════════════════════════════════════════════════════════════════
-// MÓDULO: foro/foro.controller.js — el foro (temas del admin + comentarios)
+// MÓDULO: foro/foro.controller.js — el foro (canales + temas del admin + comentarios)
 // ════════════════════════════════════════════════════════════════════════
 // QUÉ HACE:
-//   - Temas: los CREA solo el admin (users.rol = ADMIN, o el email de
-//     ADMIN_EMAIL en backend/.env). Cualquiera puede listarlos.
-//   - Comentarios: cualquier usuario logueado comenta un tema. El comentario
-//     NO tiene título, solo contenido. Se recuenta totalComentarios en cada
-//     alta/baja (no increment a ciegas), igual que en el muro.
-//   - GET /permisos → le dice al frontend si el que mira puede crear temas
-//     (para mostrar u ocultar la UI de "nuevo tema").
+//   - Canales: tabla forum_canales. Los CREA y BORRA solo el admin (rol
+//     ADMIN o el email de ADMIN_EMAIL). Cualquiera los lista. Borrar un canal
+//     arrastra en cascada sus temas y comentarios.
+//   - Temas: los crea SOLO el admin, dentro de un canal. Cualquiera los lista.
+//   - Comentarios: cualquier usuario logueado comenta un tema. Sin título,
+//     solo contenido. totalComentarios se recuenta en cada alta/baja.
+//   - GET /permisos → le dice al frontend si el que mira puede administrar
+//     (crear canales / temas).
 //
 // CON QUÉ SE CONECTA:
-//   - config/db.js (Prisma) → tablas forum_temas, forum_comentarios.
-//   - req.io (Socket.io) → foro:tema, foro:tema:deleted, foro:comentario,
-//     foro:comentario:deleted (para el tiempo real, igual que muro/chat).
+//   - config/db.js (Prisma) → forum_canales, forum_temas, forum_comentarios.
+//   - req.io (Socket.io) → foro:canal(:deleted), foro:tema(:deleted),
+//     foro:comentario(:deleted) (tiempo real, igual que muro/chat).
 //   - Frontend: hooks/useForo.js.
 // ════════════════════════════════════════════════════════════════════════
 const prisma = require('../../config/db');
 
-const CANALES = new Set(['general', 'aesthetics', 'code', 'dark_music', 'void']);
-
-// ¿El usuario puede crear temas? rol ADMIN, o su email == ADMIN_EMAIL.
+// ¿El usuario puede administrar el foro? rol ADMIN, o su email == ADMIN_EMAIL.
 const esAdmin = async (userId) => {
   const u = await prisma.users.findUnique({
     where: { id: userId },
@@ -33,7 +32,16 @@ const esAdmin = async (userId) => {
 
 const autorSelect = { id: true, username: true, nombre: true, imagen: true };
 
-// GET /api/foro/permisos
+// "Diseño Web 2" -> "diseno-web-2". Sin acentos, sin símbolos, sin espacios.
+const slugify = (s) =>
+  String(s || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')  // saca los acentos combinados
+    .toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+
+// ── GET /api/foro/permisos ──
 const getPermisos = async (req, res) => {
   try {
     res.json({ puedeCrearTema: await esAdmin(req.userId) });
@@ -43,12 +51,74 @@ const getPermisos = async (req, res) => {
   }
 };
 
-// GET /api/foro/temas?canal=general
+// ── GET /api/foro/canales ──
+const listCanales = async (req, res) => {
+  try {
+    const canales = await prisma.forum_canales.findMany({
+      orderBy: [{ orden: 'asc' }, { id: 'asc' }],
+      select: { id: true, slug: true, nombre: true, orden: true },
+    });
+    res.json({ canales });
+  } catch (err) {
+    console.error('listCanales error:', err.message);
+    res.status(500).json({ error: 'Error al obtener canales' });
+  }
+};
+
+// ── POST /api/foro/canales   body: { nombre }   — SOLO admin ──
+const crearCanal = async (req, res) => {
+  try {
+    if (!(await esAdmin(req.userId))) return res.status(403).json({ error: 'Solo el admin puede crear canales' });
+
+    const nombre = String(req.body?.nombre || '').trim().replace(/^#\s*/, '');
+    if (!nombre) return res.status(400).json({ error: 'El canal necesita un nombre' });
+    if (nombre.length > 40) return res.status(400).json({ error: 'Nombre demasiado largo (máx. 40)' });
+
+    const slug = slugify(nombre);
+    if (!slug) return res.status(400).json({ error: 'Nombre inválido' });
+
+    const existe = await prisma.forum_canales.findUnique({ where: { slug }, select: { id: true } });
+    if (existe) return res.status(409).json({ error: 'Ya existe un canal con ese nombre' });
+
+    const ultimo = await prisma.forum_canales.findFirst({ orderBy: { orden: 'desc' }, select: { orden: true } });
+    const canal = await prisma.forum_canales.create({
+      data: { slug, nombre, orden: (ultimo?.orden ?? -1) + 1 },
+      select: { id: true, slug: true, nombre: true, orden: true },
+    });
+    req.io?.emit('foro:canal', canal);
+    res.status(201).json({ canal });
+  } catch (err) {
+    console.error('crearCanal error:', err.message);
+    res.status(500).json({ error: 'Error al crear el canal' });
+  }
+};
+
+// ── DELETE /api/foro/canales/:id   — SOLO admin ──
+const borrarCanal = async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'ID inválido' });
+  try {
+    if (!(await esAdmin(req.userId))) return res.status(403).json({ error: 'Solo el admin puede borrar canales' });
+
+    const canal = await prisma.forum_canales.findUnique({ where: { id }, select: { id: true } });
+    if (!canal) return res.status(404).json({ error: 'Canal no encontrado' });
+
+    await prisma.forum_canales.delete({ where: { id } }); // cascade: temas + comentarios
+    req.io?.emit('foro:canal:deleted', { id });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('borrarCanal error:', err.message);
+    res.status(500).json({ error: 'Error al eliminar el canal' });
+  }
+};
+
+// ── GET /api/foro/temas?canal=<canalId> ──
 const listTemas = async (req, res) => {
-  const canal = CANALES.has(req.query.canal) ? req.query.canal : 'general';
+  const canalId = parseInt(req.query.canal, 10);
+  if (!Number.isInteger(canalId)) return res.status(400).json({ error: 'Canal inválido' });
   try {
     const temas = await prisma.forum_temas.findMany({
-      where: { canal },
+      where: { canalId },
       orderBy: { creadoEn: 'desc' },
       include: { users: { select: autorSelect } },
     });
@@ -59,19 +129,22 @@ const listTemas = async (req, res) => {
   }
 };
 
-// POST /api/foro/temas   body: { canal, titulo }   — SOLO admin
+// ── POST /api/foro/temas   body: { canal: <canalId>, titulo }   — SOLO admin ──
 const crearTema = async (req, res) => {
   try {
     if (!(await esAdmin(req.userId))) return res.status(403).json({ error: 'Solo el admin puede crear temas' });
 
-    const canal  = CANALES.has(req.body?.canal) ? req.body.canal : null;
-    const titulo = String(req.body?.titulo || '').trim();
-    if (!canal) return res.status(400).json({ error: 'Canal inválido' });
+    const canalId = parseInt(req.body?.canal, 10);
+    const titulo  = String(req.body?.titulo || '').trim();
+    if (!Number.isInteger(canalId)) return res.status(400).json({ error: 'Canal inválido' });
     if (!titulo) return res.status(400).json({ error: 'El tema necesita un título' });
     if (titulo.length > 200) return res.status(400).json({ error: 'Título demasiado largo (máx. 200)' });
 
+    const canal = await prisma.forum_canales.findUnique({ where: { id: canalId }, select: { id: true } });
+    if (!canal) return res.status(404).json({ error: 'Canal no encontrado' });
+
     const tema = await prisma.forum_temas.create({
-      data: { canal, titulo, autorId: req.userId },
+      data: { canalId, titulo, autorId: req.userId },
       include: { users: { select: autorSelect } },
     });
     const payload = { ...tema, autor: tema.users, users: undefined };
@@ -83,9 +156,9 @@ const crearTema = async (req, res) => {
   }
 };
 
-// DELETE /api/foro/temas/:id   — admin, o el autor del tema
+// ── DELETE /api/foro/temas/:id   — admin, o el autor del tema ──
 const borrarTema = async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id, 10);
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'ID inválido' });
   try {
     const tema = await prisma.forum_temas.findUnique({ where: { id }, select: { id: true, autorId: true } });
@@ -102,9 +175,9 @@ const borrarTema = async (req, res) => {
   }
 };
 
-// GET /api/foro/temas/:id/comentarios
+// ── GET /api/foro/temas/:id/comentarios ──
 const listComentarios = async (req, res) => {
-  const temaId = parseInt(req.params.id);
+  const temaId = parseInt(req.params.id, 10);
   if (!Number.isInteger(temaId)) return res.status(400).json({ error: 'ID inválido' });
   try {
     const comentarios = await prisma.forum_comentarios.findMany({
@@ -119,9 +192,9 @@ const listComentarios = async (req, res) => {
   }
 };
 
-// POST /api/foro/temas/:id/comentarios   body: { contenido }   — cualquiera logueado
+// ── POST /api/foro/temas/:id/comentarios   body: { contenido }   — cualquiera logueado ──
 const crearComentario = async (req, res) => {
-  const temaId    = parseInt(req.params.id);
+  const temaId    = parseInt(req.params.id, 10);
   const contenido = String(req.body?.contenido || '').trim();
   if (!Number.isInteger(temaId)) return res.status(400).json({ error: 'ID inválido' });
   if (!contenido) return res.status(400).json({ error: 'Comentario vacío' });
@@ -150,9 +223,9 @@ const crearComentario = async (req, res) => {
   }
 };
 
-// DELETE /api/foro/comentarios/:id   — el autor del comentario, o el admin
+// ── DELETE /api/foro/comentarios/:id   — el autor del comentario, o el admin ──
 const borrarComentario = async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id, 10);
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'ID inválido' });
   try {
     const c = await prisma.forum_comentarios.findUnique({ where: { id }, select: { id: true, temaId: true, autorId: true } });
@@ -176,6 +249,8 @@ const borrarComentario = async (req, res) => {
 };
 
 module.exports = {
-  getPermisos, listTemas, crearTema, borrarTema,
+  getPermisos,
+  listCanales, crearCanal, borrarCanal,
+  listTemas, crearTema, borrarTema,
   listComentarios, crearComentario, borrarComentario,
 };

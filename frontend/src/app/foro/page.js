@@ -13,19 +13,16 @@ import { foroStyles } from "./foroStyles";
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: app/foro/page.js — el FORO (funcional desde Fase 3, 2026-09-06)
 // ════════════════════════════════════════════════════════════════════════
-// QUÉ HACE: dirección "Tablón" / paleta "Grafito". Canales a la izquierda;
-// en cada canal, un TEMA CENTRAL arriba (lo crea SOLO el admin) y la lista
-// de comentarios abajo (SIN título — solo texto). Para comentar se abre un
-// composer a pantalla completa (estilo "un hilo por pantalla"). Los temas
-// anteriores del canal quedan como chips para volver a ellos.
+// QUÉ HACE: dirección "Tablón" / paleta "Grafito". Canales a la izquierda —
+// el admin los crea y borra (＋ NUEVO CANAL / papelera por fila). En cada
+// canal, un TEMA CENTRAL arriba (lo crea SOLO el admin) y la lista de
+// comentarios abajo (SIN título — solo texto). Para comentar se abre un
+// composer a pantalla completa. Los temas anteriores del canal quedan como
+// chips para volver a ellos.
 //
 // CON QUÉ SE CONECTA: hooks/useForo.js (datos + socket), components/foro/
 // Comentario.js. Backend: /api/foro/* (foro.controller.js).
 // ════════════════════════════════════════════════════════════════════════
-const CANAL_LABEL = {
-  general: "# general", aesthetics: "# aesthetics", code: "# code",
-  dark_music: "# dark-music", void: "# void",
-};
 
 export default function ForoPage() {
   const { data: session, status } = useSession();
@@ -34,17 +31,20 @@ export default function ForoPage() {
   const c02Ref = useRef(null);
 
   const {
-    CANALES, canal, setCanal,
+    canales, canal, setCanal,
     temas, temaActivo, temaActivoId, setTemaActivoId,
-    comentarios, loadingTemas, loadingComs,
+    comentarios, loadingCanales, loadingTemas, loadingComs,
     puedeCrearTema, sending,
     enviarComentario, crearTema, borrarTema, borrarComentario,
+    crearCanal, borrarCanal,
   } = useForo();
 
   const [writing, setWriting]   = useState(false);
   const [draft, setDraft]       = useState("");
   const [newTema, setNewTema]   = useState("");
   const [showNewTema, setShowNewTema] = useState(false);
+  const [newCanal, setNewCanal] = useState("");
+  const [showNewCanal, setShowNewCanal] = useState(false);
 
   useInjectedStyles("foro-styles", foroStyles);
 
@@ -69,6 +69,8 @@ export default function ForoPage() {
 
   const uid = session?.user?.dbId != null ? Number(session.user.dbId) : null;
   const prevTemas = temas.filter(t => t.id !== temaActivoId);
+  const canalActual = canales.find(c => c.id === canal) || null;
+  const canalName = canalActual?.name || "#";
 
   const submitComentario = async () => {
     const ok = await enviarComentario(draft);
@@ -77,6 +79,10 @@ export default function ForoPage() {
   const submitTema = async () => {
     const ok = await crearTema(newTema);
     if (ok) { setNewTema(""); setShowNewTema(false); }
+  };
+  const submitCanal = async () => {
+    const ok = await crearCanal(newCanal);
+    if (ok) { setNewCanal(""); setShowNewCanal(false); }
   };
 
   return (
@@ -88,13 +94,50 @@ export default function ForoPage() {
         <div className="foro-side">
           <div className="foro-side__h">CANALES</div>
           <div className="foro-side__list">
-            {CANALES.map(c => (
-              <div key={c.id} className={`canal${canal === c.id ? " on" : ""}`} onClick={() => setCanal(c.id)}>
-                {c.name}
+            {loadingCanales ? (
+              <div className="foro-side__empty"><span className="spinner" /></div>
+            ) : canales.length === 0 ? (
+              <div className="foro-side__empty">
+                {puedeCrearTema ? "sin canales — creá el primero abajo" : "sin canales todavía"}
               </div>
-            ))}
+            ) : (
+              canales.map(c => (
+                <div key={c.id} className={`canal${canal === c.id ? " on" : ""}`} onClick={() => setCanal(c.id)}>
+                  <span className="canal__t">{c.name}</span>
+                  {puedeCrearTema && (
+                    <button className="canal__del" title={`Eliminar ${c.name} y todo su contenido`}
+                      onClick={e => {
+                        e.stopPropagation();
+                        if (confirm(`¿Eliminar el canal ${c.name}? Se borran también sus temas y comentarios.`)) borrarCanal(c.id);
+                      }}>
+                      <TrashGlyph size={12} />
+                    </button>
+                  )}
+                </div>
+              ))
+            )}
+
+            {/* admin: crear canal */}
+            {puedeCrearTema && (
+              showNewCanal ? (
+                <div className="foro-newcanal">
+                  <input
+                    autoFocus value={newCanal} onChange={e => setNewCanal(e.target.value)}
+                    maxLength={40} placeholder="nombre del canal…"
+                    onKeyDown={e => { if (e.key === "Enter") submitCanal(); if (e.key === "Escape") { setShowNewCanal(false); setNewCanal(""); } }}
+                  />
+                  <div className="foro-newcanal__row">
+                    <button onClick={submitCanal}>CREAR</button>
+                    <button className="ghost" onClick={() => { setShowNewCanal(false); setNewCanal(""); }}>✕</button>
+                  </div>
+                </div>
+              ) : (
+                <button className="canal-add" onClick={() => setShowNewCanal(true)}>＋ NUEVO CANAL</button>
+              )
+            )}
           </div>
-          <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,.07)", fontFamily: "'Space Mono',monospace", fontSize: 10, color: "rgba(255,255,255,.3)", letterSpacing: ".1em" }}>
+
+          <div className="foro-side__me">
             {session?.user?.name?.split(" ")[0] || "vos"}{puedeCrearTema ? " · admin" : ""}
           </div>
         </div>
@@ -103,13 +146,13 @@ export default function ForoPage() {
         <div className="foro-board">
 
           {/* admin: crear tema */}
-          {puedeCrearTema && (
+          {puedeCrearTema && canalActual && (
             showNewTema ? (
               <div className="foro-newtema">
                 <input
                   autoFocus value={newTema} onChange={e => setNewTema(e.target.value)}
                   maxLength={200}
-                  placeholder={`título del tema para ${CANAL_LABEL[canal]}…`}
+                  placeholder={`título del tema para ${canalName}…`}
                   onKeyDown={e => { if (e.key === "Enter") submitTema(); if (e.key === "Escape") setShowNewTema(false); }}
                 />
                 <button onClick={submitTema}>PUBLICAR</button>
@@ -117,18 +160,24 @@ export default function ForoPage() {
               </div>
             ) : (
               <div className="foro-admin">
-                <button onClick={() => setShowNewTema(true)}>＋ NUEVO TEMA EN {CANAL_LABEL[canal].toUpperCase()}</button>
+                <button onClick={() => setShowNewTema(true)}>＋ NUEVO TEMA EN {canalName.toUpperCase()}</button>
               </div>
             )
           )}
 
-          {loadingTemas ? (
+          {loadingCanales || loadingTemas ? (
             <div className="foro-empty"><span className="spinner" /></div>
+          ) : !canalActual ? (
+            <div className="foro-empty">
+              {puedeCrearTema
+                ? "todavía no hay canales — creá uno en la barra de la izquierda"
+                : "el foro todavía no tiene canales"}
+            </div>
           ) : !temaActivo ? (
             <div className="foro-empty">
               {puedeCrearTema
-                ? `todavía no hay ningún tema en ${CANAL_LABEL[canal]} — creá el primero arriba`
-                : `todavía no hay ningún tema en ${CANAL_LABEL[canal]}`}
+                ? `todavía no hay ningún tema en ${canalName} — creá el primero arriba`
+                : `todavía no hay ningún tema en ${canalName}`}
             </div>
           ) : (
             <>
@@ -140,7 +189,7 @@ export default function ForoPage() {
                     <TrashGlyph size={14} />
                   </button>
                 )}
-                <div className="foro-theme__k">TEMA · {CANAL_LABEL[canal]}</div>
+                <div className="foro-theme__k">TEMA · {canalName}</div>
                 <div className="foro-theme__t">{temaActivo.titulo}</div>
                 <div className="foro-theme__meta">
                   {temaActivo.totalComentarios ?? comentarios.length} comentario{(temaActivo.totalComentarios ?? comentarios.length) === 1 ? "" : "s"}

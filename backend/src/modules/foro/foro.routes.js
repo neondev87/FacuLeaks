@@ -8,12 +8,17 @@
 const express = require('express');
 const router = express.Router();
 const {
-  getPermisos, listTemas, crearTema, borrarTema,
+  getPermisos,
+  listCanales, crearCanal, borrarCanal,
+  listTemas, crearTema, borrarTema,
   listComentarios, crearComentario, borrarComentario,
 } = require('./foro.controller');
 const { authMiddleware } = require('../../middleware/auth');
 
 router.get('/permisos',                     authMiddleware, getPermisos);
+router.get('/canales',                      authMiddleware, listCanales);
+router.post('/canales',                     authMiddleware, crearCanal);
+router.delete('/canales/:id',               authMiddleware, borrarCanal);
 router.get('/temas',                        authMiddleware, listTemas);
 router.post('/temas',                       authMiddleware, crearTema);
 router.delete('/temas/:id',                 authMiddleware, borrarTema);

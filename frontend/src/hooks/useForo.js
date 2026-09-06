@@ -3,39 +3,37 @@
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: hooks/useForo.js — estado del foro (YA NO es mock)
 // ════════════════════════════════════════════════════════════════════════
-// QUÉ HACE: maneja el canal activo, sus temas (los crea SOLO el admin), el
-// tema en foco y sus comentarios (los hace cualquiera; sin título). Abre un
-// socket para enterarse en vivo de temas/comentarios nuevos o borrados.
+// QUÉ HACE: maneja los CANALES (el admin los crea/borra), el canal activo,
+// sus temas (los crea SOLO el admin), el tema en foco y sus comentarios (los
+// hace cualquiera; sin título). Abre un socket para enterarse en vivo de
+// canales/temas/comentarios nuevos o borrados.
 //
 // CON QUÉ SE CONECTA:
 //   - backend: /api/foro/* (foro.controller.js).
-//   - Socket.io: foro:tema / foro:tema:deleted / foro:comentario /
-//     foro:comentario:deleted.
+//   - Socket.io: foro:canal(:deleted) / foro:tema(:deleted) /
+//     foro:comentario(:deleted).
 //   - Lo consume: app/foro/page.js.
 // ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback, useRef } from "react";
 import { io } from "socket.io-client";
 import { API, SOCKET_URL } from "@/lib/api";
 
-export const CANALES = [
-  { id: "general",    name: "# general" },
-  { id: "aesthetics", name: "# aesthetics" },
-  { id: "code",       name: "# code" },
-  { id: "dark_music", name: "# dark-music" },
-  { id: "void",       name: "# void" },
-];
+// Un canal de la API { id, slug, nombre, orden } -> la forma que usa la UI.
+const toCanal = (c) => ({ id: c.id, slug: c.slug, nombre: c.nombre, name: `# ${c.nombre}` });
 
 export default function useForo() {
-  const [canal,        setCanal]        = useState("general");
+  const [canales,      setCanales]      = useState([]);
+  const [canal,        setCanal]        = useState(null);   // canalId (number) | null
   const [temas,        setTemas]        = useState([]);
   const [temaActivoId, setTemaActivoId] = useState(null);
   const [comentarios,  setComentarios]  = useState([]);
+  const [loadingCanales, setLoadingCanales] = useState(true);
   const [loadingTemas, setLoadingTemas] = useState(true);
   const [loadingComs,  setLoadingComs]  = useState(false);
   const [puedeCrearTema, setPuedeCrearTema] = useState(false);
   const [sending, setSending] = useState(false);
-  // Espejos de canal/tema para leer el valor actual desde los handlers del
-  // socket sin re-suscribir el socket en cada cambio.
+  // Espejos para leer el valor actual desde los handlers del socket sin
+  // re-suscribir el socket en cada cambio.
   const canalRef = useRef(canal);
   const temaRef  = useRef(null);
   useEffect(() => { canalRef.current = canal; }, [canal]);
@@ -43,15 +41,32 @@ export default function useForo() {
 
   const temaActivo = temas.find(t => t.id === temaActivoId) || null;
 
-  // ── permisos (¿puedo crear temas?) ──
+  // ── permisos (¿puedo administrar?) ──
   useEffect(() => {
     fetch(`${API}/api/foro/permisos`, { credentials: "include" })
       .then(r => r.json()).then(d => setPuedeCrearTema(!!d.puedeCrearTema)).catch(() => {});
   }, []);
 
-  // ── temas del canal ── (sin setState sincrónico: la primera sentencia ya
-  // es un await, así el efecto que lo llama no dispara renders en cascada)
+  // ── canales ── (la primera sentencia ya es un await)
+  const loadCanales = useCallback(async () => {
+    try {
+      const res  = await fetch(`${API}/api/foro/canales`, { credentials: "include" });
+      const data = await res.json();
+      const list = (data.canales || []).map(toCanal);
+      setCanales(list);
+      setCanal(prev => (prev != null && list.some(c => c.id === prev)) ? prev : (list[0]?.id ?? null));
+    } catch {
+      setCanales([]); setCanal(null);
+    } finally {
+      setLoadingCanales(false);
+    }
+  }, []);
+
+  useEffect(() => { loadCanales(); }, [loadCanales]);
+
+  // ── temas del canal ──
   const loadTemas = useCallback(async (c) => {
+    if (c == null) { setTemas([]); setTemaActivoId(null); setLoadingTemas(false); return; }
     try {
       const res  = await fetch(`${API}/api/foro/temas?canal=${c}`, { credentials: "include" });
       const data = await res.json();
@@ -88,8 +103,20 @@ export default function useForo() {
   // ── socket (tiempo real) ──
   useEffect(() => {
     const socket = io(SOCKET_URL);
+
+    socket.on("foro:canal", (c) => {
+      setCanales(prev => prev.some(x => x.id === c.id) ? prev : [...prev, toCanal(c)]);
+    });
+    socket.on("foro:canal:deleted", ({ id }) => {
+      setCanales(prev => {
+        const next = prev.filter(c => c.id !== id);
+        if (canalRef.current === id) setCanal(next[0]?.id ?? null);
+        return next;
+      });
+    });
+
     socket.on("foro:tema", (tema) => {
-      if (tema.canal === canalRef.current) {
+      if (tema.canalId === canalRef.current) {
         setTemas(prev => prev.some(t => t.id === tema.id) ? prev : [tema, ...prev]);
       }
     });
@@ -107,6 +134,7 @@ export default function useForo() {
       setTemas(prev => prev.map(t => t.id === temaId ? { ...t, totalComentarios } : t));
       if (temaId === temaRef.current) setComentarios(prev => prev.filter(c => c.id !== comentarioId));
     });
+
     return () => { socket.disconnect(); };
   }, []);
 
@@ -137,7 +165,7 @@ export default function useForo() {
 
   const crearTema = useCallback(async (titulo) => {
     const t = String(titulo || "").trim();
-    if (!t) return false;
+    if (!t || canalRef.current == null) return false;
     try {
       const res = await fetch(`${API}/api/foro/temas`, {
         method: "POST", credentials: "include",
@@ -173,11 +201,46 @@ export default function useForo() {
     } catch { loadComentarios(temaRef.current); }
   }, [loadComentarios]);
 
+  const crearCanal = useCallback(async (nombre) => {
+    const n = String(nombre || "").trim().replace(/^#\s*/, "");
+    if (!n) return false;
+    try {
+      const res = await fetch(`${API}/api/foro/canales`, {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: n }),
+      });
+      if (!res.ok) return false;
+      const data = await res.json();
+      if (data.canal) {
+        setCanales(prev => prev.some(c => c.id === data.canal.id) ? prev : [...prev, toCanal(data.canal)]);
+        setCanal(data.canal.id);
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const borrarCanal = useCallback(async (id) => {
+    let fallback = null;
+    setCanales(prev => {
+      const next = prev.filter(c => c.id !== id);
+      if (canalRef.current === id) { fallback = next[0]?.id ?? null; setCanal(fallback); }
+      return next;
+    });
+    try {
+      const res = await fetch(`${API}/api/foro/canales/${id}`, { method: "DELETE", credentials: "include" });
+      if (!res.ok) loadCanales();
+    } catch { loadCanales(); }
+  }, [loadCanales]);
+
   return {
-    CANALES, canal, setCanal,
+    canales, canal, setCanal,
     temas, temaActivo, temaActivoId, setTemaActivoId,
-    comentarios, loadingTemas, loadingComs,
+    comentarios, loadingCanales, loadingTemas, loadingComs,
     puedeCrearTema, sending,
     enviarComentario, crearTema, borrarTema, borrarComentario,
+    crearCanal, borrarCanal,
   };
 }

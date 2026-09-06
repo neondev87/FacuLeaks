@@ -26,10 +26,25 @@ export const foroStyles = `
       .foro-side { width:200px; flex-shrink:0; border-right:1px solid ${HOLO_THEME.hairlineSoft}; background:${HOLO_THEME.panel}; display:flex; flex-direction:column; }
       .foro-side__h { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:.24em; color:${HOLO_THEME.textDim}; padding:18px 18px 8px; }
       .foro-side__list { flex:1; overflow-y:auto; padding-bottom:10px; }
-      .canal { padding:9px 18px; font-size:13px; color:rgba(242,240,248,.58); cursor:pointer; border-left:2px solid transparent; transition:color .14s, background .14s, border-color .14s; }
+      .foro-side__empty { padding:14px 18px; font-family:'Space Mono',monospace; font-size:10px; line-height:1.6; color:${HOLO_THEME.textDim}; letter-spacing:.04em; }
+      .canal { display:flex; align-items:center; gap:8px; padding:9px 14px 9px 18px; font-size:13px; color:rgba(242,240,248,.58); cursor:pointer; border-left:2px solid transparent; transition:color .14s, background .14s, border-color .14s; }
       .canal:hover { color:${HOLO_THEME.text}; background:rgba(255,255,255,.02); }
       .canal.on { color:${HOLO_THEME.text}; border-left-color:${AC}; background:${AC_SOFT}; }
-      .canal .cnt { font-family:'Space Mono',monospace; font-size:10px; color:${HOLO_THEME.textDim}; float:right; }
+      .canal__t { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .canal .cnt { font-family:'Space Mono',monospace; font-size:10px; color:${HOLO_THEME.textDim}; }
+      .canal__del { flex:none; background:none; border:0; padding:2px; cursor:pointer; color:rgba(242,240,248,.22); display:flex; opacity:0; transition:color .14s, opacity .14s; }
+      .canal:hover .canal__del { opacity:1; }
+      .canal__del:hover { color:rgba(255,90,90,.9); }
+      .canal-add { display:block; width:calc(100% - 24px); margin:10px 12px 4px; background:none; border:1px dashed ${HOLO_THEME.hairline}; color:${HOLO_THEME.textDim}; font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.12em; padding:8px 10px; border-radius:9px; cursor:pointer; transition:color .14s, border-color .14s; }
+      .canal-add:hover { color:${HOLO_THEME.text}; border-color:${AC}; }
+      .foro-newcanal { margin:10px 12px 4px; display:flex; flex-direction:column; gap:7px; }
+      .foro-newcanal input { background:${HOLO_THEME.bg}; border:1px solid ${HOLO_THEME.hairline}; border-radius:9px; padding:8px 11px; color:${HOLO_THEME.text}; font-family:'Inter',sans-serif; font-size:13px; outline:0; }
+      .foro-newcanal input::placeholder { color:rgba(242,240,248,.3); }
+      .foro-newcanal input:focus { border-color:${AC}; }
+      .foro-newcanal__row { display:flex; gap:6px; }
+      .foro-newcanal__row button { flex:1; background:${AC}; color:#0b0b0e; border:0; font-family:'Space Mono',monospace; font-weight:700; font-size:10px; letter-spacing:.12em; padding:8px 0; border-radius:8px; cursor:pointer; }
+      .foro-newcanal__row .ghost { flex:0 0 34px; background:none; border:1px solid ${HOLO_THEME.hairline}; color:${HOLO_THEME.textDim}; font-weight:400; }
+      .foro-side__me { padding:12px 16px; border-top:1px solid rgba(255,255,255,.07); font-family:'Space Mono',monospace; font-size:10px; color:rgba(255,255,255,.3); letter-spacing:.1em; }
 
       /* ── tablero ── */
       .foro-board { flex:1; min-width:0; display:flex; flex-direction:column; position:relative; }
