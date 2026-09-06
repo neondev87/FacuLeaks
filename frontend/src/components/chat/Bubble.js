@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { API } from "@/lib/api";
 import Lightbox from "@/components/Lightbox";
+import TrashGlyph from "@/components/TrashGlyph";
 import MicIcon from "./MicIcon";
 import AudioPlayer from "./AudioPlayer";
 import AudioReplyPreview from "./AudioReplyPreview";
@@ -41,7 +42,6 @@ export default function Bubble({ msg, esPropio, replyMsg, onReply, onDelete }) {
     }, 320);
   };
 
-  const trashCol = delPhase === "idle" ? "currentColor" : "rgba(255,80,80,.85)";
 
   return (
     <div className="bubble-wrap"
@@ -54,19 +54,14 @@ export default function Bubble({ msg, esPropio, replyMsg, onReply, onDelete }) {
           </svg>
         </button>
         {esPropio && (
-          <button className="bubble-act del" onClick={handleDelete} title="Eliminar">
+          <button className="bubble-act del" onClick={handleDelete} title="Eliminar"
+            style={delPhase !== "idle" ? { color: "rgba(255,90,90,.95)" } : undefined}>
             <div style={{
-              transition: delPhase==="shrink" ? "all .28s cubic-bezier(.4,0,.6,1)" : "none",
-              transform: delPhase==="shrink" ? "scale(.05) perspective(200px) translateZ(-80px)" : delPhase==="open" ? "scale(1.15)" : "scale(1)",
+              transition: delPhase==="shrink" ? "transform .28s cubic-bezier(.4,0,.6,1), opacity .28s ease" : "transform .18s ease",
+              transform: delPhase==="shrink" ? "scale(.05) perspective(200px) translateZ(-80px)" : delPhase==="open" ? "scale(1.18) rotate(-8deg)" : "scale(1)",
               opacity: delPhase==="gone" ? 0 : 1,
             }}>
-              <svg width="14" height="15" viewBox="0 0 12 14" fill="none">
-                <rect x="1" y="3" width="10" height="10" rx="1" stroke={trashCol} strokeWidth="1"/>
-                <path d="M4 3V2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1" stroke={trashCol} strokeWidth="1"/>
-                <line x1="0" y1="3" x2="12" y2="3" stroke={trashCol} strokeWidth="1"/>
-                <line x1="4.5" y1="6" x2="4.5" y2="10" stroke={trashCol} strokeWidth="1"/>
-                <line x1="7.5" y1="6" x2="7.5" y2="10" stroke={trashCol} strokeWidth="1"/>
-              </svg>
+              <TrashGlyph size={14} />
             </div>
           </button>
         )}

@@ -113,13 +113,23 @@ export default function useFeedPosts({ activeTab, status, session }) {
         p.id === postId ? { ...p, totalLikes, totalDislikes } : p
       ));
     });
-    // B3 · contador de comentarios en vivo
-    const applyCommentCount = ({ postId, totalComentarios }) => {
-      setPosts(prev => prev.map(p =>
-        p.id === postId
-          ? { ...p, totalComentarios, _count: { ...p._count, comments: totalComentarios } }
-          : p
-      ));
+    // B3 · contador de comentarios en vivo — también corrige un bug real:
+    // `previewComments` (los primeros 2 que se ven en el muro sin abrir el
+    // hilo) se cargaban una sola vez con el post y nunca se tocaban de
+    // nuevo, así que borrar un comentario desde el hilo abierto lo sacaba
+    // ahí pero la vista previa (al cerrar y reabrir) seguía mostrando la
+    // versión vieja con el comentario ya borrado adentro. Ahora se parcha
+    // `previewComments` en el mismo evento que ya actualiza el contador.
+    const applyCommentCount = ({ postId, totalComentarios, comment, commentId }) => {
+      setPosts(prev => prev.map(p => {
+        if (p.id !== postId) return p;
+        let previewComments = p.previewComments || [];
+        if (commentId != null) previewComments = previewComments.filter(c => c.id !== commentId);
+        if (comment && previewComments.length < 2 && !previewComments.some(c => c.id === comment.id)) {
+          previewComments = [...previewComments, comment];
+        }
+        return { ...p, totalComentarios, _count: { ...p._count, comments: totalComentarios }, previewComments };
+      }));
     };
     feedSocket.on("post:comment", applyCommentCount);
     feedSocket.on("post:comment:deleted", applyCommentCount);

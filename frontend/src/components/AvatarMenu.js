@@ -22,6 +22,22 @@
 import { useState, useRef, useEffect } from 'react';
 import { API } from '@/lib/api';
 import { HOLO_THEME } from '@/lib/theme';
+import TrashGlyph from '@/components/TrashGlyph';
+
+// Íconos de línea del menú del avatar (cambiar / ver). El de eliminar es el
+// TrashGlyph compartido de toda la app.
+const CameraIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 8a2 2 0 0 1 2-2h1.2l1-1.6A1 1 0 0 1 10 4h4a1 1 0 0 1 .85.4L15.8 6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
+    <circle cx="12" cy="12.5" r="3.2" />
+  </svg>
+);
+const EyeIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
 
 export default function AvatarMenu({ currentAvatar, canEdit = true, onAvatarChange, onViewClick }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -201,14 +217,15 @@ export default function AvatarMenu({ currentAvatar, canEdit = true, onAvatarChan
             position: 'absolute',
             top: '100%',
             left: 0,
-            marginTop: 6,
-            background: '#0a0a0a',
-            border: '1px solid rgba(255,255,255,.1)',
-            borderRadius: 4,
-            boxShadow: '0 4px 20px rgba(0,0,0,.8)',
+            marginTop: 8,
+            background: HOLO_THEME.panel,
+            border: `1px solid ${HOLO_THEME.hairline}`,
+            borderRadius: 12,
+            boxShadow: '0 12px 32px -8px rgba(0,0,0,.7)',
             overflow: 'hidden',
             zIndex: 100,
-            minWidth: 180,
+            minWidth: 184,
+            padding: 5,
             animation: 'fadeIn .15s ease'
           }}>
             <button
@@ -217,21 +234,22 @@ export default function AvatarMenu({ currentAvatar, canEdit = true, onAvatarChan
                 width: '100%',
                 background: 'transparent',
                 border: 'none',
-                padding: '10px 14px',
-                color: 'rgba(255,255,255,.7)',
-                fontFamily: "'IBM Plex Mono',monospace",
-                fontSize: 12,
+                borderRadius: 8,
+                padding: '9px 11px',
+                color: 'rgba(242,240,248,.72)',
+                fontFamily: "'Inter',sans-serif",
+                fontSize: 13,
                 cursor: 'pointer',
                 textAlign: 'left',
-                transition: 'background .15s',
+                transition: 'background .15s, color .15s',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8
+                gap: 10
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,.05)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,.05)'; e.currentTarget.style.color = HOLO_THEME.text; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(242,240,248,.72)'; }}
             >
-              <span>📷</span> Cambiar foto
+              <CameraIcon /> Cambiar foto
             </button>
 
             {avatarUrl && (
@@ -242,24 +260,25 @@ export default function AvatarMenu({ currentAvatar, canEdit = true, onAvatarChan
                     width: '100%',
                     background: 'transparent',
                     border: 'none',
-                    padding: '10px 14px',
-                    color: 'rgba(255,255,255,.7)',
-                    fontFamily: "'IBM Plex Mono',monospace",
-                    fontSize: 12,
+                    borderRadius: 8,
+                    padding: '9px 11px',
+                    color: 'rgba(242,240,248,.72)',
+                    fontFamily: "'Inter',sans-serif",
+                    fontSize: 13,
                     cursor: 'pointer',
                     textAlign: 'left',
-                    transition: 'background .15s',
+                    transition: 'background .15s, color .15s',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 8
+                    gap: 10
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,.05)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,.05)'; e.currentTarget.style.color = HOLO_THEME.text; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(242,240,248,.72)'; }}
                 >
-                  <span>👁️</span> Ver foto
+                  <EyeIcon /> Ver foto
                 </button>
 
-                <div style={{ height: 1, background: 'rgba(255,255,255,.05)', margin: '4px 0' }} />
+                <div style={{ height: 1, background: HOLO_THEME.hairlineSoft, margin: '4px 6px' }} />
 
                 <button
                   onClick={handleDelete}
@@ -267,27 +286,28 @@ export default function AvatarMenu({ currentAvatar, canEdit = true, onAvatarChan
                     width: '100%',
                     background: 'transparent',
                     border: 'none',
-                    padding: '10px 14px',
-                    color: 'rgba(255,100,100,.6)',
-                    fontFamily: "'IBM Plex Mono',monospace",
-                    fontSize: 12,
+                    borderRadius: 8,
+                    padding: '9px 11px',
+                    color: 'rgba(255,110,110,.75)',
+                    fontFamily: "'Inter',sans-serif",
+                    fontSize: 13,
                     cursor: 'pointer',
                     textAlign: 'left',
                     transition: 'all .15s',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 8
+                    gap: 10
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255,50,50,.08)';
-                    e.currentTarget.style.color = 'rgba(255,120,120,.9)';
+                    e.currentTarget.style.background = 'rgba(255,90,90,.09)';
+                    e.currentTarget.style.color = 'rgba(255,130,130,.95)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.color = 'rgba(255,100,100,.6)';
+                    e.currentTarget.style.color = 'rgba(255,110,110,.75)';
                   }}
                 >
-                  <span>🗑️</span> Eliminar
+                  <TrashGlyph size={15} /> Eliminar
                 </button>
               </>
             )}

@@ -163,12 +163,28 @@ const feedSiguiendo = async (req, res) => {
   }
 };
 
+const PRIVACIDADES = new Set(['PUBLICA', 'AMIGOS', 'SOLO_YO']);
+// `imagen` solo puede ser una ruta de subida propia — nunca una URL arbitraria
+// (evita que se inyecten pixeles de tracking / contenido externo en el feed).
+const IMAGEN_OK = /^\/uploads\/imagenes\/[A-Za-z0-9._-]+$/;
+
 const nuevoPost = async (req, res) => {
   try {
-    const { titulo, contenido, privacidad, imagen } = req.body;
+    const titulo    = req.body?.titulo != null ? String(req.body.titulo).trim() : null;
+    const contenido = String(req.body?.contenido || '').trim();
+    const imagen    = req.body?.imagen ? String(req.body.imagen) : null;
+    const privacidad = PRIVACIDADES.has(req.body?.privacidad) ? req.body.privacidad : 'PUBLICA';
+
     if (!contenido && !imagen) return res.status(400).json({ error: 'Se requiere contenido o imagen' });
+    if (titulo && titulo.length > 200) return res.status(400).json({ error: 'Título demasiado largo (máx. 200)' });
+    if (contenido.length > 5000) return res.status(400).json({ error: 'Contenido demasiado largo (máx. 5000)' });
+    if (imagen && !IMAGEN_OK.test(imagen)) return res.status(400).json({ error: 'Imagen inválida' });
+
     const post = await createPost(req.userId, { titulo, contenido, privacidad, imagen });
-    req.io.emit('post:new', post);
+    // Solo los posts públicos se difunden en vivo al muro de todos. Los de
+    // AMIGOS / SOLO_YO aparecen en el perfil del autor por fetch normal — no
+    // hay que mandarle su contenido a cada cliente conectado.
+    if (post.privacidad === 'PUBLICA') req.io.emit('post:new', post);
     res.status(201).json({ post });
   } catch (err) {
     console.error(err);

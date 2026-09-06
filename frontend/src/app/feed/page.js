@@ -75,7 +75,7 @@ export default function FeedPage() {
 
       <div className="feed-wrap">
 
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24, borderBottom:`1px solid ${HOLO_THEME.hairlineSoft}`, paddingBottom:14 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
           <div style={{ fontFamily:"'Cinzel',serif", fontSize:16, color:HOLO_THEME.text, letterSpacing:".2em" }}>† MURO · {activeTab}</div>
           <div style={{ display:"flex", gap:20, fontSize:12, fontFamily:"'Inter',sans-serif" }}>
             {["RECIENTES", "TRENDING", "SIGUIENDO"].map(t => (

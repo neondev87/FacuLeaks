@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import usePostComments from "@/hooks/usePostComments";
 import { API } from "@/lib/api";
 import { HOLO_THEME } from "@/lib/theme";
+import TrashGlyph from "@/components/TrashGlyph";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: components/feed/PostComments.js — hilo de comentarios (diseño feed)
@@ -25,10 +26,19 @@ export default function PostComments({ postId, currentUserId }) {
   const router = useRouter();
   const { comments, loading, sending, add, remove } = usePostComments(postId, true);
   const [text, setText] = useState("");
+  const textareaRef = useRef(null);
+
+  // Autocrecimiento: el textarea arranca en 1 línea y crece con lo que se
+  // escribe (hasta un tope), en vez de scrollear el texto de costado.
+  const autoGrow = el => {
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+  };
 
   const submit = async () => {
     const ok = await add(text);
-    if (ok) setText("");
+    if (ok) { setText(""); autoGrow(textareaRef.current); }
   };
 
   const fmt = (d) => d
@@ -60,13 +70,13 @@ export default function PostComments({ postId, currentUserId }) {
                       <span style={{ fontSize:12, color:HOLO_THEME.text, fontFamily:"'Inter',sans-serif", fontWeight:500 }}>{autor.username || "unknown"}</span>
                       <span style={{ fontSize:10, color:HOLO_THEME.textDim, fontFamily:"'Space Mono',monospace" }}>{fmt(c.creadoEn)}</span>
                       {mine && (
-                        <span onClick={() => remove(c.id)}
-                          style={{ marginLeft:"auto", fontSize:10, color:HOLO_THEME.textDim, cursor:"pointer", fontFamily:"'Space Mono',monospace", transition:"color .15s" }}
+                        <button onClick={() => remove(c.id)} title="Eliminar comentario"
+                          style={{ marginLeft:"auto", background:"none", border:"none", padding:2, cursor:"pointer", color:HOLO_THEME.textDim, display:"flex", transition:"color .15s" }}
                           onMouseEnter={e => e.currentTarget.style.color = "#c0524a"}
-                          onMouseLeave={e => e.currentTarget.style.color = HOLO_THEME.textDim}>✕</span>
+                          onMouseLeave={e => e.currentTarget.style.color = HOLO_THEME.textDim}><TrashGlyph size={13} /></button>
                       )}
                     </div>
-                    <div style={{ fontSize:13, color:"rgba(242,240,248,.65)", lineHeight:1.6, fontFamily:"'Inter',sans-serif", whiteSpace:"pre-wrap" }}>
+                    <div style={{ fontSize:13, color:"rgba(242,240,248,.65)", lineHeight:1.6, fontFamily:"'Inter',sans-serif", whiteSpace:"pre-wrap", wordBreak:"break-word", overflowWrap:"anywhere" }}>
                       {c.contenido}
                     </div>
                   </div>
@@ -77,17 +87,19 @@ export default function PostComments({ postId, currentUserId }) {
         </div>
       )}
 
-      <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-        <input
+      <div style={{ display:"flex", gap:8, alignItems:"flex-end" }}>
+        <textarea
+          ref={textareaRef}
           value={text}
-          onChange={e => setText(e.target.value)}
+          onChange={e => { setText(e.target.value); autoGrow(e.target); }}
           onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }}
           placeholder="escribir un comentario..."
           maxLength={500}
+          rows={1}
           style={{
             flex:1, background:"#0a0a0d", border:`1px solid ${HOLO_THEME.hairline}`,
             padding:"7px 10px", fontSize:12, color:HOLO_THEME.text, fontFamily:"'Inter',sans-serif",
-            outline:"none",
+            outline:"none", resize:"none", overflowY:"auto", maxHeight:120, lineHeight:1.5,
           }}
           onFocus={e => e.target.style.borderColor = "rgba(255,255,255,.4)"}
           onBlur={e => e.target.style.borderColor = HOLO_THEME.hairline}

@@ -48,6 +48,13 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, onSha
   const likes    = post.totalLikes ?? post._count?.post_likes ?? 0;
   const dislikes = post.totalDislikes ?? 0;
   const comments = post.totalComentarios ?? post._count?.comments ?? 0;
+  const previewCount = post.previewComments?.length ?? 0;
+  const anyPreviewLong = (post.previewComments || []).some(c => (c.contenido || "").length > 200);
+  // ¿Vale la pena la barra "desplegar"? Solo si hay comentarios además de los
+  // del preview, o alguno del preview es largo (queda cortado). Si no, el
+  // preview YA es el hilo completo: se muestra un trigger quieto para escribir
+  // un comentario, sin la animación de altura (que ahí no revela nada nuevo).
+  const commentsHasMore = comments > previewCount || anyPreviewLong;
   const compartidos = post.totalCompartidos ?? 0;
   const esPublico = post.privacidad === "PUBLICA";
   const counts   = { LIKE: likes, DISLIKE: dislikes };
@@ -125,8 +132,9 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, onSha
           </div>
         </div>
 
-        {/* Footer */}
-        <div style={{ padding:"12px 18px", borderTop:`1px solid ${HOLO_THEME.hairlineSoft}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        {/* Footer — sin línea arriba a propósito: contenido + reacciones son
+            UN solo bloque visual, no dos secciones separadas. */}
+        <div style={{ padding:"6px 18px 12px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div style={{ display:"flex", gap:4, alignItems:"center" }}>
             {REACTIONS.map(({ key, Icon }) => (
               <Icon
@@ -149,22 +157,36 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, onSha
 
         {/* Vista previa: primeros 2 comentarios, siempre visibles (no hace falta
             desplegar el hilo). Se oculta si el hilo completo ya está abierto,
-            para no mostrar los mismos dos comentarios dos veces. */}
+            para no mostrar los mismos dos comentarios dos veces. Burbujas
+            iguales a las del hilo completo (PostComments.js) — misma
+            identidad visual, no un diseño aparte improvisado. */}
         {!showComments && post.previewComments?.length > 0 && (
-          <div style={{ padding:"10px 18px", borderTop:`1px solid ${HOLO_THEME.hairlineSoft}`, display:"flex", flexDirection:"column", gap:8 }}>
+          <div style={{ padding:"4px 18px 14px", borderTop:`1px solid ${HOLO_THEME.hairlineSoft}`, display:"flex", flexDirection:"column", gap:14 }}>
             {post.previewComments.map((c, i) => (
-              <div key={c.id} style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
-                <div style={{ width:20, height:20, borderRadius:"50%", flexShrink:0, backgroundColor:"#1c1c24", backgroundImage: c.autor?.imagen ? `url(${c.autor.imagen.startsWith("http") ? c.autor.imagen : `${API}${c.autor.imagen}`})` : "none", backgroundSize:"cover", backgroundPosition:"center", border:`1px solid ${HOLO_THEME.hairline}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:7, color:HOLO_THEME.textDim }}>{!c.autor?.imagen && "◈"}</div>
-                <div style={{ flex:1, minWidth:0, fontSize:12, lineHeight:1.5, fontFamily:"'Inter',sans-serif", color:"rgba(242,240,248,.65)", maxHeight: i === 1 ? "4.5em" : "none", overflowY: i === 1 ? "auto" : "visible", paddingRight: i === 1 ? 4 : 0 }}>
-                  <span style={{ color:HOLO_THEME.text, fontWeight:500 }}>{c.autor?.username || "unknown"}</span>{" "}
-                  {c.contenido}
+              <div key={c.id} style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
+                <div style={{ width:26, height:26, borderRadius:"50%", flexShrink:0, backgroundColor:"#1c1c24", backgroundImage: c.autor?.imagen ? `url(${c.autor.imagen.startsWith("http") ? c.autor.imagen : `${API}${c.autor.imagen}`})` : "none", backgroundSize:"cover", backgroundPosition:"center", border:`1px solid ${HOLO_THEME.hairline}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:8, color:HOLO_THEME.textDim, marginTop:2 }}>{!c.autor?.imagen && "◈"}</div>
+                <div style={{ flex:1, minWidth:0, background:HOLO_THEME.panel, border:`1px solid ${HOLO_THEME.hairlineSoft}`, borderRadius:10, padding:"8px 12px" }}>
+                  <div style={{ fontSize:12, color:HOLO_THEME.text, fontWeight:500, fontFamily:"'Inter',sans-serif", marginBottom:3 }}>
+                    {c.autor?.username || "unknown"}
+                  </div>
+                  <div style={{
+                    fontSize:13, lineHeight:1.6, fontFamily:"'Inter',sans-serif", color:"rgba(242,240,248,.68)",
+                    whiteSpace:"pre-wrap", wordBreak:"break-word", overflowWrap:"anywhere",
+                    maxHeight: i === 1 ? 72 : "none",
+                    overflowY: i === 1 ? "auto" : "visible",
+                    overflowX: "hidden",
+                  }}>
+                    {c.contenido}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* Barrita: click para desplegar el hilo de comentarios con animación */}
+        {/* Barrita de comentarios. Con más comentarios que el preview → cuenta +
+            chevron + hilo animado. Si el preview ya es todo → trigger quieto
+            para comentar, sin animación de altura. */}
         <div
           onClick={() => setShowComments(v => !v)}
           style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, padding:"6px 14px", borderTop:`1px solid ${HOLO_THEME.hairlineSoft}`, cursor:"pointer", transition:"background .15s" }}
@@ -172,29 +194,37 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, onSha
           onMouseLeave={e => e.currentTarget.style.background = "none"}
         >
           <span style={{ fontSize:11, letterSpacing:".1em", color: showComments ? HOLO_THEME.text : HOLO_THEME.textDim, fontFamily:"'Space Mono',monospace" }}>
-            † {comments} comentario{comments === 1 ? "" : "s"}
+            {commentsHasMore
+              ? `† ${comments} comentario${comments === 1 ? "" : "s"}`
+              : (showComments ? "† ocultar" : "† comentar")}
           </span>
-          <motion.span
-            animate={{ rotate: showComments ? 180 : 0 }}
-            transition={{ duration: .25, ease: "easeOut" }}
-            style={{ fontSize:10, color: showComments ? HOLO_THEME.text : HOLO_THEME.textDim, display:"inline-block" }}
-          >▾</motion.span>
+          {commentsHasMore && (
+            <motion.span
+              animate={{ rotate: showComments ? 180 : 0 }}
+              transition={{ duration: .25, ease: "easeOut" }}
+              style={{ fontSize:10, color: showComments ? HOLO_THEME.text : HOLO_THEME.textDim, display:"inline-block" }}
+            >▾</motion.span>
+          )}
         </div>
 
-        <AnimatePresence initial={false}>
-          {showComments && (
-            <motion.div
-              key="comments"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: .3, ease: "easeInOut" }}
-              style={{ overflow: "hidden" }}
-            >
-              <PostComments postId={post.id} currentUserId={currentUserId} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {commentsHasMore ? (
+          <AnimatePresence initial={false}>
+            {showComments && (
+              <motion.div
+                key="comments"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: .3, ease: "easeInOut" }}
+                style={{ overflow: "hidden" }}
+              >
+                <PostComments postId={post.id} currentUserId={currentUserId} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        ) : (
+          showComments && <PostComments postId={post.id} currentUserId={currentUserId} />
+        )}
       </div>
     </>
   );

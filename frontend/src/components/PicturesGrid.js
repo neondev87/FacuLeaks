@@ -18,6 +18,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { API } from '@/lib/api';
 import { HOLO_THEME } from '@/lib/theme';
+import TrashGlyph from '@/components/TrashGlyph';
+
+const EyeIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
 
 export default function PicturesGrid({ userId, initialPhotos = [], canEdit = true }) {
   const [photos, setPhotos] = useState(initialPhotos);
@@ -136,12 +144,12 @@ export default function PicturesGrid({ userId, initialPhotos = [], canEdit = tru
                     style={{
                       position: 'absolute',
                       inset: 0,
-                      background: 'rgba(0,0,0,.7)',
+                      background: 'rgba(0,0,0,.62)',
                       backdropFilter: 'blur(2px)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: 8,
+                      gap: 10,
                       animation: 'fadeIn .15s ease'
                     }}
                   >
@@ -149,51 +157,57 @@ export default function PicturesGrid({ userId, initialPhotos = [], canEdit = tru
                       onClick={() => setSelectedPhoto(photo)}
                       title="Ver"
                       style={{
-                        background: 'rgba(255,255,255,.1)',
-                        border: '1px solid rgba(255,255,255,.2)',
-                        borderRadius: 4,
-                        color: '#e8e4d9',
+                        background: 'rgba(255,255,255,.08)',
+                        border: '1px solid rgba(255,255,255,.16)',
+                        borderRadius: 9,
+                        color: 'rgba(242,240,248,.85)',
                         cursor: 'pointer',
-                        fontSize: 16,
-                        padding: '6px 10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 8,
                         transition: 'all .15s'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(255,255,255,.2)';
-                        e.currentTarget.style.borderColor = 'rgba(255,255,255,.4)';
+                        e.currentTarget.style.background = 'rgba(255,255,255,.16)';
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,.32)';
+                        e.currentTarget.style.color = '#fff';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(255,255,255,.1)';
-                        e.currentTarget.style.borderColor = 'rgba(255,255,255,.2)';
+                        e.currentTarget.style.background = 'rgba(255,255,255,.08)';
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,.16)';
+                        e.currentTarget.style.color = 'rgba(242,240,248,.85)';
                       }}
                     >
-                      👁️
+                      <EyeIcon />
                     </button>
                     <button
                       onClick={() => handleDelete(photo.id)}
                       title="Eliminar"
                       style={{
-                        background: 'rgba(255,50,50,.1)',
-                        border: '1px solid rgba(255,80,80,.3)',
-                        borderRadius: 4,
-                        color: 'rgba(255,100,100,.8)',
+                        background: 'rgba(255,90,90,.1)',
+                        border: '1px solid rgba(255,90,90,.28)',
+                        borderRadius: 9,
+                        color: 'rgba(255,110,110,.85)',
                         cursor: 'pointer',
-                        fontSize: 16,
-                        padding: '6px 10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 8,
                         transition: 'all .15s'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(255,50,50,.2)';
-                        e.currentTarget.style.borderColor = 'rgba(255,100,100,.5)';
-                        e.currentTarget.style.color = 'rgba(255,120,120,1)';
+                        e.currentTarget.style.background = 'rgba(255,90,90,.2)';
+                        e.currentTarget.style.borderColor = 'rgba(255,110,110,.5)';
+                        e.currentTarget.style.color = 'rgba(255,135,135,1)';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(255,50,50,.1)';
-                        e.currentTarget.style.borderColor = 'rgba(255,80,80,.3)';
-                        e.currentTarget.style.color = 'rgba(255,100,100,.8)';
+                        e.currentTarget.style.background = 'rgba(255,90,90,.1)';
+                        e.currentTarget.style.borderColor = 'rgba(255,90,90,.28)';
+                        e.currentTarget.style.color = 'rgba(255,110,110,.85)';
                       }}
                     >
-                      🗑️
+                      <TrashGlyph size={16} />
                     </button>
                   </div>
                 )}

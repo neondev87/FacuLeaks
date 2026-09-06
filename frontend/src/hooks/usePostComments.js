@@ -88,12 +88,18 @@ export default function usePostComments(postId, enabled) {
   const remove = useCallback(async (commentId) => {
     setComments(prev => prev.filter(c => c.id !== commentId)); // optimista
     try {
-      await fetch(`${API}/api/posts/${postId}/comments/${commentId}`, {
+      const res = await fetch(`${API}/api/posts/${postId}/comments/${commentId}`, {
         method: "DELETE",
         credentials: "include",
       });
+      // BUG encontrado: antes no se chequeaba res.ok — si el backend rechazaba
+      // el borrado (403/404/500), la UI igual lo mostraba borrado hasta que
+      // se recargaba el hilo, momento en el que volvía a aparecer (el
+      // comentario nunca se había borrado de verdad). Ahora un status no-ok
+      // revierte igual que un error de red.
+      if (!res.ok) throw new Error();
     } catch {
-      load(); // revertir
+      load(); // revertir con el estado real del servidor
     }
   }, [postId, load]);
 

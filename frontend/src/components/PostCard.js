@@ -26,30 +26,11 @@ import usePostComments from '@/hooks/usePostComments';
 import { API } from '@/lib/api';
 import { HOLO_THEME } from '@/lib/theme';
 import { REACTIONS } from '@/components/feed/reactions';
+import TrashGlyph from '@/components/TrashGlyph';
 
-// ── Pixel Trash (ícono de basura pixel art) ──
-const TRASH_LID_C = [[0,0,1,1,1,0,0],[0,1,1,1,1,1,0],[0,0,1,1,1,0,0]];
-const TRASH_LID_O = [[0,0,0,1,1,0,0],[0,1,1,1,1,1,0],[0,0,1,1,1,1,0]];
-const TRASH_BODY  = [
-  [0,1,1,1,1,1,0],
-  [0,1,0,1,0,1,0],
-  [0,1,0,1,0,1,0],
-  [0,1,0,1,0,1,0],
-  [0,1,1,1,1,1,0],
-];
-
-function PixelTrash({ s = 2, phase = "idle" }) {
-  const lid = phase === "open" || phase === "shrink" ? TRASH_LID_O : TRASH_LID_C;
-  const col = phase === "idle" ? "rgba(255,255,255,.28)" : phase === "open" ? "rgba(255,80,80,.85)" : "rgba(255,80,80,.5)";
-  return (
-    <svg width={7*s} height={8*s} viewBox={`0 0 ${7*s} ${8*s}`} style={{ display:"block" }}>
-      {lid.map((row, r) => row.map((c, ci) => c ? <rect key={`l${r}${ci}`} x={ci*s} y={r*s} width={s} height={s} fill={col}/> : null))}
-      {TRASH_BODY.map((row, r) => row.map((c, ci) => c ? <rect key={`b${r}${ci}`} x={ci*s} y={(r+3)*s} width={s} height={s} fill={col}/> : null))}
-    </svg>
-  );
-}
-
-function TrashBtn({ onDelete, s = 2 }) {
+// Botón de borrar (post del perfil) — misma animación de tres fases y el
+// mismo ícono de papelera (components/TrashGlyph.js) que el resto de la app.
+function TrashBtn({ onDelete }) {
   const [phase, setPhase] = useState("idle");
   const [busy,  setBusy]  = useState(false);
   const ref = useRef();
@@ -59,19 +40,20 @@ function TrashBtn({ onDelete, s = 2 }) {
     ref.current = setTimeout(() => {
       setPhase("shrink");
       setTimeout(async () => { setPhase("gone"); setBusy(true); await onDelete(); }, 300);
-    }, 350);
+    }, 320);
   };
   useEffect(() => () => clearTimeout(ref.current), []);
   return (
     <button onClick={handleClick} disabled={busy} title="Eliminar"
-      style={{ background:"none", border:"none", cursor: busy ? "default" : "pointer", padding:"2px 4px", display:"flex", alignItems:"center", opacity: busy ? .3 : 1, outline:"none" }}>
+      style={{ background:"none", border:"none", cursor: busy ? "default" : "pointer", padding:5, borderRadius:7, display:"flex", alignItems:"center", justifyContent:"center", opacity: busy ? .3 : 1, outline:"none", color: phase === "idle" ? "rgba(242,240,248,.35)" : "rgba(255,90,90,.95)", transition:"background .15s, color .15s" }}
+      onMouseEnter={e => { if (!busy) { e.currentTarget.style.background = "rgba(255,90,90,.08)"; e.currentTarget.style.color = "rgba(255,90,90,.9)"; } }}
+      onMouseLeave={e => { e.currentTarget.style.background = "none"; if (phase === "idle") e.currentTarget.style.color = "rgba(242,240,248,.35)"; }}>
       <div style={{
-        transition: phase === "shrink" ? "all .3s cubic-bezier(.4,0,.6,1)" : "none",
-        transform: phase === "shrink" ? "scale(.05) perspective(200px) translateZ(-80px)" : phase === "open" ? "scale(1.15)" : "scale(1)",
+        transition: phase === "shrink" ? "transform .3s cubic-bezier(.4,0,.6,1), opacity .3s ease" : "transform .18s ease",
+        transform: phase === "shrink" ? "scale(.05) perspective(200px) translateZ(-80px)" : phase === "open" ? "scale(1.18) rotate(-8deg)" : "scale(1)",
         opacity: phase === "gone" ? 0 : 1,
-        filter: phase === "open" || phase === "shrink" ? "brightness(1.4)" : "none",
       }}>
-        <PixelTrash s={s} phase={phase} />
+        <TrashGlyph size={15} />
       </div>
     </button>
   );
@@ -84,11 +66,24 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
   const uid = viewerId ?? currentUser?.id;
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const commentRef = useRef(null);
   const { comments, add, remove } = usePostComments(post.id, showComments);
+  const totalComs = post.totalComentarios ?? comments.length ?? 0;
+  // Si no hay comentarios, la barra es solo un trigger para escribir uno
+  // (sin cuenta ni chevron ni animación de altura, que ahí no revela nada).
+  const comsHasMore = totalComs > 0;
+
+  // Autocrecimiento: el textarea arranca en 1 línea y crece con lo que se
+  // escribe (hasta un tope), en vez de scrollear el texto de costado.
+  const autoGrowComment = el => {
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+  };
 
   const handleComment = async () => {
     const ok = await add(commentText);
-    if (ok) setCommentText("");
+    if (ok) { setCommentText(""); autoGrowComment(commentRef.current); }
   };
 
   const formatDate = (dateString) => {
@@ -105,6 +100,99 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
     if (days < 7) return `${days}d`;
     return date.toLocaleDateString("es-MX", { month: "short", day: "numeric" });
   };
+
+  // Cuerpo del hilo de comentarios (lista + input). Se monta con animación de
+  // altura si hay comentarios, o directo (sin animación) si no hay.
+  const commentsBody = (
+    <div style={{ marginTop: 12 }}>
+      {comments.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
+          {comments.map(comment => {
+            const autor = comment.autor || comment.users || {};
+            const avatar = autor.imagen;
+            const mine = uid != null && Number(autor.id) === Number(uid);
+            return (
+              <div key={comment.id} style={{ display: "flex", gap: 8, fontSize: 13 }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: "50%",
+                  backgroundColor: "rgba(255,255,255,.1)",
+                  backgroundImage: avatar ? `url(${avatar.startsWith('http') ? avatar : `${API}${avatar}`})` : "none",
+                  backgroundSize: "cover", backgroundPosition: "center",
+                  flexShrink: 0, border: "1px solid rgba(255,255,255,.08)"
+                }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "8px 12px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,.8)" }}>
+                        {autor.username || "unknown"}
+                      </span>
+                      {mine && (
+                        <button
+                          onClick={() => remove(comment.id)}
+                          title="Eliminar comentario"
+                          style={{ marginLeft: "auto", background: "none", border: "none", padding: 2, cursor: "pointer", color: "rgba(255,255,255,.25)", display: "flex", transition: "color .15s" }}
+                          onMouseEnter={e => e.currentTarget.style.color = "rgba(255,90,90,.85)"}
+                          onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,.25)"}
+                        ><TrashGlyph size={13} /></button>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 13, color: "rgba(232,228,217,.7)", lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word", overflowWrap: "anywhere" }}>
+                      {comment.contenido}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,.25)", marginTop: 4, marginLeft: 12 }}>
+                    {formatDate(comment.creadoEn)}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+        <div style={{
+          width: 32, height: 32, borderRadius: "50%",
+          backgroundColor: "rgba(255,255,255,.1)",
+          backgroundImage: currentUser.imagen ? `url(${currentUser.imagen.startsWith('http') ? currentUser.imagen : `${API}${currentUser.imagen}`})` : "none",
+          backgroundSize: "cover", backgroundPosition: "center",
+          flexShrink: 0, border: "1px solid rgba(255,255,255,.08)"
+        }} />
+        <div style={{ flex: 1, display: "flex", gap: 8, alignItems: "flex-end" }}>
+          <textarea
+            ref={commentRef}
+            value={commentText}
+            onChange={e => { setCommentText(e.target.value); autoGrowComment(e.target); }}
+            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleComment(); } }}
+            placeholder="Escribe un comentario..."
+            rows={1}
+            style={{
+              flex: 1, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)",
+              borderRadius: 18, padding: "8px 14px", fontSize: 13, color: "rgba(255,255,255,.85)",
+              fontFamily: "'Inter',sans-serif", outline: "none", resize: "none",
+              overflowY: "auto", maxHeight: 120, lineHeight: 1.5, transition: "all .15s"
+            }}
+            onFocus={e => { e.target.style.background = "rgba(255,255,255,.07)"; e.target.style.borderColor = "rgba(255,255,255,.15)"; }}
+            onBlur={e => { e.target.style.background = "rgba(255,255,255,.05)"; e.target.style.borderColor = "rgba(255,255,255,.08)"; }}
+          />
+          {commentText.trim() && (
+            <button
+              onClick={handleComment}
+              style={{
+                background: "rgba(255,255,255,.12)", border: "1px solid rgba(255,255,255,.2)",
+                borderRadius: 18, padding: "8px 16px", fontSize: 12, fontWeight: 500,
+                color: "rgba(255,255,255,.9)", cursor: "pointer", fontFamily: "'Inter',sans-serif", transition: "all .15s"
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.18)"}
+              onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,.12)"}
+            >
+              Comentar
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div style={{
@@ -152,7 +240,7 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
 
         {/* Botón eliminar (solo si canDelete) */}
         {canDelete && onDelete && (
-          <TrashBtn s={2} onDelete={onDelete} />
+          <TrashBtn onDelete={onDelete} />
         )}
       </div>
 
@@ -228,7 +316,8 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
         ))}
       </div>
 
-      {/* Barrita: click para desplegar el hilo de comentarios con animación */}
+      {/* Barrita de comentarios: con comentarios → cuenta + chevron + hilo
+          animado; sin comentarios → trigger quieto para escribir uno. */}
       <div
         onClick={() => setShowComments(v => !v)}
         style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, padding:"6px 0", cursor:"pointer", transition:"background .15s", borderRadius:6 }}
@@ -239,193 +328,39 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
         <span style={{ fontSize:12, color: showComments ? "rgba(255,255,255,.7)" : "rgba(255,255,255,.4)", fontFamily:"'Inter',sans-serif" }}>
-          {(showComments ? comments.length : (post.totalComentarios ?? comments.length)) || 0} comentarios
+          {comsHasMore
+            ? `${showComments ? comments.length : totalComs} comentario${(showComments ? comments.length : totalComs) === 1 ? "" : "s"}`
+            : (showComments ? "ocultar" : "comentar")}
         </span>
-        <motion.span
-          animate={{ rotate: showComments ? 180 : 0 }}
-          transition={{ duration: .25, ease: "easeOut" }}
-          style={{ fontSize:10, color: showComments ? "rgba(255,255,255,.7)" : "rgba(255,255,255,.4)", display:"inline-block" }}
-        >▾</motion.span>
+        {comsHasMore && (
+          <motion.span
+            animate={{ rotate: showComments ? 180 : 0 }}
+            transition={{ duration: .25, ease: "easeOut" }}
+            style={{ fontSize:10, color: showComments ? "rgba(255,255,255,.7)" : "rgba(255,255,255,.4)", display:"inline-block" }}
+          >▾</motion.span>
+        )}
       </div>
 
-      {/* Sección de comentarios */}
-      <AnimatePresence initial={false}>
-      {showComments && (
-        <motion.div
-          key="comments"
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: .3, ease: "easeInOut" }}
-          style={{ overflow: "hidden" }}
-        >
-        <div style={{ marginTop: 12 }}>
-
-          {/* Lista de comentarios */}
-          {comments.length > 0 && (
-            <div style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 10,
-              marginBottom: 12
-            }}>
-              {comments.map(comment => {
-                const autor = comment.autor || comment.users || {};
-                const avatar = autor.imagen;
-                const mine = uid != null && Number(autor.id) === Number(uid);
-                return (
-                <div key={comment.id} style={{
-                  display: "flex",
-                  gap: 8,
-                  fontSize: 13
-                }}>
-                  {/* Avatar del comentario */}
-                  <div style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: "50%",
-                    backgroundColor: "rgba(255,255,255,.1)",
-                    backgroundImage: avatar
-                      ? `url(${avatar.startsWith('http') ? avatar : `${API}${avatar}`})`
-                      : "none",
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    flexShrink: 0,
-                    border: "1px solid rgba(255,255,255,.08)"
-                  }} />
-
-                  {/* Contenido del comentario */}
-                  <div style={{ flex: 1 }}>
-                    <div style={{
-                      background: "rgba(255,255,255,.03)",
-                      border: "1px solid rgba(255,255,255,.06)",
-                      borderRadius: 12,
-                      padding: "8px 12px"
-                    }}>
-                      <div style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        marginBottom: 4
-                      }}>
-                        <span style={{
-                          fontSize: 12,
-                          fontWeight: 500,
-                          color: "rgba(255,255,255,.8)"
-                        }}>
-                          {autor.username || "unknown"}
-                        </span>
-                        {mine && (
-                          <span
-                            onClick={() => remove(comment.id)}
-                            title="Eliminar comentario"
-                            style={{ marginLeft: "auto", fontSize: 11, color: "rgba(255,255,255,.25)", cursor: "pointer" }}
-                            onMouseEnter={e => e.currentTarget.style.color = "rgba(255,80,80,.8)"}
-                            onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,.25)"}
-                          >✕</span>
-                        )}
-                      </div>
-                      <div style={{
-                        fontSize: 13,
-                        color: "rgba(232,228,217,.7)",
-                        lineHeight: 1.5
-                      }}>
-                        {comment.contenido}
-                      </div>
-                    </div>
-                    <div style={{
-                      fontSize: 11,
-                      color: "rgba(255,255,255,.25)",
-                      marginTop: 4,
-                      marginLeft: 12
-                    }}>
-                      {formatDate(comment.creadoEn)}
-                    </div>
-                  </div>
-                </div>
-                );
-              })}
-            </div>
+      {/* Sección de comentarios. Con comentarios → hilo animado; sin
+          comentarios → el mismo cuerpo pero sin animación de altura. */}
+      {comsHasMore ? (
+        <AnimatePresence initial={false}>
+          {showComments && (
+            <motion.div
+              key="comments"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: .3, ease: "easeInOut" }}
+              style={{ overflow: "hidden" }}
+            >
+              {commentsBody}
+            </motion.div>
           )}
-
-          {/* Input para nuevo comentario */}
-          <div style={{
-            display: "flex",
-            gap: 8,
-            alignItems: "flex-start"
-          }}>
-            {/* Avatar del usuario actual */}
-            <div style={{
-              width: 32,
-              height: 32,
-              borderRadius: "50%",
-              backgroundColor: "rgba(255,255,255,.1)",
-              backgroundImage: currentUser.imagen
-                ? `url(${currentUser.imagen.startsWith('http') ? currentUser.imagen : `${API}${currentUser.imagen}`})`
-                : "none",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              flexShrink: 0,
-              border: "1px solid rgba(255,255,255,.08)"
-            }} />
-
-            {/* Input */}
-            <div style={{ flex: 1, display: "flex", gap: 8 }}>
-              <input
-                type="text"
-                value={commentText}
-                onChange={e => setCommentText(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleComment()}
-                placeholder="Escribe un comentario..."
-                style={{
-                  flex: 1,
-                  background: "rgba(255,255,255,.05)",
-                  border: "1px solid rgba(255,255,255,.08)",
-                  borderRadius: 18,
-                  padding: "8px 14px",
-                  fontSize: 13,
-                  color: "rgba(255,255,255,.85)",
-                  fontFamily: "'Inter',sans-serif",
-                  outline: "none",
-                  transition: "all .15s"
-                }}
-                onFocus={e => {
-                  e.target.style.background = "rgba(255,255,255,.07)";
-                  e.target.style.borderColor = "rgba(255,255,255,.15)";
-                }}
-                onBlur={e => {
-                  e.target.style.background = "rgba(255,255,255,.05)";
-                  e.target.style.borderColor = "rgba(255,255,255,.08)";
-                }}
-              />
-              
-              {commentText.trim() && (
-                <button
-                  onClick={handleComment}
-                  style={{
-                    background: "rgba(255,255,255,.12)",
-                    border: "1px solid rgba(255,255,255,.2)",
-                    borderRadius: 18,
-                    padding: "8px 16px",
-                    fontSize: 12,
-                    fontWeight: 500,
-                    color: "rgba(255,255,255,.9)",
-                    cursor: "pointer",
-                    fontFamily: "'Inter',sans-serif",
-                    transition: "all .15s"
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.18)"}
-                  onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,.12)"}
-                >
-                  Comentar
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-        </motion.div>
+        </AnimatePresence>
+      ) : (
+        showComments && <div style={{ marginTop: 4 }}>{commentsBody}</div>
       )}
-      </AnimatePresence>
     </div>
   );
 }
