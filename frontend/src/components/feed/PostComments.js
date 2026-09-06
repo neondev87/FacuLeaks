@@ -63,7 +63,7 @@ export default function PostComments({ postId, currentUserId }) {
               <div key={c.id} style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
                 <div
                   onClick={() => autor.id && router.push(`/perfil/${autor.id}`)}
-                  style={{ width:26, height:26, borderRadius:"50%", flexShrink:0, backgroundColor:"#1c1c24", backgroundImage: autor.imagen ? `url(${autor.imagen.startsWith("http") ? autor.imagen : `${API}${autor.imagen}`})` : "none", backgroundSize:"cover", backgroundPosition:"center", border:`1px solid ${HOLO_THEME.hairline}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:8, color:HOLO_THEME.textDim, cursor: autor.id ? "pointer" : "default" }}>{!autor.imagen && "◈"}</div>
+                  style={{ width:26, height:26, borderRadius:"50%", flexShrink:0, backgroundColor:"#1c1c24", backgroundImage: autor.imagen ? `url(${autor.imagen.startsWith("http") ? autor.imagen : `${API}${autor.imagen}`})` : "none", backgroundSize:"100% 100%", backgroundPosition:"center", border:`1px solid ${HOLO_THEME.hairline}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:8, color:HOLO_THEME.textDim, cursor: autor.id ? "pointer" : "default" }}>{!autor.imagen && "◈"}</div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ background:HOLO_THEME.panel, border:`1px solid ${HOLO_THEME.hairlineSoft}`, borderRadius:10, padding:"8px 12px" }}>
                     <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom:3 }}>

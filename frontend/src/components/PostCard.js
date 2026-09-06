@@ -117,7 +117,7 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
                   width: 32, height: 32, borderRadius: "50%",
                   backgroundColor: "rgba(255,255,255,.1)",
                   backgroundImage: avatar ? `url(${avatar.startsWith('http') ? avatar : `${API}${avatar}`})` : "none",
-                  backgroundSize: "cover", backgroundPosition: "center",
+                  backgroundSize: "100% 100%", backgroundPosition: "center",
                   flexShrink: 0, border: "1px solid rgba(255,255,255,.08)"
                 }} />
                 <div style={{ flex: 1 }}>
@@ -155,7 +155,7 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
           width: 32, height: 32, borderRadius: "50%",
           backgroundColor: "rgba(255,255,255,.1)",
           backgroundImage: currentUser.imagen ? `url(${currentUser.imagen.startsWith('http') ? currentUser.imagen : `${API}${currentUser.imagen}`})` : "none",
-          backgroundSize: "cover", backgroundPosition: "center",
+          backgroundSize: "100% 100%", backgroundPosition: "center",
           flexShrink: 0, border: "1px solid rgba(255,255,255,.08)"
         }} />
         <div style={{ flex: 1, display: "flex", gap: 8, alignItems: "flex-end" }}>
@@ -223,7 +223,7 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
             backgroundImage: post.autor?.imagen
               ? `url(${post.autor.imagen.startsWith('http') ? post.autor.imagen : `${API}${post.autor.imagen}`})`
               : "none",
-            backgroundSize: "cover",
+            backgroundSize: "100% 100%",
             backgroundPosition: "center",
             border: `1px solid ${HOLO_THEME.hairline}`
           }} />

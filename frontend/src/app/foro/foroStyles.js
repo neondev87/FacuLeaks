@@ -59,7 +59,7 @@ export const foroStyles = `
       .foro-cmts { flex:1; overflow-y:auto; padding:6px 22px 20px; }
       .foro-empty { text-align:center; color:${HOLO_THEME.textDim}; font-family:'Space Mono',monospace; font-size:12px; letter-spacing:.06em; padding:32px 0; }
       .fcm { display:flex; gap:11px; padding:13px 4px; border-bottom:1px solid ${HOLO_THEME.hairlineSoft}; animation:fadeIn .18s ease; }
-      .fcm__av { width:32px; height:32px; border-radius:50%; flex-shrink:0; background:#1c1c24; background-size:cover; background-position:center; border:1px solid ${HOLO_THEME.hairline}; display:flex; align-items:center; justify-content:center; font-size:9px; color:${HOLO_THEME.textDim}; }
+      .fcm__av { width:32px; height:32px; border-radius:50%; flex-shrink:0; background:#1c1c24; background-size:100% 100%; background-position:center; border:1px solid ${HOLO_THEME.hairline}; display:flex; align-items:center; justify-content:center; font-size:9px; color:${HOLO_THEME.textDim}; }
       .fcm__bd { flex:1; min-width:0; }
       .fcm__hd { display:flex; gap:9px; align-items:baseline; }
       .fcm__u { font-size:12.5px; color:${HOLO_THEME.text}; font-weight:500; }

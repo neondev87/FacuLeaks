@@ -87,7 +87,7 @@ export default function FeedPage() {
 
         <div style={{ padding:16, marginBottom:28, background:HOLO_THEME.panel, borderRadius:10, border:`1px solid ${HOLO_THEME.hairlineSoft}` }}>
           <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
-            <div className="composer-avatar" style={{ width:34, height:34, backgroundImage: avatarSrc(ownImagen) ? `url(${avatarSrc(ownImagen)})` : "none", backgroundSize:"cover", backgroundPosition:"center", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, color:HOLO_THEME.textDim }}>{!avatarSrc(ownImagen) && "◈"}</div>
+            <div className="composer-avatar" style={{ width:34, height:34, backgroundImage: avatarSrc(ownImagen) ? `url(${avatarSrc(ownImagen)})` : "none", backgroundSize:"100% 100%", backgroundPosition:"center", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, color:HOLO_THEME.textDim }}>{!avatarSrc(ownImagen) && "◈"}</div>
             <div style={{ flex:1 }}>
               <input className="post-title-input" placeholder="Título (opcional)" value={postTitle} onChange={e => setPostTitle(e.target.value)} />
               <textarea className="post-body-input" placeholder="¿Qué está pasando en tu realidad?" value={postContent} onChange={handleContentChange} rows={2} />

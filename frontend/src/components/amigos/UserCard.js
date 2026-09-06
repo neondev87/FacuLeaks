@@ -19,7 +19,7 @@ export default function UserCard({ user, actions }) {
           width: 32, height: 32, borderRadius: "50%",
           backgroundColor: "#1c1c24",
           backgroundImage: avatarUrl ? `url(${avatarUrl})` : "none",
-          backgroundSize: "cover", backgroundPosition: "center",
+          backgroundSize: "100% 100%", backgroundPosition: "center",
           border: `1px solid ${HOLO_THEME.hairline}`, display: "flex", alignItems: "center",
           justifyContent: "center", fontSize: 10, color: HOLO_THEME.textDim, flexShrink: 0,
         }}>{!avatarUrl && "◈"}</div>

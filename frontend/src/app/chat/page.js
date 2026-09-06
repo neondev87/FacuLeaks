@@ -134,7 +134,7 @@ export default function ChatPage() {
                   <div style={{ padding:"6px 14px 14px", fontSize:12, color:"rgba(255,255,255,.2)", fontFamily:"'Space Mono',monospace" }}>sin solicitudes pendientes</div>
                 ) : chat.solicitudes.map(s => (
                   <div key={s.userId} className="conv-item" onClick={() => handleOpenChat(s)}>
-                    <div className="avatar" style={avatarSrc(s.imagen) ? { backgroundImage:`url(${avatarSrc(s.imagen)})`, backgroundSize:"cover", backgroundPosition:"center" } : undefined}>
+                    <div className="avatar" style={avatarSrc(s.imagen) ? { backgroundImage:`url(${avatarSrc(s.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : undefined}>
                       {!avatarSrc(s.imagen) && initial(s.username)}
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
@@ -158,7 +158,7 @@ export default function ChatPage() {
               <div className="conv-sec">RECIENTES</div>
               {chat.recientes.length > 0 ? chat.recientes.map(c => (
                 <div key={c.userId} className={`conv-item${chat.isActive(c.userId) ? " active" : ""}`} onClick={() => handleOpenChat(c)}>
-                  <div className="avatar" style={avatarSrc(c.imagen) ? { backgroundImage:`url(${avatarSrc(c.imagen)})`, backgroundSize:"cover", backgroundPosition:"center" } : undefined}>
+                  <div className="avatar" style={avatarSrc(c.imagen) ? { backgroundImage:`url(${avatarSrc(c.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : undefined}>
                     {!avatarSrc(c.imagen) && initial(c.username)}<div className="status-dot" style={{ background: chat.isOnline(c.userId) ? "#3ddc84" : "#2a2a2a" }} />
                   </div>
                   <div style={{ flex:1, minWidth:0 }}>
@@ -178,7 +178,7 @@ export default function ChatPage() {
               <div className="conv-sec">AMIGOS</div>
               {chat.amigos.length > 0 ? chat.amigos.map(a => (
                 <div key={a.userId} className={`conv-item${chat.isActive(a.userId) ? " active" : ""}`} onClick={() => handleOpenChat(a)}>
-                  <div className="avatar" style={avatarSrc(a.imagen) ? { backgroundImage:`url(${avatarSrc(a.imagen)})`, backgroundSize:"cover", backgroundPosition:"center" } : undefined}>
+                  <div className="avatar" style={avatarSrc(a.imagen) ? { backgroundImage:`url(${avatarSrc(a.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : undefined}>
                     {!avatarSrc(a.imagen) && initial(a.username)}<div className="status-dot" style={{ background: chat.isOnline(a.userId) ? "#3ddc84" : "#2a2a2a" }} />
                   </div>
                   <div style={{ flex:1, minWidth:0 }}>
@@ -200,7 +200,7 @@ export default function ChatPage() {
           <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, background:HOLO_THEME.bg }}>
 
             <div style={{ padding:"14px 24px", background:HOLO_THEME.bg, borderBottom:`1px solid ${HOLO_THEME.hairlineSoft}`, display:"flex", alignItems:"center", gap:16 }}>
-              <div className="avatar" style={{ width:46, height:46, ...(avatarSrc(activeChat.imagen) ? { backgroundImage:`url(${avatarSrc(activeChat.imagen)})`, backgroundSize:"cover", backgroundPosition:"center" } : {}) }}>
+              <div className="avatar" style={{ width:46, height:46, ...(avatarSrc(activeChat.imagen) ? { backgroundImage:`url(${avatarSrc(activeChat.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : {}) }}>
                 {!avatarSrc(activeChat.imagen) && initial(activeChat.username)}<div className="status-dot-hdr" style={{ background: chat.isOnline(activeChat.userId) ? "#3ddc84" : "#2a2a2a" }} />
               </div>
               <div style={{ flex:1 }}>
@@ -233,7 +233,7 @@ export default function ChatPage() {
                       <div style={{ display:"flex", gap:10, flexDirection: esPropio ? "row-reverse" : "row", alignItems:"flex-end" }}>
                         <div style={{ width:36, flexShrink:0 }}>
                           {!prevSame ? (
-                            <div className="avatar-sm" style={avatarSrc(esPropio ? chat.ownImagen : activeChat.imagen) ? { backgroundImage:`url(${avatarSrc(esPropio ? chat.ownImagen : activeChat.imagen)})`, backgroundSize:"cover", backgroundPosition:"center" } : undefined}>
+                            <div className="avatar-sm" style={avatarSrc(esPropio ? chat.ownImagen : activeChat.imagen) ? { backgroundImage:`url(${avatarSrc(esPropio ? chat.ownImagen : activeChat.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : undefined}>
                               {!avatarSrc(esPropio ? chat.ownImagen : activeChat.imagen) && (esPropio ? "◎" : "◈")}
                             </div>
                           ) : <div style={{ width:36 }} />}
@@ -354,7 +354,7 @@ export default function ChatPage() {
                   {search.resultados.map(u => (
                     <div key={u.id} className="resultado-item" onClick={() => handleOpenChat(u)}>
                       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                        <div className="avatar-sm" style={avatarSrc(u.imagen) ? { backgroundImage:`url(${avatarSrc(u.imagen)})`, backgroundSize:"cover", backgroundPosition:"center" } : undefined}>
+                        <div className="avatar-sm" style={avatarSrc(u.imagen) ? { backgroundImage:`url(${avatarSrc(u.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : undefined}>
                           {!avatarSrc(u.imagen) && "◈"}
                         </div>
                         <div>

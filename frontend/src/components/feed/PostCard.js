@@ -96,7 +96,7 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, onSha
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 18px 8px" }}>
           <div style={{ display:"flex", gap:10, alignItems:"center", cursor: post.autor?.id ? "pointer" : "default" }}
             onClick={() => post.autor?.id && router.push(`/perfil/${post.autor.id}`)}>
-            <div style={{ width:36, height:36, borderRadius:"50%", backgroundColor:"#1c1c24", backgroundImage: post.autor?.imagen ? `url(${post.autor.imagen.startsWith("http") ? post.autor.imagen : `${API}${post.autor.imagen}`})` : "none", backgroundSize:"cover", backgroundPosition:"center", border:`1px solid ${HOLO_THEME.hairline}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, color:HOLO_THEME.textDim, transition:"border-color .2s", flexShrink:0 }}
+            <div style={{ width:36, height:36, borderRadius:"50%", backgroundColor:"#1c1c24", backgroundImage: post.autor?.imagen ? `url(${post.autor.imagen.startsWith("http") ? post.autor.imagen : `${API}${post.autor.imagen}`})` : "none", backgroundSize:"100% 100%", backgroundPosition:"center", border:`1px solid ${HOLO_THEME.hairline}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, color:HOLO_THEME.textDim, transition:"border-color .2s", flexShrink:0 }}
               onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(255,255,255,.4)"}
               onMouseLeave={e => e.currentTarget.style.borderColor = HOLO_THEME.hairline}>{!post.autor?.imagen && "◈"}</div>
             <div>
@@ -165,7 +165,7 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, onSha
           <div style={{ padding:"4px 18px 14px", borderTop:`1px solid ${HOLO_THEME.hairlineSoft}`, display:"flex", flexDirection:"column", gap:14 }}>
             {post.previewComments.map((c, i) => (
               <div key={c.id} style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
-                <div style={{ width:26, height:26, borderRadius:"50%", flexShrink:0, backgroundColor:"#1c1c24", backgroundImage: c.autor?.imagen ? `url(${c.autor.imagen.startsWith("http") ? c.autor.imagen : `${API}${c.autor.imagen}`})` : "none", backgroundSize:"cover", backgroundPosition:"center", border:`1px solid ${HOLO_THEME.hairline}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:8, color:HOLO_THEME.textDim, marginTop:2 }}>{!c.autor?.imagen && "◈"}</div>
+                <div style={{ width:26, height:26, borderRadius:"50%", flexShrink:0, backgroundColor:"#1c1c24", backgroundImage: c.autor?.imagen ? `url(${c.autor.imagen.startsWith("http") ? c.autor.imagen : `${API}${c.autor.imagen}`})` : "none", backgroundSize:"100% 100%", backgroundPosition:"center", border:`1px solid ${HOLO_THEME.hairline}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:8, color:HOLO_THEME.textDim, marginTop:2 }}>{!c.autor?.imagen && "◈"}</div>
                 <div style={{ flex:1, minWidth:0, background:HOLO_THEME.panel, border:`1px solid ${HOLO_THEME.hairlineSoft}`, borderRadius:10, padding:"8px 12px" }}>
                   <div style={{ fontSize:12, color:HOLO_THEME.text, fontWeight:500, fontFamily:"'Inter',sans-serif", marginBottom:3 }}>
                     {c.autor?.username || "unknown"}

@@ -172,7 +172,9 @@ export default function AvatarMenu({ currentAvatar, canEdit = true, onAvatarChan
             <img
               src={avatarUrl}
               alt="avatar"
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
+              // fill = se estira para ocupar el recuadro entero, sin barras ni
+              // recorte (mismo criterio que el avatar guardado en el backend).
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill', display: 'block' }}
             />
           ) : (
             <div style={{

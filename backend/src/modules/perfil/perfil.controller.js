@@ -12,9 +12,9 @@
 //     pantallas que solo necesitan mostrar "tu ícono" (composer del muro,
 //     chat), sin pedir stats/posts/fotos de más.
 //   - updateAvatar() / deleteAvatar(): sube (valida + comprime con Sharp a
-//     WebP, con fit:'contain' — reescala la foto ENTERA adentro del cuadrado
-//     en vez de recortarla, como Facebook/Instagram) o borra la foto de
-//     perfil. Ambas avisan en vivo por socket (`user:avatar`) a todo el
+//     WebP, con fit:'fill' — se estira la foto para llenar el cuadrado 400x400
+//     entero, sin barras ni recorte) o borra la foto de perfil. Ambas avisan
+//     en vivo por socket (`user:avatar`) a todo el
 //     mundo — feed, perfiles públicos y chats abiertos actualizan el ícono
 //     sin recargar la página.
 //   - uploadPhotos() / deletePhoto(): la galería de fotos (hasta 10 por vez).
@@ -259,12 +259,11 @@ const updateAvatar = async (req, res) => {
     const hash    = crypto.randomBytes(16).toString('hex');
     const outName = `avatar_${req.userId}_${hash}.webp`;
     const outPath = path.join('uploads/imagenes', outName);
-    // fit:'contain' (no 'cover'): reescala la foto entera adentro del cuadrado
-    // en vez de recortarla — así el ícono siempre muestra la foto completa
-    // (como Facebook/Instagram), sin cortar cabezas ni bordes por el crop
-    // centrado a ciegas. El relleno usa el mismo gris casi-negro que el
-    // placeholder de AvatarMenu.js, así no se nota como "barras".
-    await sharp(tmpPath).rotate().resize(400,400,{ fit:'contain', background:{ r:10,g:10,b:10,alpha:1 } }).webp({ quality:85 }).toFile(outPath);
+    // fit:'fill' — se estira la foto para OCUPAR el cuadrado 400x400 entero,
+    // sin barras y sin recortar (pedido explícito de Erick: "que se reestire
+    // la imagen para rellenar"). Con el avatar ya cuadrado, cualquier ícono
+    // circular o rectangular lo muestra lleno de borde a borde.
+    await sharp(tmpPath).rotate().resize(400, 400, { fit: 'fill' }).webp({ quality: 85 }).toFile(outPath);
     fs.unlinkSync(tmpPath);
     const url = `/uploads/imagenes/${outName}`;
     await prisma.users.update({ where:{ id:req.userId }, data:{ imagen:url } });
