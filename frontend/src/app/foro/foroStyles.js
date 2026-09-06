@@ -34,21 +34,26 @@ export const foroStyles = `
       /* ── tablero ── */
       .foro-board { flex:1; min-width:0; display:flex; flex-direction:column; position:relative; }
 
-      .foro-theme { margin:18px 20px 8px; padding:18px 22px; border:1px solid ${HOLO_THEME.hairline}; border-radius:12px; background:linear-gradient(180deg, ${AC_SOFT}, transparent 82%), ${HOLO_THEME.panel}; text-align:center; animation:rise .3s both; }
+      .foro-theme { position:relative; margin:22px 24px 12px; padding:26px 30px 24px; border:1px solid ${HOLO_THEME.hairline}; border-radius:14px; background:linear-gradient(180deg, ${AC_SOFT}, transparent 82%), ${HOLO_THEME.panel}; text-align:center; animation:rise .3s both; }
       .foro-theme__k { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:.24em; color:${AC}; }
-      .foro-theme__t { font-family:'Cinzel',serif; font-size:19px; color:${HOLO_THEME.text}; margin:7px 0 0; line-height:1.3; }
-      .foro-theme__meta { font-family:'Space Mono',monospace; font-size:10px; color:${HOLO_THEME.textDim}; margin-top:9px; }
-      .foro-theme__go { margin-top:13px; background:${AC}; color:#0b0b0e; border:0; font-family:'Space Mono',monospace; font-weight:700; font-size:10px; letter-spacing:.16em; padding:9px 22px; border-radius:20px; cursor:pointer; transition:filter .15s; }
+      .foro-theme__t { font-family:'Cinzel',serif; font-size:22px; color:${HOLO_THEME.text}; margin:10px auto 0; line-height:1.4; max-width:680px; text-wrap:balance; }
+      .foro-theme__meta { font-family:'Space Mono',monospace; font-size:10px; color:${HOLO_THEME.textDim}; margin-top:12px; }
+      .foro-theme__go { margin-top:16px; background:${AC}; color:#0b0b0e; border:0; font-family:'Space Mono',monospace; font-weight:700; font-size:10px; letter-spacing:.16em; padding:10px 24px; border-radius:20px; cursor:pointer; transition:filter .15s; }
       .foro-theme__go:hover { filter:brightness(1.1); }
-      .foro-theme__del { position:absolute; top:12px; right:16px; background:none; border:0; color:rgba(242,240,248,.28); cursor:pointer; padding:4px; display:flex; transition:color .15s; }
+      .foro-theme__del { position:absolute; top:14px; right:18px; background:none; border:0; color:rgba(242,240,248,.28); cursor:pointer; padding:4px; display:flex; transition:color .15s; }
       .foro-theme__del:hover { color:rgba(255,90,90,.9); }
-      .foro-theme { position:relative; }
 
-      /* ── temas anteriores (chips) ── */
-      .foro-prev { display:flex; gap:8px; flex-wrap:wrap; padding:2px 22px 6px; }
-      .foro-prev .chip { font-family:'Space Mono',monospace; font-size:10px; color:${HOLO_THEME.textDim}; border:1px solid ${HOLO_THEME.hairlineSoft}; border-radius:99px; padding:4px 11px; cursor:pointer; transition:color .14s, border-color .14s; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-      .foro-prev .chip:hover { color:${HOLO_THEME.text}; border-color:${HOLO_THEME.hairline}; }
+      /* ── temas anteriores ── */
+      .foro-prev { padding:2px 24px 8px; }
+      .foro-prev__h { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:.2em; color:${HOLO_THEME.textDim}; margin-bottom:7px; }
+      .foro-prev__list { display:flex; gap:8px; flex-wrap:wrap; }
+      .foro-prev .chip { display:inline-flex; align-items:center; gap:6px; font-family:'Space Mono',monospace; font-size:10px; color:${HOLO_THEME.textDim}; border:1px solid ${HOLO_THEME.hairlineSoft}; border-radius:99px; padding:5px 6px 5px 12px; transition:color .14s, border-color .14s; max-width:280px; }
+      .foro-prev .chip:hover { border-color:${HOLO_THEME.hairline}; }
       .foro-prev .chip.on { color:${HOLO_THEME.text}; border-color:${AC}; }
+      .foro-prev .chip__t { cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .foro-prev .chip:hover .chip__t { color:${HOLO_THEME.text}; }
+      .foro-prev .chip__del { flex:none; background:none; border:0; padding:1px; cursor:pointer; color:rgba(242,240,248,.28); display:flex; transition:color .14s; }
+      .foro-prev .chip__del:hover { color:rgba(255,90,90,.9); }
 
       /* ── comentarios (sin título) ── */
       .foro-cmts { flex:1; overflow-y:auto; padding:6px 22px 20px; }

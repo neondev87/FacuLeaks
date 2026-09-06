@@ -149,12 +149,23 @@ export default function ForoPage() {
                 <button className="foro-theme__go" onClick={() => { setWriting(true); }}>＋ COMENTAR</button>
               </div>
 
-              {/* temas anteriores del canal */}
+              {/* temas anteriores del canal — cada uno se puede abrir o (admin/autor) borrar */}
               {prevTemas.length > 0 && (
                 <div className="foro-prev">
-                  {prevTemas.map(t => (
-                    <span key={t.id} className="chip" title={t.titulo} onClick={() => setTemaActivoId(t.id)}>{t.titulo}</span>
-                  ))}
+                  <div className="foro-prev__h">{puedeCrearTema ? "TUS OTROS TEMAS EN ESTE CANAL" : "TEMAS ANTERIORES"}</div>
+                  <div className="foro-prev__list">
+                    {prevTemas.map(t => (
+                      <span key={t.id} className="chip">
+                        <span className="chip__t" title={t.titulo} onClick={() => setTemaActivoId(t.id)}>{t.titulo}</span>
+                        {(puedeCrearTema || (uid != null && t.autor?.id === uid)) && (
+                          <button className="chip__del" title="Eliminar tema"
+                            onClick={() => { if (confirm(`¿Eliminar "${t.titulo}" y todos sus comentarios?`)) borrarTema(t.id); }}>
+                            <TrashGlyph size={11} />
+                          </button>
+                        )}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
 
