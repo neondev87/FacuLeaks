@@ -172,7 +172,7 @@ export default function AvatarMenu({ currentAvatar, canEdit = true, onAvatarChan
             <img
               src={avatarUrl}
               alt="avatar"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
             />
           ) : (
             <div style={{

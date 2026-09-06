@@ -102,11 +102,11 @@ export default function PicturesGrid({ userId, initialPhotos = [], canEdit = tru
               background: HOLO_THEME.panel,
               border: `1px solid ${HOLO_THEME.hairlineSoft}`,
               borderRadius: 8,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               overflow: 'hidden',
               position: 'relative',
+              // solo centrar cuando el slot está vacío (el "·"); con foto, la
+              // imagen se posiciona absoluta y llena el cuadrado sin líos de flex
+              ...(photo ? {} : { display: 'flex', alignItems: 'center', justifyContent: 'center' }),
               cursor: photo ? 'pointer' : 'default',
               transition: 'border-color .2s'
             }}
@@ -128,9 +128,12 @@ export default function PicturesGrid({ userId, initialPhotos = [], canEdit = tru
                   alt=""
                   onClick={() => !canEdit ? setSelectedPhoto(photo) : null}
                   style={{
+                    position: 'absolute',
+                    inset: 0,
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover',
+                    objectPosition: 'center',
                     display: 'block',
                     transition: 'transform .3s'
                   }}
