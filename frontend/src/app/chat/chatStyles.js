@@ -37,7 +37,6 @@ export const chatStyles = `
       @keyframes flicker  { 0%,100%{opacity:1;transform:scaleY(1)} 33%{opacity:.92;transform:scaleY(.97) scaleX(1.02)} 66%{opacity:.96;transform:scaleY(1.02) scaleX(.98)} }
       ${KF.pulse}
       ${KF.wave}
-      @keyframes micPulse { 0%,100%{opacity:.6;transform:scale(1)} 50%{opacity:1;transform:scale(1.08)} }
       body { background:${HOLO_THEME.bg}; color:${HOLO_THEME.text}; font-family:'Inter',sans-serif; font-size:16px; overflow:hidden; }
       ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:999px} ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.28)}
       /* ── Barra lateral: dirección "Vitral editorial · Tinta" ──────────────
@@ -57,9 +56,13 @@ export const chatStyles = `
       .avatar-sm { width:36px; height:36px; border-radius:6px; background:#17171b; border:1.5px solid rgba(184,179,194,.2); display:flex; align-items:center; justify-content:center; font-size:11px; color:${HOLO_THEME.textDim}; flex-shrink:0; font-family:'Space Mono',monospace; }
       .status-dot { position:absolute; bottom:1px; right:1px; width:11px; height:11px; border-radius:50%; border:2px solid ${HOLO_THEME.panel}; }
       .status-dot-hdr { position:absolute; bottom:1px; right:1px; width:12px; height:12px; border-radius:50%; border:2px solid ${HOLO_THEME.bg}; }
-      .bubble-me { background:${HOLO_THEME.text}; border-radius:16px; box-shadow:0 2px 14px rgba(0,0,0,.45); overflow:hidden; animation:fadeUp .15s ease; position:relative; z-index:1; }
-      .bubble-other { background:${HOLO_THEME.panel}; border:1px solid ${HOLO_THEME.hairlineSoft}; border-radius:16px; box-shadow:0 2px 14px rgba(0,0,0,.45); overflow:hidden; animation:fadeUp .15s ease; position:relative; z-index:1; }
-      .bubble-text-me    { font-family:'Inter',sans-serif; font-size:16px; color:${HOLO_THEME.bg}; line-height:1.6; letter-spacing:.01em; }
+      /* Burbujas — rediseño de la conversación activa (paleta Tinta): propia en
+         marfil frío, ajena en panel; esquina "doblada" del lado del emisor;
+         entrada con un rise corto y tranquilo. */
+      .bubble-me { background:#ecebef; border-radius:16px 16px 5px 16px; box-shadow:0 1px 10px rgba(0,0,0,.4); overflow:hidden; animation:msgRise .24s cubic-bezier(.2,.7,.3,1); position:relative; z-index:1; }
+      .bubble-other { background:#16161b; border:1px solid ${HOLO_THEME.hairlineSoft}; border-radius:16px 16px 16px 5px; box-shadow:0 1px 10px rgba(0,0,0,.4); overflow:hidden; animation:msgRise .24s cubic-bezier(.2,.7,.3,1); position:relative; z-index:1; }
+      @keyframes msgRise { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+      .bubble-text-me    { font-family:'Inter',sans-serif; font-size:16px; color:#151318; line-height:1.6; letter-spacing:.01em; }
       .bubble-text-other { font-family:'Inter',sans-serif; font-size:16px; color:${HOLO_THEME.text}; line-height:1.6; letter-spacing:.01em; }
       .bubble-time-me    { font-size:11px; color:rgba(10,10,13,.4); white-space:nowrap; flex-shrink:0; font-family:'Space Mono',monospace; letter-spacing:.05em; margin-top:auto; }
       .bubble-time-other { font-size:11px; color:rgba(242,240,248,.3); white-space:nowrap; flex-shrink:0; font-family:'Space Mono',monospace; letter-spacing:.05em; margin-top:auto; }
@@ -67,13 +70,46 @@ export const chatStyles = `
       .reply-bar-other { padding:8px 14px 7px; background:rgba(255,255,255,.05); border-bottom:1px solid ${HOLO_THEME.hairlineSoft}; display:flex; gap:8px; }
       .reply-btn { padding:3px 12px; background:rgba(255,255,255,.05); border-radius:999px; border:1px solid ${HOLO_THEME.hairlineSoft}; font-size:12px; font-family:'Space Mono',monospace; color:${HOLO_THEME.textDim}; cursor:pointer; display:inline-flex; gap:4px; align-items:center; animation:fadeIn .1s ease; letter-spacing:.06em; transition:all .15s; }
       .reply-btn:hover { background:rgba(255,255,255,.1); color:${HOLO_THEME.text}; }
-      .chat-input { flex:1; background:transparent; border:none; color:${HOLO_THEME.text}; font-family:'Inter',sans-serif; font-size:15px; padding:13px 18px; outline:none; letter-spacing:.02em; }
+      .chat-input { flex:1; background:transparent; border:none; color:${HOLO_THEME.text}; font-family:'Inter',sans-serif; font-size:15px; padding:12px 8px 12px 16px; outline:none; letter-spacing:.02em; }
       .chat-input::placeholder { color:rgba(242,240,248,.28); }
-      .input-wrap { flex:1; display:flex; background:${HOLO_THEME.panel}; border-radius:26px; overflow:hidden; border:1px solid ${HOLO_THEME.hairlineSoft}; transition:border-color .2s; align-items:center; }
+      .input-wrap { flex:1; display:flex; background:${HOLO_THEME.panel}; border-radius:24px; overflow:hidden; border:1px solid ${HOLO_THEME.hairlineSoft}; transition:border-color .2s; align-items:center; }
       .input-wrap:focus-within { border-color:${HOLO_THEME.hairline}; }
-      .send-arrow { background:transparent; border:none; border-left:1px solid ${HOLO_THEME.hairlineSoft}; padding:0 18px; color:${HOLO_THEME.textDim}; font-size:19px; cursor:pointer; transition:color .2s; height:100%; }
-      .send-arrow:hover { color:${HOLO_THEME.text}; }
-      .send-arrow:disabled { opacity:.2; cursor:not-allowed; }
+
+      /* ── Composer del chat activo (rediseño) ──────────────────────────────
+         Iconos nuevos (adjuntar / mic) + envío como avión de papel, y el
+         estado de "grabando" sin la barra verde de ondas: punto latiendo
+         lento, cronómetro monoespaciado, una onda continua que se desplaza
+         suave y "deslizá para cancelar". Todo con transiciones cortas. */
+      .composer-bar { padding:12px 18px 16px; background:${HOLO_THEME.bg}; border-top:1px solid ${HOLO_THEME.hairlineSoft}; display:flex; gap:5px; align-items:center; position:relative; }
+      .cx-btn { width:36px; height:36px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; color:${HOLO_THEME.textDim}; background:none; border:0; cursor:pointer; transition:color .15s, background .15s, transform .12s; }
+      .cx-btn:hover:not(:disabled) { color:${HOLO_THEME.text}; background:rgba(255,255,255,.05); }
+      .cx-btn:active:not(:disabled) { transform:scale(.9); }
+      .cx-btn:disabled { opacity:.3; cursor:not-allowed; }
+      .send-plane { flex:none; width:32px; height:32px; margin:3px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:transparent; color:${HOLO_THEME.textDim}; border:0; cursor:pointer; transition:color .18s, background .18s, transform .12s; }
+      .send-plane svg { transform:translateX(1px); }
+      .send-plane:not(:disabled) { background:${TINTA}; color:#151318; }
+      .send-plane:not(:disabled):hover { background:#c6c1d2; }
+      .send-plane:not(:disabled):active { transform:scale(.9); }
+      .send-plane:disabled { opacity:.35; cursor:not-allowed; }
+      .cx-rec { flex:1; display:flex; align-items:center; gap:11px; background:${HOLO_THEME.panel}; border:1px solid ${HOLO_THEME.hairline}; border-radius:24px; padding:8px 10px 8px 14px; animation:msgRise .22s ease; }
+      .cx-rec__dot { width:9px; height:9px; border-radius:50%; background:${TINTA}; flex:none; animation:recPulse 1.6s ease-in-out infinite; }
+      .cx-rec__t { font-family:'Space Mono',monospace; font-size:12px; color:${HOLO_THEME.text}; letter-spacing:.05em; flex:none; font-variant-numeric:tabular-nums; }
+      .cx-rec__wave { flex:1; height:26px; overflow:hidden; position:relative; color:${TINTA}; }
+      .cx-rec__wave svg { position:absolute; left:0; top:0; height:100%; width:200%; animation:recDrift 3s linear infinite; }
+      .cx-rec__cancel { display:flex; align-items:center; gap:6px; font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.12em; color:${HOLO_THEME.textDim}; text-transform:uppercase; flex:none; background:none; border:0; cursor:pointer; animation:recNudge 1.9s ease-in-out infinite; }
+      .cx-rec__cancel svg { width:11px; height:11px; }
+      .cx-rec__cancel:hover { color:${HOLO_THEME.text}; }
+      .cx-rec__send { width:36px; height:36px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; background:${TINTA}; color:#151318; border:0; cursor:pointer; transition:transform .12s; }
+      .cx-rec__send:active { transform:scale(.9); }
+      @keyframes recPulse { 0%,100% { opacity:.5; transform:scale(1); } 50% { opacity:1; transform:scale(1.25); } }
+      @keyframes recDrift { from { transform:translateX(0); } to { transform:translateX(-50%); } }
+      @keyframes recNudge { 0%,100% { opacity:.4; transform:translateX(0); } 50% { opacity:.95; transform:translateX(-3px); } }
+      .typing-dots { display:inline-flex; gap:4px; }
+      .typing-dots i { width:5px; height:5px; border-radius:50%; background:${HOLO_THEME.textDim}; animation:typingBreathe 1.5s ease-in-out infinite; }
+      .typing-dots i:nth-child(2) { animation-delay:.22s; }
+      .typing-dots i:nth-child(3) { animation-delay:.44s; }
+      @keyframes typingBreathe { 0%,100% { opacity:.22; } 50% { opacity:.9; } }
+      @media (prefers-reduced-motion:reduce) { .cx-rec__wave svg, .cx-rec__cancel, .cx-rec__dot, .typing-dots i { animation:none; } }
       .buscar-input { width:100%; box-sizing:border-box; background:${HOLO_THEME.panel}; border:1px solid ${HOLO_THEME.hairline}; color:${HOLO_THEME.text}; font-family:'Inter',sans-serif; font-size:14px; padding:10px 14px; outline:none; transition:border-color .2s; border-radius:20px; }
       .buscar-input:focus { border-color:rgba(255,255,255,.3); }
       .buscar-input::placeholder { color:rgba(242,240,248,.25); }
@@ -83,21 +119,23 @@ export const chatStyles = `
       .date-pill { display:flex; align-items:center; gap:12px; margin:18px 0 16px; }
       .date-pill::before,.date-pill::after { content:''; flex:1; height:1px; background:${HOLO_THEME.hairlineSoft}; }
       .date-pill span { font-size:11px; font-family:'Space Mono',monospace; color:${HOLO_THEME.textDim}; background:${HOLO_THEME.panel}; padding:4px 14px; border-radius:999px; letter-spacing:.1em; }
-      .mic-recording { animation:micPulse 1s ease-in-out infinite; }
 
       /* ── Fondo decorativo del recuadro "nueva conversación" (sin chat abierto) ──
-         Lo monta components/chat/EmptyStateBg.js. Acomodo "anchas simétricas":
-         texto red-letter al fondo + las dos figuras al pie. Las figuras son PNG
-         RGBA ya teñidos del rojo del tema (alpha por luminancia — nada de blend
-         mode, así no aparece el recuadro gris de antes). El buscador
-         (.empty-search) va SIEMPRE por delante con z-index más alto. */
+         Lo monta components/chat/EmptyStateBg.js. Acomodo "trío parejo": texto
+         red-letter al fondo + tres figuras al pie (manos / ángel con la cruz /
+         cráneo). Son PNG RGBA ya teñidos del rojo del tema (alpha por
+         luminancia — nada de blend mode, así no aparece el recuadro gris de
+         antes). El buscador (.empty-search) va SIEMPRE por delante. */
       .empty-bg { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
       .bible-layer { position:absolute; inset:0; padding:26px 30px; font-family:'EB Garamond',Georgia,'Times New Roman',serif; font-size:8.5px; line-height:1.5; text-align:justify; hyphens:auto; -webkit-hyphens:auto; column-count:5; column-gap:20px; color:rgba(255,244,240,.075); user-select:none; overflow:hidden; }
       .bible-layer p { margin:0 0 7px; }
       .bible-layer .rl-rojo { color:rgba(192,82,74,.46); }
       .empty-fig { position:absolute; bottom:0; background-repeat:no-repeat; background-size:contain; -webkit-mask-image:linear-gradient(to top,#000 66%,transparent 100%); mask-image:linear-gradient(to top,#000 66%,transparent 100%); }
-      .empty-fig-l { left:-4%; width:45%; height:85%; opacity:.8; background-image:url('/art/chat-fig-izq.png'); background-position:bottom left; }
-      .empty-fig-r { right:-2%; width:50%; height:93%; opacity:.95; background-image:url('/art/chat-fig-der.png'); background-position:bottom right; }
+      /* Acomodo "trío parejo": las 3 figuras con peso parecido, el ángel del
+         centro un poco al frente (z-index + opacidad). */
+      .empty-fig-l { left:-4%; width:44%; height:84%; opacity:.7; background-image:url('/art/chat-fig-izq.png'); background-position:bottom left; }
+      .empty-fig-c { left:50%; transform:translateX(-50%); width:40%; height:94%; opacity:.95; z-index:1; background-image:url('/art/chat-fig-centro.png'); background-position:bottom center; }
+      .empty-fig-r { right:-3%; width:47%; height:90%; opacity:.8; background-image:url('/art/chat-fig-der.png'); background-position:bottom right; }
       .empty-search { position:relative; z-index:20; }
-      @media (max-width:820px) { .bible-layer { column-count:3; } .empty-fig-l { width:52%; } .empty-fig-r { width:58%; } }
+      @media (max-width:820px) { .bible-layer { column-count:3; } .empty-fig-l { width:52%; } .empty-fig-c { width:46%; } .empty-fig-r { width:58%; } }
     `;

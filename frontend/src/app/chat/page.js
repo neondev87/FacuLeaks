@@ -10,10 +10,7 @@ import useChat from "@/hooks/useChat";
 import useChatSearch from "@/hooks/useChatSearch";
 import useAudioRecorder from "@/hooks/useAudioRecorder";
 import useChatImage from "@/hooks/useChatImage";
-import { BARS } from "@/components/chat/constants";
 import StreakC from "@/components/chat/StreakC";
-import MicIcon from "@/components/chat/MicIcon";
-import IconBtn from "@/components/chat/IconBtn";
 import RequestsIcon from "@/components/chat/RequestsIcon";
 import EmptyStateBg from "@/components/chat/EmptyStateBg";
 import Bubble from "@/components/chat/Bubble";
@@ -46,6 +43,7 @@ export default function ChatPage() {
   const fileInputRef   = useRef(null);
 
   const [showSolicitudes, setShowSolicitudes] = useState(false);
+  const [recSecs, setRecSecs] = useState(0);
 
   const search = useChatSearch();
   const chat   = useChat({ session, status, inputRef });
@@ -61,6 +59,16 @@ export default function ChatPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior:"smooth" });
   }, [chat.mensajes, chat.showTypingIndicator, chat.showAudioIndicator]);
+
+  // Cronómetro del estado "grabando audio" (solo visual — la lógica de grabar
+  // vive en useAudioRecorder). Se calcula desde el instante en que arrancó.
+  useEffect(() => {
+    if (!rec.recording) return undefined;
+    const started = Date.now();
+    const t = setInterval(() => setRecSecs(Math.floor((Date.now() - started) / 1000)), 250);
+    return () => { clearInterval(t); setRecSecs(0); };
+  }, [rec.recording]);
+  const fmtRec = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
   const handleOpenChat = user => { search.closeSearch(); setShowSolicitudes(false); chat.openChat(user); };
   const totalSolicitudes = chat.solicitudes.reduce((acc, s) => acc + (s.unread || 0), 0) || chat.solicitudes.length;
@@ -161,7 +169,7 @@ export default function ChatPage() {
 
             <div style={{ padding:"14px 24px", background:HOLO_THEME.bg, borderBottom:`1px solid ${HOLO_THEME.hairlineSoft}`, display:"flex", alignItems:"center", gap:16 }}>
               <div className="avatar" style={{ width:46, height:46, ...(avatarSrc(activeChat.imagen) ? { backgroundImage:`url(${avatarSrc(activeChat.imagen)})`, backgroundSize:"cover", backgroundPosition:"center" } : {}) }}>
-                {!avatarSrc(activeChat.imagen) && "◈"}<div className="status-dot-hdr" style={{ background: chat.isOnline(activeChat.userId) ? "#3ddc84" : "#2a2a2a" }} />
+                {!avatarSrc(activeChat.imagen) && initial(activeChat.username)}<div className="status-dot-hdr" style={{ background: chat.isOnline(activeChat.userId) ? "#3ddc84" : "#2a2a2a" }} />
               </div>
               <div style={{ flex:1 }}>
                 <div style={{ fontFamily:"'Cinzel',serif", fontSize:20, color:HOLO_THEME.text, lineHeight:1 }}>{activeChat.username}</div>
@@ -243,68 +251,48 @@ export default function ChatPage() {
               </div>
             )}
 
-            <div style={{ padding:"12px 20px 16px", background:HOLO_THEME.bg, borderTop:`1px solid ${HOLO_THEME.hairlineSoft}`, display:"flex", gap:7, alignItems:"center" }}>
+            <div className="composer-bar">
               <input ref={fileInputRef} type="file" accept="image/*" style={{ display:"none" }}
                 onChange={e => { const f = e.target.files?.[0]; if (f) img.sendImage(f); e.target.value = ""; }} />
 
-              <IconBtn title={img.sending ? "Enviando imagen..." : "Adjuntar imagen"} onClick={() => fileInputRef.current?.click()} disabled={!activeChat || img.sending}>
-                <svg width="21" height="21" viewBox="0 0 18 18" fill="none">
-                  <rect x="8.3" y="2" width="1.4" height="14" rx=".7" fill="rgba(255,255,255,.6)"/>
-                  <rect x="2" y="8.3" width="14" height="1.4" rx=".7" fill="rgba(255,255,255,.6)"/>
-                  <rect x="8.1" y="8.1" width="1.8" height="1.8" rx=".4" fill="rgba(255,255,255,.6)" transform="rotate(45 9 9)"/>
-                  <rect x="3.8" y="3.2" width="1" height="3.2" rx=".5" fill="rgba(255,255,255,.6)" opacity=".35" transform="rotate(45 4.3 4.8)"/>
-                  <rect x="13.2" y="3.2" width="1" height="3.2" rx=".5" fill="rgba(255,255,255,.6)" opacity=".35" transform="rotate(-45 13.7 4.8)"/>
-                  <rect x="3.8" y="11.6" width="1" height="3.2" rx=".5" fill="rgba(255,255,255,.6)" opacity=".35" transform="rotate(-45 4.3 13.2)"/>
-                  <rect x="13.2" y="11.6" width="1" height="3.2" rx=".5" fill="rgba(255,255,255,.6)" opacity=".35" transform="rotate(45 13.7 13.2)"/>
-                </svg>
-              </IconBtn>
-
-              <IconBtn title="Stickers" onClick={() => {}} disabled={!activeChat}>
-                <svg width="21" height="21" viewBox="0 0 18 18" fill="none">
-                  <path d="M2.5 3.5 Q2.5 2 4 2 L11.2 2 L16 6.8 L16 14.5 Q16 16 14.5 16 L4 16 Q2.5 16 2.5 14.5 Z" stroke="rgba(255,255,255,.6)" strokeWidth="1.1" fill="none"/>
-                  <path d="M11.2 2 L11.2 6.8 L16 6.8" stroke="rgba(255,255,255,.28)" strokeWidth="1" fill="none"/>
-                  <circle cx="7.2" cy="10" r=".85" fill="rgba(255,255,255,.6)"/>
-                  <circle cx="10.8" cy="10" r=".85" fill="rgba(255,255,255,.6)"/>
-                  <path d="M6.8 12.4 Q9 13.8 11.2 12.4" stroke="rgba(255,255,255,.6)" strokeWidth=".9" strokeLinecap="round" fill="none"/>
-                </svg>
-              </IconBtn>
-
-              <IconBtn title={rec.recording ? "Detener audio" : "Grabar audio"} onClick={rec.handleMicClick} disabled={!activeChat}>
-                <div className={rec.recording ? "mic-recording" : ""}>
-                  <MicIcon size={21} recording={rec.recording} />
-                </div>
-              </IconBtn>
-
               {rec.recording ? (
-                <div style={{ flex:1, background:"rgba(61,220,132,.04)", border:"1px solid rgba(61,220,132,.2)", borderRadius:26, padding:"0 16px", display:"flex", alignItems:"center", gap:8, height:46 }}>
-                  <span style={{ fontFamily:"'Space Mono',monospace", fontSize:12, color:"rgba(61,220,132,.7)", letterSpacing:".1em" }}>grabando</span>
-                  {BARS.map((h, i) => (
-                    <div key={i} style={{ width:2, borderRadius:2, background:"rgba(61,220,132,.7)", height:`${h*14}px`, animation:`wave 0.9s ease ${i*0.06}s infinite`, transformOrigin:"center" }}/>
-                  ))}
-                  <div style={{ marginLeft:"auto", display:"flex", gap:8 }}>
-                    <button onClick={() => rec.stopRecording(false)}
-                      style={{ background:"none", border:"1px solid rgba(255,80,80,.3)", color:"rgba(255,80,80,.6)", fontFamily:"'Space Mono',monospace", fontSize:11, padding:"4px 12px", cursor:"pointer", letterSpacing:".1em", transition:"all .15s" }}
-                      onMouseEnter={e => { e.currentTarget.style.background="rgba(255,80,80,.1)"; e.currentTarget.style.color="#ff5050"; }}
-                      onMouseLeave={e => { e.currentTarget.style.background="none"; e.currentTarget.style.color="rgba(255,80,80,.6)"; }}>
-                      ✕
-                    </button>
-                    <button onClick={() => rec.stopRecording(true)}
-                      style={{ background:"rgba(61,220,132,.15)", border:"1px solid rgba(61,220,132,.4)", color:"#3ddc84", fontFamily:"'Space Mono',monospace", fontSize:11, padding:"4px 14px", cursor:"pointer", letterSpacing:".1em", transition:"all .15s" }}
-                      onMouseEnter={e => e.currentTarget.style.background="rgba(61,220,132,.25)"}
-                      onMouseLeave={e => e.currentTarget.style.background="rgba(61,220,132,.15)"}>
-                      ↑ enviar
-                    </button>
-                  </div>
+                // Estado "grabando" rediseñado: punto latiendo lento, cronómetro,
+                // una onda continua que se desplaza suave y "deslizá para cancelar".
+                <div className="cx-rec">
+                  <span className="cx-rec__dot" />
+                  <span className="cx-rec__t">{fmtRec(recSecs)}</span>
+                  <span className="cx-rec__wave">
+                    <svg viewBox="0 0 240 26" preserveAspectRatio="none" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                      <path d="M0 13 Q7 3 14 13 T28 13 T42 13 T56 13 T70 13 T84 13 T98 13 T112 13 T126 13 T140 13 T154 13 T168 13 T182 13 T196 13 T210 13 T224 13 T238 13" opacity=".9" />
+                    </svg>
+                  </span>
+                  <button className="cx-rec__cancel" onClick={() => rec.stopRecording(false)} title="Cancelar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><polyline points="15 6 9 12 15 18" /></svg>
+                    deslizá para cancelar
+                  </button>
+                  <button className="cx-rec__send" onClick={() => rec.stopRecording(true)} title="Enviar audio">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4l17.6-8.4a1 1 0 0 0 0-1.8L3.4 1.8a1 1 0 0 0-1.4 1.1L4 10l10 2-10 2-2 7.1a1 1 0 0 0 1.4 1.3z" /></svg>
+                  </button>
                 </div>
               ) : (
-                <div className="input-wrap">
-                  <input ref={inputRef} className="chat-input"
-                    placeholder={chat.replyingTo ? "↩ responder..." : "Escribe un mensaje..."}
-                    value={chat.input} onChange={chat.handleInputChange}
-                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); chat.sendMessage(); } }}
-                  />
-                  <button className="send-arrow" onClick={chat.sendMessage} disabled={!chat.input.trim()}>↑</button>
-                </div>
+                <>
+                  <button className="cx-btn" title={img.sending ? "Enviando imagen..." : "Adjuntar"} onClick={() => fileInputRef.current?.click()} disabled={!activeChat || img.sending}>
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5l-8.5 8.5a5 5 0 0 1-7-7l9-9a3.5 3.5 0 0 1 5 5l-9 9a2 2 0 0 1-3-3l8-8" /></svg>
+                  </button>
+                  <button className="cx-btn" title="Grabar audio" onClick={rec.handleMicClick} disabled={!activeChat}>
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M6 11a6 6 0 0 0 12 0" /><line x1="12" y1="17" x2="12" y2="21" /><line x1="9" y1="21" x2="15" y2="21" /></svg>
+                  </button>
+                  <div className="input-wrap">
+                    <input ref={inputRef} className="chat-input"
+                      placeholder={chat.replyingTo ? "↩ responder..." : "Escribí un mensaje..."}
+                      value={chat.input} onChange={chat.handleInputChange}
+                      onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); chat.sendMessage(); } }}
+                    />
+                    <button className="send-plane" onClick={chat.sendMessage} disabled={!chat.input.trim()} title="Enviar">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4l17.6-8.4a1 1 0 0 0 0-1.8L3.4 1.8a1 1 0 0 0-1.4 1.1L4 10l10 2-10 2-2 7.1a1 1 0 0 0 1.4 1.3z" /></svg>
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </div>

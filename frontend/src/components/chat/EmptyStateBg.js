@@ -9,15 +9,15 @@
 //      "red-letter": Reina-Valera 1909 (dominio público) con las palabras
 //      de Cristo en el rojo del tema (HOLO_THEME.marker). Marca de agua muy
 //      tenue, llena todo el alto repitiendo los mismos versículos.
-//   2. `.empty-fig-l` / `.empty-fig-r` — las dos imágenes ancladas al pie
-//      (art/chat-fig-izq.png = manos, art/chat-fig-der.png = cráneo). Son PNG
-//      RGBA ya procesados: teñidos del rojo del tema (HOLO_THEME.marker, con
-//      los brillos hacia un cálido) y con el alpha sacado de la luminancia —
-//      el negro del original ya viene transparente, así que NO hace falta
-//      blend mode (eso era lo que dibujaba un recuadro gris de fondo).
-//      Acomodo "anchas simétricas": grandes, altas, un poco sangradas hacia
-//      afuera; la derecha va algo más grande y opaca. Se funden hacia arriba
-//      con un `mask-image`.
+//   2. `.empty-fig-l` / `.empty-fig-c` / `.empty-fig-r` — las tres imágenes
+//      ancladas al pie (art/chat-fig-izq.png = manos, chat-fig-centro.png =
+//      ángel con la cruz, chat-fig-der.png = cráneo). Son PNG RGBA ya
+//      procesados: teñidos del rojo del tema (HOLO_THEME.marker, con los
+//      brillos hacia un cálido) y con el alpha sacado de la luminancia — el
+//      negro del original ya viene transparente, así que NO hace falta blend
+//      mode (eso era lo que dibujaba un recuadro gris de fondo). Acomodo
+//      "trío parejo": las tres con peso parecido, el ángel del centro un
+//      poco al frente. Se funden hacia arriba con un `mask-image`.
 // El componente es puramente decorativo (`aria-hidden`, `pointer-events`
 // desactivados en el CSS): NO tapa ni compite con el buscador, que va por
 // delante con z-index más alto (ver `.empty-search` en chatStyles.js).
@@ -68,6 +68,7 @@ export default function EmptyStateBg() {
         ))}
       </div>
       <div className="empty-fig empty-fig-l" />
+      <div className="empty-fig empty-fig-c" />
       <div className="empty-fig empty-fig-r" />
     </div>
   );
