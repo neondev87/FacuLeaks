@@ -15,7 +15,9 @@ export default function AudioReplyPreview({ src }) {
     a.crossOrigin = "use-credentials"; // manda la cookie al backend (audio gateado)
     a.src = `${API}${src}`;
     a.onloadedmetadata = () => {
-      const s = Math.floor(a.duration);
+      const d = a.duration;
+      if (!d || d === Infinity || Number.isNaN(d)) { setDur("0:00"); return; }
+      const s = Math.floor(d);
       setDur(`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`);
     };
   }, [src]);

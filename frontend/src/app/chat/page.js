@@ -42,11 +42,20 @@ export default function ChatPage() {
   const inputRef       = useRef(null);
   const fileInputRef   = useRef(null);
   const solicitudesRef = useRef(null);
-  const recDragStart   = useRef(null);
+
+  // "Deslizá para cancelar" el audio: el arrastre se maneja con refs + rAF y se
+  // aplica directo al DOM (recBarRef.style.transform), NO con estado de React —
+  // así no se re-renderiza toda la página de chat en cada pointermove y el
+  // gesto va fluido. Lo único que sí es estado es `recArmed` (cruzó el umbral),
+  // que cambia una o dos veces por gesto.
+  const recBarRef     = useRef(null);
+  const recStartXRef  = useRef(null);
+  const recDragXRef   = useRef(0);
+  const recRafRef     = useRef(0);
 
   const [showSolicitudes, setShowSolicitudes] = useState(false);
   const [recSecs, setRecSecs] = useState(0);
-  const [recDragX, setRecDragX] = useState(0);   // "deslizá para cancelar" el audio
+  const [recArmed, setRecArmed] = useState(false);
 
   const search = useChatSearch();
   const chat   = useChat({ session, status, inputRef });
@@ -69,7 +78,7 @@ export default function ChatPage() {
     if (!rec.recording) return undefined;
     const started = Date.now();
     const t = setInterval(() => setRecSecs(Math.floor((Date.now() - started) / 1000)), 250);
-    return () => { clearInterval(t); setRecSecs(0); setRecDragX(0); };
+    return () => { clearInterval(t); setRecSecs(0); recDragXRef.current = 0; setRecArmed(false); };
   }, [rec.recording]);
   const fmtRec = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
@@ -85,19 +94,48 @@ export default function ChatPage() {
   }, [showSolicitudes]);
 
   // Deslizar para cancelar el audio: se arrastra la barra hacia la izquierda;
-  // pasado el umbral se descarta la grabación al soltar.
+  // pasado el umbral se descarta la grabación al soltar. El movimiento se
+  // pinta en un rAF directo sobre el nodo (sin setState) para que sea suave.
   const REC_CANCEL_AT = -96;
-  const onRecPointerDown = e => { recDragStart.current = e.clientX; e.currentTarget.setPointerCapture?.(e.pointerId); };
+
+  const paintRecDrag = () => {
+    recRafRef.current = 0;
+    const el = recBarRef.current;
+    if (el) el.style.transform = `translateX(${recDragXRef.current}px)`;
+    const armed = recDragXRef.current <= REC_CANCEL_AT;
+    setRecArmed(prev => (prev === armed ? prev : armed));
+  };
+  const onRecPointerDown = e => {
+    if (e.target.closest(".cx-rec__send")) return;
+    recStartXRef.current = e.clientX;
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    if (recBarRef.current) recBarRef.current.style.transition = "none";
+  };
   const onRecPointerMove = e => {
-    if (recDragStart.current == null) return;
-    setRecDragX(Math.max(-150, Math.min(0, e.clientX - recDragStart.current)));
+    if (recStartXRef.current == null) return;
+    recDragXRef.current = Math.max(-150, Math.min(0, e.clientX - recStartXRef.current));
+    if (!recRafRef.current) recRafRef.current = requestAnimationFrame(paintRecDrag);
   };
   const onRecPointerUp = () => {
-    const cancel = recDragX <= REC_CANCEL_AT;
-    recDragStart.current = null;
-    setRecDragX(0);
+    if (recStartXRef.current == null) return;
+    const cancel = recDragXRef.current <= REC_CANCEL_AT;
+    recStartXRef.current = null;
+    if (recRafRef.current) { cancelAnimationFrame(recRafRef.current); recRafRef.current = 0; }
+    recDragXRef.current = 0;
+    setRecArmed(false);
+    const el = recBarRef.current;
+    if (el) { el.style.transition = ""; el.style.transform = "translateX(0px)"; }
     if (cancel) rec.stopRecording(false);
   };
+
+  // Onda continua del estado "grabando". Período 12 sobre un viewBox de 120 de
+  // ancho con el <svg> a 200%: cuando recDrift lo desplaza -50% el patrón calza
+  // exacto (5 ciclos por vuelta), sin el salto que se veía antes cada 3s.
+  const REC_WAVE_D = (() => {
+    let d = "M0 13 q 3 -7 6 0";
+    for (let x = 6; x < 240; x += 6) d += " t 6 0";
+    return d;
+  })();
 
   const handleOpenChat = user => { search.closeSearch(); setShowSolicitudes(false); chat.openChat(user); };
   const totalSolicitudes = chat.solicitudes.reduce((acc, s) => acc + (s.unread || 0), 0) || chat.solicitudes.length;
@@ -292,9 +330,9 @@ export default function ChatPage() {
                 // desplaza, y "deslizá para cancelar" — se arrastra la barra a
                 // la izquierda y al soltar pasado el umbral se descarta.
                 <div
-                  className={`cx-rec${recDragX <= REC_CANCEL_AT ? " cx-rec--armed" : ""}`}
-                  style={{ transform: `translateX(${recDragX}px)`, transition: recDragX === 0 ? "transform .18s ease" : "none" }}
-                  onPointerDown={e => { if (!e.target.closest(".cx-rec__send")) onRecPointerDown(e); }}
+                  ref={recBarRef}
+                  className={`cx-rec${recArmed ? " cx-rec--armed" : ""}`}
+                  onPointerDown={onRecPointerDown}
                   onPointerMove={onRecPointerMove}
                   onPointerUp={onRecPointerUp}
                   onPointerCancel={onRecPointerUp}
@@ -302,13 +340,13 @@ export default function ChatPage() {
                   <span className="cx-rec__dot" />
                   <span className="cx-rec__t">{fmtRec(recSecs)}</span>
                   <span className="cx-rec__wave">
-                    <svg viewBox="0 0 240 26" preserveAspectRatio="none" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-                      <path d="M0 13 Q7 3 14 13 T28 13 T42 13 T56 13 T70 13 T84 13 T98 13 T112 13 T126 13 T140 13 T154 13 T168 13 T182 13 T196 13 T210 13 T224 13 T238 13" opacity=".9" />
+                    <svg viewBox="0 0 120 26" preserveAspectRatio="none" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                      <path d={REC_WAVE_D} opacity=".9" />
                     </svg>
                   </span>
                   <button className="cx-rec__cancel" onClick={() => rec.stopRecording(false)} title="Cancelar">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><polyline points="15 6 9 12 15 18" /></svg>
-                    {recDragX <= REC_CANCEL_AT ? "soltá para cancelar" : "deslizá para cancelar"}
+                    {recArmed ? "soltá para cancelar" : "deslizá para cancelar"}
                   </button>
                   <button className="cx-rec__send" onClick={() => rec.stopRecording(true)} title="Enviar audio">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4l17.6-8.4a1 1 0 0 0 0-1.8L3.4 1.8a1 1 0 0 0-1.4 1.1L4 10l10 2-10 2-2 7.1a1 1 0 0 0 1.4 1.3z" /></svg>
