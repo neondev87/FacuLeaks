@@ -178,6 +178,9 @@ export default function useChat({ session, status, inputRef }) {
     });
     setInput("");
     setReplyingTo(null);
+    // Dejar el cursor listo para el próximo mensaje sin tener que volver a
+    // clickear el campo (cubre tanto Enter como el botón de enviar).
+    setTimeout(() => inputRef.current?.focus(), 0);
   };
 
   const isOnline = id => onlineUsers.includes(String(id));

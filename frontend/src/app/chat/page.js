@@ -41,9 +41,12 @@ export default function ChatPage() {
   const messagesEndRef = useRef(null);
   const inputRef       = useRef(null);
   const fileInputRef   = useRef(null);
+  const solicitudesRef = useRef(null);
+  const recDragStart   = useRef(null);
 
   const [showSolicitudes, setShowSolicitudes] = useState(false);
   const [recSecs, setRecSecs] = useState(0);
+  const [recDragX, setRecDragX] = useState(0);   // "deslizá para cancelar" el audio
 
   const search = useChatSearch();
   const chat   = useChat({ session, status, inputRef });
@@ -66,9 +69,35 @@ export default function ChatPage() {
     if (!rec.recording) return undefined;
     const started = Date.now();
     const t = setInterval(() => setRecSecs(Math.floor((Date.now() - started) / 1000)), 250);
-    return () => { clearInterval(t); setRecSecs(0); };
+    return () => { clearInterval(t); setRecSecs(0); setRecDragX(0); };
   }, [rec.recording]);
   const fmtRec = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+  // El panel de solicitudes se cierra al hacer click en cualquier lado (no hace
+  // falta volver a picar el avioncito).
+  useEffect(() => {
+    if (!showSolicitudes) return undefined;
+    const onDown = e => { if (!solicitudesRef.current?.contains(e.target)) setShowSolicitudes(false); };
+    const onEsc  = e => { if (e.key === "Escape") setShowSolicitudes(false); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onEsc);
+    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onEsc); };
+  }, [showSolicitudes]);
+
+  // Deslizar para cancelar el audio: se arrastra la barra hacia la izquierda;
+  // pasado el umbral se descarta la grabación al soltar.
+  const REC_CANCEL_AT = -96;
+  const onRecPointerDown = e => { recDragStart.current = e.clientX; e.currentTarget.setPointerCapture?.(e.pointerId); };
+  const onRecPointerMove = e => {
+    if (recDragStart.current == null) return;
+    setRecDragX(Math.max(-150, Math.min(0, e.clientX - recDragStart.current)));
+  };
+  const onRecPointerUp = () => {
+    const cancel = recDragX <= REC_CANCEL_AT;
+    recDragStart.current = null;
+    setRecDragX(0);
+    if (cancel) rec.stopRecording(false);
+  };
 
   const handleOpenChat = user => { search.closeSearch(); setShowSolicitudes(false); chat.openChat(user); };
   const totalSolicitudes = chat.solicitudes.reduce((acc, s) => acc + (s.unread || 0), 0) || chat.solicitudes.length;
@@ -93,9 +122,11 @@ export default function ChatPage() {
               <div className="side-kicker">{"// FacuLeaks"}</div>
             </div>
 
+            <div ref={solicitudesRef}>
             <RequestsIcon count={totalSolicitudes} active={showSolicitudes} onClick={() => setShowSolicitudes(v => !v)} />
 
-            {/* Panel desplegable de solicitudes de mensaje (gente que no es tu amigo y no le respondiste todavía) */}
+            {/* Panel desplegable de solicitudes de mensaje (gente que no es tu amigo y no le respondiste todavía).
+                Se cierra clickeando en cualquier lado o con Escape (ver useEffect). */}
             {showSolicitudes && (
               <div style={{ position:"absolute", top:"100%", right:14, marginTop:6, width:260, border:`1px solid ${HOLO_THEME.hairline}`, borderRadius:10, background:HOLO_THEME.panel, boxShadow:"0 8px 24px rgba(0,0,0,.5)", zIndex:10, maxHeight:280, overflowY:"auto" }}>
                 <div className="conv-sec conv-sec--sm">SOLICITUDES</div>
@@ -117,6 +148,7 @@ export default function ChatPage() {
                 ))}
               </div>
             )}
+            </div>
           </div>
 
           {/* Dividido en 2 mitades independientes, cada una con su propio scroll — RECIENTES arriba, AMIGOS abajo */}
@@ -256,9 +288,17 @@ export default function ChatPage() {
                 onChange={e => { const f = e.target.files?.[0]; if (f) img.sendImage(f); e.target.value = ""; }} />
 
               {rec.recording ? (
-                // Estado "grabando" rediseñado: punto latiendo lento, cronómetro,
-                // una onda continua que se desplaza suave y "deslizá para cancelar".
-                <div className="cx-rec">
+                // Estado "grabando": punto latiendo, cronómetro, onda que se
+                // desplaza, y "deslizá para cancelar" — se arrastra la barra a
+                // la izquierda y al soltar pasado el umbral se descarta.
+                <div
+                  className={`cx-rec${recDragX <= REC_CANCEL_AT ? " cx-rec--armed" : ""}`}
+                  style={{ transform: `translateX(${recDragX}px)`, transition: recDragX === 0 ? "transform .18s ease" : "none" }}
+                  onPointerDown={e => { if (!e.target.closest(".cx-rec__send")) onRecPointerDown(e); }}
+                  onPointerMove={onRecPointerMove}
+                  onPointerUp={onRecPointerUp}
+                  onPointerCancel={onRecPointerUp}
+                >
                   <span className="cx-rec__dot" />
                   <span className="cx-rec__t">{fmtRec(recSecs)}</span>
                   <span className="cx-rec__wave">
@@ -268,7 +308,7 @@ export default function ChatPage() {
                   </span>
                   <button className="cx-rec__cancel" onClick={() => rec.stopRecording(false)} title="Cancelar">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><polyline points="15 6 9 12 15 18" /></svg>
-                    deslizá para cancelar
+                    {recDragX <= REC_CANCEL_AT ? "soltá para cancelar" : "deslizá para cancelar"}
                   </button>
                   <button className="cx-rec__send" onClick={() => rec.stopRecording(true)} title="Enviar audio">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4l17.6-8.4a1 1 0 0 0 0-1.8L3.4 1.8a1 1 0 0 0-1.4 1.1L4 10l10 2-10 2-2 7.1a1 1 0 0 0 1.4 1.3z" /></svg>

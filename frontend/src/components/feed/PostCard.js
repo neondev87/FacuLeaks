@@ -91,8 +91,9 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, onSha
         onMouseEnter={e => e.currentTarget.style.borderColor = HOLO_THEME.hairline}
         onMouseLeave={e => e.currentTarget.style.borderColor = HOLO_THEME.hairlineSoft}
       >
-        {/* Header */}
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 18px", borderBottom:`1px solid ${HOLO_THEME.hairlineSoft}` }}>
+        {/* Header — sin línea abajo: el nombre y lo que se posteó son un solo
+            bloque, no dos secciones separadas. */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 18px 8px" }}>
           <div style={{ display:"flex", gap:10, alignItems:"center", cursor: post.autor?.id ? "pointer" : "default" }}
             onClick={() => post.autor?.id && router.push(`/perfil/${post.autor.id}`)}>
             <div style={{ width:30, height:30, borderRadius:"50%", backgroundColor:"#1c1c24", backgroundImage: post.autor?.imagen ? `url(${post.autor.imagen.startsWith("http") ? post.autor.imagen : `${API}${post.autor.imagen}`})` : "none", backgroundSize:"cover", backgroundPosition:"center", border:`1px solid ${HOLO_THEME.hairline}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, color:HOLO_THEME.textDim, transition:"border-color .2s", flexShrink:0 }}
