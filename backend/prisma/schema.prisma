@@ -235,6 +235,8 @@ model users {
   user_photos                                      user_photos[]
   user_profiles                                    user_profiles?
   user_stats                                       user_stats?
+  forum_temas                                      forum_temas[]
+  forum_comentarios                                forum_comentarios[]
 
   @@index([email], map: "idx_users_email")
   @@index([username], map: "idx_users_username")
@@ -300,4 +302,43 @@ enum post_likes_tipo {
 enum users_rol {
   ADMIN
   USUARIO
+}
+
+// ── Foro ──────────────────────────────────────────────────────────────────
+// Los "temas" los crea SOLO el admin (users.rol = ADMIN, o el email de
+// ADMIN_EMAIL). Cualquier usuario logueado puede comentar. El comentario NO
+// tiene título — solo contenido.
+enum forum_canal {
+  general
+  aesthetics
+  code
+  dark_music
+  void
+}
+
+model forum_temas {
+  id                Int                 @id @default(autoincrement())
+  canal             forum_canal         @default(general)
+  titulo            String              @db.VarChar(200)
+  autorId           Int
+  totalComentarios  Int                 @default(0)
+  creadoEn          DateTime            @default(now()) @db.DateTime(0)
+  users             users               @relation(fields: [autorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "forum_temas_ibfk_1")
+  forum_comentarios forum_comentarios[]
+
+  @@index([autorId], map: "idx_forum_temas_autor")
+  @@index([canal], map: "idx_forum_temas_canal")
+}
+
+model forum_comentarios {
+  id          Int         @id @default(autoincrement())
+  temaId      Int
+  autorId     Int
+  contenido   String      @db.Text
+  creadoEn    DateTime    @default(now()) @db.DateTime(0)
+  forum_temas forum_temas @relation(fields: [temaId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "forum_comentarios_ibfk_1")
+  users       users       @relation(fields: [autorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "forum_comentarios_ibfk_2")
+
+  @@index([autorId], map: "idx_forum_com_autor")
+  @@index([temaId], map: "idx_forum_com_tema")
 }

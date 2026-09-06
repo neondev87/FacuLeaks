@@ -48,6 +48,7 @@ const amigosRoutes  = require('./modules/amigos/amigos.routes');
 const uploadRoutes  = require('./modules/upload/upload.routes');
 const spotifyRoutes = require('./modules/spotify/spotify.routes');
 const perfilRoutes  = require('./modules/perfil/perfil.routes');
+const foroRoutes    = require('./modules/foro/foro.routes');
 const { authMiddleware } = require('./middleware/auth');
 const { serveAudio }     = require('./modules/chat/chat.controller');
 
@@ -108,6 +109,7 @@ app.use('/api/chat',    chatRoutes);
 app.use('/api/amigos',  amigosRoutes);
 app.use('/api/spotify', spotifyRoutes);
 app.use('/api/perfil',  perfilRoutes);
+app.use('/api/foro',    foroRoutes);
 
 const onlineUsers = new Map();
 const { registerChatSocketHandlers } = require('./modules/chat/chat.socket');

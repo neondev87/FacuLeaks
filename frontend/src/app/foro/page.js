@@ -1,43 +1,50 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import BgCross from "@/components/BgCross";
 import useInjectedStyles from "@/hooks/useInjectedStyles";
 import useForo from "@/hooks/useForo";
-import ChannelItem from "@/components/foro/ChannelItem";
-import MessageRow from "@/components/foro/MessageRow";
+import Comentario from "@/components/foro/Comentario";
+import TrashGlyph from "@/components/TrashGlyph";
 import { foroStyles } from "./foroStyles";
-import { HOLO_THEME } from "@/lib/theme";
 
 // ════════════════════════════════════════════════════════════════════════
-// MÓDULO: app/foro/page.js — foro (100% MOCK, no funcional)
+// MÓDULO: app/foro/page.js — el FORO (funcional desde Fase 3, 2026-09-06)
 // ════════════════════════════════════════════════════════════════════════
-// QUÉ HACE HOY: nada real — los canales y mensajes son datos de prueba
-// (hooks/useForo.js) y el input de escribir no manda nada a ningún lado. No
-// existe tabla ni endpoint de foro en el backend.
+// QUÉ HACE: dirección "Tablón" / paleta "Grafito". Canales a la izquierda;
+// en cada canal, un TEMA CENTRAL arriba (lo crea SOLO el admin) y la lista
+// de comentarios abajo (SIN título — solo texto). Para comentar se abre un
+// composer a pantalla completa (estilo "un hilo por pantalla"). Los temas
+// anteriores del canal quedan como chips para volver a ellos.
 //
-// PARA QUÉ SIRVE: es una vidriera de cómo se vería el foro, pendiente de
-// construir de cero (modelo de datos + backend + frontend). Decisión
-// explícita de Erick: queda para el final, fuera del prompt maestro de
-// Fases 0-3. Lo que SÍ se hizo el 2026-09-04 fue parejar la ESTRUCTURA con
-// el patrón de Fase 2 (hook + componentes + useInjectedStyles) — la
-// funcionalidad real del foro sigue sin construir, no tocar sin que se pida.
-//
-// CON QUÉ SE CONECTA: hooks/useForo.js (mock), components/foro/*.
+// CON QUÉ SE CONECTA: hooks/useForo.js (datos + socket), components/foro/
+// Comentario.js. Backend: /api/foro/* (foro.controller.js).
 // ════════════════════════════════════════════════════════════════════════
+const CANAL_LABEL = {
+  general: "# general", aesthetics: "# aesthetics", code: "# code",
+  dark_music: "# dark-music", void: "# void",
+};
+
 export default function ForoPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const ac = HOLO_THEME.text;
-  const messagesEndRef = useRef(null);
+  const cmtsEndRef = useRef(null);
+  const c02Ref = useRef(null);
 
   const {
-    channels, activeChannel, setActiveChannel,
-    input, setInput, currentMsgs, currentChannel, sendMessage,
+    CANALES, canal, setCanal,
+    temas, temaActivo, temaActivoId, setTemaActivoId,
+    comentarios, loadingTemas, loadingComs,
+    puedeCrearTema, sending,
+    enviarComentario, crearTema, borrarTema, borrarComentario,
   } = useForo();
+
+  const [writing, setWriting]   = useState(false);
+  const [draft, setDraft]       = useState("");
+  const [newTema, setNewTema]   = useState("");
+  const [showNewTema, setShowNewTema] = useState(false);
 
   useInjectedStyles("foro-styles", foroStyles);
 
@@ -46,76 +53,153 @@ export default function ForoPage() {
   }, [status, router]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [activeChannel]);
+    cmtsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [comentarios]);
+
+  // cerrar el composer con Escape
+  useEffect(() => {
+    if (!writing) return undefined;
+    const onEsc = e => { if (e.key === "Escape") setWriting(false); };
+    document.addEventListener("keydown", onEsc);
+    c02Ref.current?.focus();
+    return () => document.removeEventListener("keydown", onEsc);
+  }, [writing]);
 
   if (status === "loading") return null;
+
+  const uid = session?.user?.dbId != null ? Number(session.user.dbId) : null;
+  const prevTemas = temas.filter(t => t.id !== temaActivoId);
+
+  const submitComentario = async () => {
+    const ok = await enviarComentario(draft);
+    if (ok) { setDraft(""); setWriting(false); }
+  };
+  const submitTema = async () => {
+    const ok = await crearTema(newTema);
+    if (ok) { setNewTema(""); setShowNewTema(false); }
+  };
 
   return (
     <>
       <Navbar />
-      <BgCross />
+      <div className="foro">
 
-      <div style={{ display: "flex", height: "calc(100vh - 48px)", marginTop: 48 }}>
-
-        {/* ── SIDEBAR ── */}
-        <div style={{ width: 210, borderRight: `1px solid ${HOLO_THEME.hairlineSoft}`, background: HOLO_THEME.panel, display: "flex", flexDirection: "column", flexShrink: 0 }}>
-          <div style={{ padding: "14px 16px", borderBottom: `1px solid ${HOLO_THEME.hairlineSoft}`, fontFamily: "'Cinzel', serif", fontSize: 13, color: ac, letterSpacing: ".2em" }}>
-            VOID_CHANNELS
-          </div>
-
-          <div style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
-            {channels.map(c => (
-              <ChannelItem
-                key={c.id}
-                channel={c}
-                active={activeChannel === c.id}
-                onClick={() => setActiveChannel(c.id)}
-                accent={ac}
-              />
+        {/* ── canales ── */}
+        <div className="foro-side">
+          <div className="foro-side__h">CANALES</div>
+          <div className="foro-side__list">
+            {CANALES.map(c => (
+              <div key={c.id} className={`canal${canal === c.id ? " on" : ""}`} onClick={() => setCanal(c.id)}>
+                {c.name}
+              </div>
             ))}
           </div>
-
-          <div style={{ padding: "10px 14px", borderTop: `1px solid ${HOLO_THEME.hairlineSoft}`, display: "flex", gap: 10, alignItems: "center" }}>
-            <div style={{ width: 26, height: 26, borderRadius: "50%", backgroundColor: "#1c1c24", border: `1px solid ${HOLO_THEME.hairline}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: HOLO_THEME.textDim, flexShrink: 0 }}>◈</div>
-            <div>
-              <div style={{ fontSize: 12, color: HOLO_THEME.text, fontFamily: "'Inter',sans-serif" }}>{session?.user?.name?.split(" ")[0] || "user"}</div>
-              <div style={{ fontSize: 10, color: "#3ddc84", display: "flex", alignItems: "center", gap: 4, fontFamily: "'Inter',sans-serif" }}>
-                <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#3ddc84", display: "inline-block" }} />
-                online
-              </div>
-            </div>
+          <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,.07)", fontFamily: "'Space Mono',monospace", fontSize: 10, color: "rgba(255,255,255,.3)", letterSpacing: ".1em" }}>
+            {session?.user?.name?.split(" ")[0] || "vos"}{puedeCrearTema ? " · admin" : ""}
           </div>
         </div>
 
-        {/* ── MENSAJES ── */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+        {/* ── tablero ── */}
+        <div className="foro-board">
 
-          <div style={{ padding: "12px 24px", borderBottom: `1px solid ${HOLO_THEME.hairlineSoft}`, display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
-            <span style={{ color: ac, fontFamily: "'Cinzel', serif", fontSize: 15 }}>{currentChannel?.name}</span>
-            <span style={{ color: HOLO_THEME.hairline }}>|</span>
-            <span style={{ fontSize: 12, color: HOLO_THEME.textDim, fontFamily: "'Inter',sans-serif" }}>{currentChannel?.desc}</span>
-          </div>
+          {/* admin: crear tema */}
+          {puedeCrearTema && (
+            showNewTema ? (
+              <div className="foro-newtema">
+                <input
+                  autoFocus value={newTema} onChange={e => setNewTema(e.target.value)}
+                  maxLength={200}
+                  placeholder={`título del tema para ${CANAL_LABEL[canal]}…`}
+                  onKeyDown={e => { if (e.key === "Enter") submitTema(); if (e.key === "Escape") setShowNewTema(false); }}
+                />
+                <button onClick={submitTema}>PUBLICAR</button>
+                <button className="ghost" onClick={() => { setShowNewTema(false); setNewTema(""); }}>✕</button>
+              </div>
+            ) : (
+              <div className="foro-admin">
+                <button onClick={() => setShowNewTema(true)}>＋ NUEVO TEMA EN {CANAL_LABEL[canal].toUpperCase()}</button>
+              </div>
+            )
+          )}
 
-          <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
-            {currentMsgs.map((m, i) => (
-              <MessageRow key={i} msg={m} accent={ac} />
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
+          {loadingTemas ? (
+            <div className="foro-empty"><span className="spinner" /></div>
+          ) : !temaActivo ? (
+            <div className="foro-empty">
+              {puedeCrearTema
+                ? `todavía no hay ningún tema en ${CANAL_LABEL[canal]} — creá el primero arriba`
+                : `todavía no hay ningún tema en ${CANAL_LABEL[canal]}`}
+            </div>
+          ) : (
+            <>
+              {/* tema central — solo título */}
+              <div className="foro-theme">
+                {(puedeCrearTema || (uid != null && temaActivo.autor?.id === uid)) && (
+                  <button className="foro-theme__del" title="Eliminar tema"
+                    onClick={() => { if (confirm("¿Eliminar este tema y todos sus comentarios?")) borrarTema(temaActivo.id); }}>
+                    <TrashGlyph size={14} />
+                  </button>
+                )}
+                <div className="foro-theme__k">TEMA · {CANAL_LABEL[canal]}</div>
+                <div className="foro-theme__t">{temaActivo.titulo}</div>
+                <div className="foro-theme__meta">
+                  {temaActivo.totalComentarios ?? comentarios.length} comentario{(temaActivo.totalComentarios ?? comentarios.length) === 1 ? "" : "s"}
+                  {temaActivo.autor?.username ? ` · por ${temaActivo.autor.username}` : ""}
+                </div>
+                <button className="foro-theme__go" onClick={() => { setWriting(true); }}>＋ COMENTAR</button>
+              </div>
 
-          <div style={{ padding: "14px 24px", borderTop: `1px solid ${HOLO_THEME.hairlineSoft}`, display: "flex", gap: 10, flexShrink: 0 }}>
-            <input
-              className="msg-input"
-              placeholder={`mensaje en ${currentChannel?.name}...`}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") sendMessage(); }}
-            />
-            <button className="send-btn" onClick={sendMessage}>
-              ENVIAR
-            </button>
-          </div>
+              {/* temas anteriores del canal */}
+              {prevTemas.length > 0 && (
+                <div className="foro-prev">
+                  {prevTemas.map(t => (
+                    <span key={t.id} className="chip" title={t.titulo} onClick={() => setTemaActivoId(t.id)}>{t.titulo}</span>
+                  ))}
+                </div>
+              )}
+
+              {/* comentarios (sin título) */}
+              <div className="foro-cmts">
+                {loadingComs ? (
+                  <div className="foro-empty"><span className="spinner" /></div>
+                ) : comentarios.length === 0 ? (
+                  <div className="foro-empty">sé el primero en comentar este tema</div>
+                ) : (
+                  comentarios.map(c => (
+                    <Comentario
+                      key={c.id}
+                      c={c}
+                      canDelete={puedeCrearTema || (uid != null && c.autor?.id === uid)}
+                      onDelete={borrarComentario}
+                    />
+                  ))
+                )}
+                <div ref={cmtsEndRef} />
+              </div>
+            </>
+          )}
+
+          {/* composer "un hilo por pantalla" */}
+          {temaActivo && (
+            <div className={`foro-c02${writing ? " open" : ""}`}>
+              <div className="foro-c02__ctx">RESPONDIENDO AL TEMA · <b>{temaActivo.titulo}</b></div>
+              <textarea
+                ref={c02Ref}
+                className="foro-c02__ta"
+                value={draft}
+                onChange={e => setDraft(e.target.value)}
+                maxLength={5000}
+                placeholder="escribí tu comentario… (sin título, directo al grano)"
+              />
+              <div className="foro-c02__row">
+                <button className="foro-c02__cancel" onClick={() => setWriting(false)}>CANCELAR</button>
+                <button className="foro-c02__send" onClick={submitComentario} disabled={sending || !draft.trim()}>
+                  {sending ? <span className="spinner" /> : "PUBLICAR †"}
+                </button>
+              </div>
+              <div className="foro-c02__hint">ESC PARA CERRAR · EL COMENTARIO NO LLEVA TÍTULO</div>
+            </div>
+          )}
         </div>
       </div>
     </>

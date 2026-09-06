@@ -1,61 +1,93 @@
 // MÓDULO: app/foro/foroStyles.js
-// CSS de la página de foro. Se inyecta con hooks/useInjectedStyles.js
-// ("foro-styles", …) desde app/foro/page.js. Este archivo es CSS nomás —
-// la página en sí sigue siendo mock, eso no cambió.
+// CSS del foro. Se inyecta con hooks/useInjectedStyles.js ("foro-styles", …)
+// desde app/foro/page.js.
 //
-// Fase 3 (2026-09-05): pasa a la paleta "Holographic" (HOLO_THEME) y al
-// trío de fuentes Cinzel/Inter/Space Mono de Muro/Perfil/Amigos — misma
-// estructura visual que esas páginas (esquinas redondeadas, hairlines
-// finos). Antes compartía paleta/ruido "scanline" con amigos, que ya tuvo
-// su turno de Fase 3 y se separó de acá.
-import { FONT_IMPORT_MAIN, NOISE_TEXTURE, HOLO_THEME } from "@/lib/theme";
+// Fase 3 (2026-09-06): el foro pasa a ser FUNCIONAL — dirección "Tablón" con
+// paleta "Grafito" (acento gris #9a9aa6, sobrio). Canales a la izquierda, un
+// tema central arriba (lo crea solo el admin), lista de comentarios abajo
+// (SIN título), y para escribir un comentario se abre un composer a pantalla
+// completa (estilo "un hilo por pantalla"). Fondo plano igual que Perfil.
+import { FONT_IMPORT_MAIN, HOLO_THEME } from "@/lib/theme";
+
+const AC = "#9a9aa6";                 // acento grafito
+const AC_SOFT = "rgba(154,154,166,.14)";
 
 export const foroStyles = `
       ${FONT_IMPORT_MAIN}
+      @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+      @keyframes rise   { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+      @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
       body { background:${HOLO_THEME.bg}; color:${HOLO_THEME.text}; font-family:'Inter',sans-serif; font-size:13px; overflow:hidden; }
-      ${NOISE_TEXTURE}
-      ::-webkit-scrollbar { width:4px }
-      ::-webkit-scrollbar-track { background:#000 }
-      ::-webkit-scrollbar-thumb { background:#222 }
+      ::-webkit-scrollbar { width:5px } ::-webkit-scrollbar-track { background:transparent } ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.14); border-radius:99px }
 
-      .channel-item {
-        padding: 7px 16px;
-        margin: 0 8px 2px;
-        border-radius: 8px;
-        cursor: pointer;
-        border-left: 2px solid transparent;
-        transition: all .15s;
-      }
-      .channel-item:hover { background: rgba(255,255,255,.03); }
-      .channel-item.active { background: rgba(255,255,255,.07); border-left-color: ${HOLO_THEME.text}; }
+      .foro { display:flex; height:calc(100vh - 48px); margin-top:48px; }
 
-      .msg-input {
-        flex: 1;
-        background: ${HOLO_THEME.panel};
-        border: 1px solid ${HOLO_THEME.hairlineSoft};
-        color: ${HOLO_THEME.text};
-        font-family: 'Inter', sans-serif;
-        font-size: 13px;
-        padding: 11px 16px;
-        outline: none;
-        border-radius: 20px;
-        transition: border-color .2s;
-      }
-      .msg-input:focus { border-color: ${HOLO_THEME.hairline}; }
-      .msg-input::placeholder { color: rgba(242,240,248,.28); }
+      /* ── canales ── */
+      .foro-side { width:200px; flex-shrink:0; border-right:1px solid ${HOLO_THEME.hairlineSoft}; background:${HOLO_THEME.panel}; display:flex; flex-direction:column; }
+      .foro-side__h { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:.24em; color:${HOLO_THEME.textDim}; padding:18px 18px 8px; }
+      .foro-side__list { flex:1; overflow-y:auto; padding-bottom:10px; }
+      .canal { padding:9px 18px; font-size:13px; color:rgba(242,240,248,.58); cursor:pointer; border-left:2px solid transparent; transition:color .14s, background .14s, border-color .14s; }
+      .canal:hover { color:${HOLO_THEME.text}; background:rgba(255,255,255,.02); }
+      .canal.on { color:${HOLO_THEME.text}; border-left-color:${AC}; background:${AC_SOFT}; }
+      .canal .cnt { font-family:'Space Mono',monospace; font-size:10px; color:${HOLO_THEME.textDim}; float:right; }
 
-      .send-btn {
-        background: ${HOLO_THEME.text};
-        border: none;
-        color: ${HOLO_THEME.bg};
-        font-family: 'Space Mono', monospace;
-        font-weight: 700;
-        font-size: 11px;
-        padding: 11px 20px;
-        cursor: pointer;
-        letter-spacing: .14em;
-        border-radius: 20px;
-        transition: opacity .2s;
-      }
-      .send-btn:hover { opacity: .85; }
+      /* ── tablero ── */
+      .foro-board { flex:1; min-width:0; display:flex; flex-direction:column; position:relative; }
+
+      .foro-theme { margin:18px 20px 8px; padding:18px 22px; border:1px solid ${HOLO_THEME.hairline}; border-radius:12px; background:linear-gradient(180deg, ${AC_SOFT}, transparent 82%), ${HOLO_THEME.panel}; text-align:center; animation:rise .3s both; }
+      .foro-theme__k { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:.24em; color:${AC}; }
+      .foro-theme__t { font-family:'Cinzel',serif; font-size:19px; color:${HOLO_THEME.text}; margin:7px 0 0; line-height:1.3; }
+      .foro-theme__meta { font-family:'Space Mono',monospace; font-size:10px; color:${HOLO_THEME.textDim}; margin-top:9px; }
+      .foro-theme__go { margin-top:13px; background:${AC}; color:#0b0b0e; border:0; font-family:'Space Mono',monospace; font-weight:700; font-size:10px; letter-spacing:.16em; padding:9px 22px; border-radius:20px; cursor:pointer; transition:filter .15s; }
+      .foro-theme__go:hover { filter:brightness(1.1); }
+      .foro-theme__del { position:absolute; top:12px; right:16px; background:none; border:0; color:rgba(242,240,248,.28); cursor:pointer; padding:4px; display:flex; transition:color .15s; }
+      .foro-theme__del:hover { color:rgba(255,90,90,.9); }
+      .foro-theme { position:relative; }
+
+      /* ── temas anteriores (chips) ── */
+      .foro-prev { display:flex; gap:8px; flex-wrap:wrap; padding:2px 22px 6px; }
+      .foro-prev .chip { font-family:'Space Mono',monospace; font-size:10px; color:${HOLO_THEME.textDim}; border:1px solid ${HOLO_THEME.hairlineSoft}; border-radius:99px; padding:4px 11px; cursor:pointer; transition:color .14s, border-color .14s; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .foro-prev .chip:hover { color:${HOLO_THEME.text}; border-color:${HOLO_THEME.hairline}; }
+      .foro-prev .chip.on { color:${HOLO_THEME.text}; border-color:${AC}; }
+
+      /* ── comentarios (sin título) ── */
+      .foro-cmts { flex:1; overflow-y:auto; padding:6px 22px 20px; }
+      .foro-empty { text-align:center; color:${HOLO_THEME.textDim}; font-family:'Space Mono',monospace; font-size:12px; letter-spacing:.06em; padding:32px 0; }
+      .fcm { display:flex; gap:11px; padding:13px 4px; border-bottom:1px solid ${HOLO_THEME.hairlineSoft}; animation:fadeIn .18s ease; }
+      .fcm__av { width:32px; height:32px; border-radius:50%; flex-shrink:0; background:#1c1c24; background-size:cover; background-position:center; border:1px solid ${HOLO_THEME.hairline}; display:flex; align-items:center; justify-content:center; font-size:9px; color:${HOLO_THEME.textDim}; }
+      .fcm__bd { flex:1; min-width:0; }
+      .fcm__hd { display:flex; gap:9px; align-items:baseline; }
+      .fcm__u { font-size:12.5px; color:${HOLO_THEME.text}; font-weight:500; }
+      .fcm__ti { font-family:'Space Mono',monospace; font-size:10px; color:${HOLO_THEME.textDim}; }
+      .fcm__del { margin-left:auto; background:none; border:0; padding:2px; cursor:pointer; color:rgba(242,240,248,.25); display:flex; transition:color .14s; }
+      .fcm__del:hover { color:rgba(255,90,90,.85); }
+      .fcm__tx { font-size:13px; color:rgba(242,240,248,.74); line-height:1.65; margin-top:3px; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; }
+
+      /* ── composer estilo "un hilo por pantalla" ── */
+      .foro-c02 { position:absolute; inset:0; background:${HOLO_THEME.bg}; display:flex; flex-direction:column; justify-content:center; padding:0 clamp(24px,7vw,72px); opacity:0; pointer-events:none; transform:translateY(12px); transition:opacity .24s ease, transform .24s ease; z-index:5; }
+      .foro-c02.open { opacity:1; pointer-events:auto; transform:none; }
+      .foro-c02__ctx { font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.14em; color:${HOLO_THEME.textDim}; }
+      .foro-c02__ctx b { color:${AC}; font-weight:400; }
+      .foro-c02__ta { width:100%; margin-top:14px; background:none; border:0; outline:0; resize:none; color:${HOLO_THEME.text}; font-family:'Inter',sans-serif; font-size:17px; line-height:1.6; min-height:130px; max-height:46vh; }
+      .foro-c02__ta::placeholder { color:rgba(242,240,248,.3); }
+      .foro-c02__row { display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
+      .foro-c02__cancel { background:none; border:1px solid ${HOLO_THEME.hairline}; color:${HOLO_THEME.textDim}; font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.14em; padding:10px 18px; border-radius:20px; cursor:pointer; transition:color .14s, border-color .14s; }
+      .foro-c02__cancel:hover { color:${HOLO_THEME.text}; border-color:${HOLO_THEME.hairline}; }
+      .foro-c02__send { background:${AC}; color:#0b0b0e; border:0; font-family:'Space Mono',monospace; font-weight:700; font-size:10px; letter-spacing:.16em; padding:11px 22px; border-radius:20px; cursor:pointer; transition:filter .15s; }
+      .foro-c02__send:hover:not(:disabled) { filter:brightness(1.1); }
+      .foro-c02__send:disabled { opacity:.4; cursor:not-allowed; }
+      .foro-c02__hint { margin-top:12px; font-family:'Space Mono',monospace; font-size:9px; color:${HOLO_THEME.textDim}; letter-spacing:.1em; }
+
+      /* ── form nuevo tema (admin) ── */
+      .foro-newtema { margin:12px 20px; display:flex; gap:8px; }
+      .foro-newtema input { flex:1; background:${HOLO_THEME.panel}; border:1px solid ${HOLO_THEME.hairline}; border-radius:10px; padding:10px 14px; color:${HOLO_THEME.text}; font-family:'Inter',sans-serif; font-size:14px; outline:0; }
+      .foro-newtema input::placeholder { color:rgba(242,240,248,.3); }
+      .foro-newtema input:focus { border-color:${AC}; }
+      .foro-newtema button { background:${AC}; color:#0b0b0e; border:0; font-family:'Space Mono',monospace; font-weight:700; font-size:10px; letter-spacing:.14em; padding:0 18px; border-radius:10px; cursor:pointer; }
+      .foro-newtema .ghost { background:none; border:1px solid ${HOLO_THEME.hairline}; color:${HOLO_THEME.textDim}; }
+      .foro-admin { padding:10px 20px 0; }
+      .foro-admin button { background:none; border:1px dashed ${HOLO_THEME.hairline}; color:${HOLO_THEME.textDim}; font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.14em; padding:9px 16px; border-radius:10px; cursor:pointer; width:100%; transition:color .14s, border-color .14s; }
+      .foro-admin button:hover { color:${HOLO_THEME.text}; border-color:${HOLO_THEME.hairline}; }
+
+      .spinner { width:12px; height:12px; border:1px solid rgba(255,255,255,.15); border-top-color:rgba(255,255,255,.55); border-radius:50%; animation:spin .7s linear infinite; display:inline-block; }
     `;
