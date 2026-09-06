@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import BgCross from "@/components/BgCross";
 import useInjectedStyles from "@/hooks/useInjectedStyles";
 import useAmigos from "@/hooks/useAmigos";
 import UserCard from "@/components/amigos/UserCard";
@@ -43,7 +42,6 @@ export default function AmigosPage() {
   return (
     <>
       <Navbar />
-      <BgCross />
 
       <div className="page-wrap">
 

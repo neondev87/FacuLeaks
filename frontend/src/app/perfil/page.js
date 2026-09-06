@@ -102,17 +102,19 @@ export default function ProfilePage() {
           )}
         </div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"220px 1fr 240px", gap:18 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"200px 1fr 240px", gap:18 }}>
 
           {/* ════════════════════════════════════════════════ */}
           {/* ── COLUMNA IZQUIERDA ── */}
           {/* ════════════════════════════════════════════════ */}
           <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
 
-            {/* ── Avatar con menú contextual ── */}
+            {/* ── Avatar con menú contextual — mismo tamaño (150) que el
+                recuadro de perfil del muro. ── */}
             <AvatarMenu
               currentAvatar={user.imagen}
               canEdit={true}
+              size={150}
               onAvatarChange={(url) => {
                 setPerfil(p => ({
                   ...p,

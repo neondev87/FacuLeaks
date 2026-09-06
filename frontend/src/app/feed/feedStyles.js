@@ -28,7 +28,7 @@ export const feedStyles = `
       ${SCROLLBAR_THIN}
       .feed-page { display:flex; gap:28px; align-items:flex-start; max-width:1180px; margin:0 auto; padding:68px 28px 48px; }
       .feed-wrap { flex:1; min-width:0; max-width:860px; animation:fadeIn .5s ease; }
-      .feed-sidebar { width:180px; flex-shrink:0; position:sticky; top:84px; }
+      .feed-sidebar { width:150px; flex-shrink:0; position:sticky; top:84px; }
 
       /* ── Tabs (RECIENTES/TRENDING/SIGUIENDO) ── */
       .feed-tab { cursor:pointer; transition:color .2s; color:${HOLO_THEME.textDim}; font-weight:400; }

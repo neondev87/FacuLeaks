@@ -68,9 +68,10 @@ export default function FeedPage() {
       <BgCross />
       <div className="feed-page">
 
-      {/* Recuadro de tu perfil — mismo AvatarMenu (con el efecto "chrome aero") que perfil, sticky */}
+      {/* Recuadro de tu perfil — EXACTAMENTE el mismo AvatarMenu y tamaño (150)
+          que la columna izquierda de /perfil, sticky. */}
       <div className="feed-sidebar">
-        <AvatarMenu currentAvatar={ownImagen} canEdit={false} onViewClick={() => router.push("/perfil")} />
+        <AvatarMenu currentAvatar={ownImagen} canEdit={false} size={150} onViewClick={() => router.push("/perfil")} />
       </div>
 
       <div className="feed-wrap">
@@ -99,7 +100,7 @@ export default function FeedPage() {
               )}
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 {!postImagen ? (
-                  <Uploader resetKey={uploaderKey} tipo="imagen" compact label="+ imagen"
+                  <Uploader resetKey={uploaderKey} tipo="imagen" compact label="imagen"
                     onSuccess={({ url }) => { setPostImagen(url); setDlFilename(url.split('/').pop()); setDlTrigger(t => t+1); }}
                     onError={msg => console.error(msg)}
                   />

@@ -21,9 +21,23 @@
 import { useState, useRef, useEffect } from "react";
 import { API } from "@/lib/api";
 
+// Íconos de línea (limpios) según el tipo de subida.
+const ImgIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4.5" width="18" height="15" rx="2.5" />
+    <circle cx="8.5" cy="10" r="1.6" />
+    <path d="M4 17l4.5-4.5a2 2 0 0 1 2.8 0L16 17M14 15l2-2a2 2 0 0 1 2.8 0L21 15.5" />
+  </svg>
+);
+const DocIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" />
+  </svg>
+);
+
 const TIPOS = {
-  imagen:    { accept: "image/jpeg,image/png,image/webp,image/gif", label: "imagen", icono: "◈" },
-  documento: { accept: "application/pdf,.doc,.docx",                label: "doc",    icono: "†" },
+  imagen:    { accept: "image/jpeg,image/png,image/webp,image/gif", label: "imagen", Icon: ImgIcon },
+  documento: { accept: "application/pdf,.doc,.docx",                label: "doc",    Icon: DocIcon },
 };
 
 export default function Uploader({
@@ -83,7 +97,7 @@ export default function Uploader({
   const cfg = TIPOS[tipo] || TIPOS.imagen;
 
   return (
-    <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, ...style }}>
+    <div style={{ fontFamily:"'Space Mono',monospace", fontSize:11, ...style }}>
       <input
         ref={inputRef} type="file" accept={cfg.accept}
         style={{ display:"none" }}
@@ -107,19 +121,20 @@ export default function Uploader({
           onClick={() => { reset(); inputRef.current?.click(); }}
           disabled={estado === "loading"}
           style={{
-            background: estado === "loading" ? "rgba(255,255,255,.03)" : "transparent",
-            border: `1px dashed ${estado === "error" ? "#cc3344" : "rgba(255,255,255,.15)"}`,
-            color: "rgba(255,255,255,.4)", cursor:"pointer", transition:"all .2s",
-            padding: compact ? "6px 12px" : "14px 24px",
-            display:"flex", alignItems:"center", gap:8,
-            fontFamily:"'IBM Plex Mono',monospace", fontSize:10, letterSpacing:".1em",
+            background: estado === "loading" ? "rgba(255,255,255,.04)" : "transparent",
+            border: `1px solid ${estado === "error" ? "#cc3344" : "rgba(255,255,255,.14)"}`,
+            color: "rgba(242,240,248,.5)", cursor:"pointer", transition:"all .18s",
+            padding: compact ? "7px 14px" : "13px 22px",
+            borderRadius: compact ? 20 : 8,
+            display:"inline-flex", alignItems:"center", gap:7,
+            fontFamily:"'Space Mono',monospace", fontSize:10, letterSpacing:".12em", textTransform:"uppercase",
           }}
-          onMouseEnter={e => { if (estado !== "loading") e.currentTarget.style.borderColor = "rgba(255,255,255,.4)"; }}
-          onMouseLeave={e => { if (estado !== "loading") e.currentTarget.style.borderColor = estado === "error" ? "#cc3344" : "rgba(255,255,255,.15)"; }}
+          onMouseEnter={e => { if (estado !== "loading") { e.currentTarget.style.borderColor = "rgba(255,255,255,.34)"; e.currentTarget.style.color = "rgba(242,240,248,.85)"; } }}
+          onMouseLeave={e => { if (estado !== "loading") { e.currentTarget.style.borderColor = estado === "error" ? "#cc3344" : "rgba(255,255,255,.14)"; e.currentTarget.style.color = "rgba(242,240,248,.5)"; } }}
         >
           {estado === "loading"
-            ? <><span className="spinner-sm" /> procesando...</>
-            : <>{cfg.icono} {label || `subir ${cfg.label}`}</>
+            ? <><span className="spinner-sm" /> procesando…</>
+            : <><cfg.Icon /> {label || cfg.label}</>
           }
         </button>
       )}

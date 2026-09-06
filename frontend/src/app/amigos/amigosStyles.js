@@ -9,14 +9,15 @@
 // NOISE_TEXTURE_SCANLINE, esquinas cuadradas) — ese acople queda roto a
 // propósito: cada página usa ahora los tokens que le tocan en su turno de
 // Fase 3, foro todavía no tuvo el suyo.
-import { FONT_IMPORT_MAIN, NOISE_TEXTURE, SCROLLBAR_THIN, KF, HOLO_THEME } from "@/lib/theme";
+// El fondo es plano (HOLO_THEME.bg), IGUAL que Perfil — antes tenía la
+// textura de ruido + BgCross, se sacaron por pedido explícito.
+import { FONT_IMPORT_MAIN, SCROLLBAR_THIN, KF, HOLO_THEME } from "@/lib/theme";
 
 export const amigosStyles = `
       ${FONT_IMPORT_MAIN}
       ${KF.fadeIn}
       ${KF.spin}
       body { background:${HOLO_THEME.bg}; color:${HOLO_THEME.text}; font-family:'Inter',sans-serif; font-size:13px; overflow-x:hidden; }
-      ${NOISE_TEXTURE}
       ${SCROLLBAR_THIN}
 
       .page-wrap {
