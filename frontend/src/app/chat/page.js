@@ -15,6 +15,7 @@ import StreakC from "@/components/chat/StreakC";
 import MicIcon from "@/components/chat/MicIcon";
 import IconBtn from "@/components/chat/IconBtn";
 import RequestsIcon from "@/components/chat/RequestsIcon";
+import EmptyStateBg from "@/components/chat/EmptyStateBg";
 import Bubble from "@/components/chat/Bubble";
 import AudioIndicator from "@/components/chat/AudioIndicator";
 import TypingIndicator from "@/components/chat/TypingIndicator";
@@ -64,6 +65,10 @@ export default function ChatPage() {
   const handleOpenChat = user => { search.closeSearch(); setShowSolicitudes(false); chat.openChat(user); };
   const totalSolicitudes = chat.solicitudes.reduce((acc, s) => acc + (s.unread || 0), 0) || chat.solicitudes.length;
 
+  // Inicial para el avatar cuadrado (cuando el usuario no tiene foto) — dirección
+  // "Vitral editorial · Tinta". Toma la primera letra útil del nombre.
+  const initial = name => (String(name || "").match(/[a-z0-9]/i)?.[0] || "?").toUpperCase();
+
   if (status === "loading") return null;
 
   const { activeChat, streak } = chat;
@@ -73,7 +78,7 @@ export default function ChatPage() {
       <Navbar />
       <div style={{ display:"flex", height:"calc(100vh - 48px)", marginTop:48 }}>
 
-        <div style={{ width:300, borderRight:`1px solid ${HOLO_THEME.hairlineSoft}`, display:"flex", flexDirection:"column", background:HOLO_THEME.panel, flexShrink:0 }}>
+        <div className="chat-side" style={{ width:300, borderRight:`1px solid ${HOLO_THEME.hairlineSoft}`, display:"flex", flexDirection:"column", flexShrink:0 }}>
           <div style={{ padding:"20px 22px 18px", borderBottom:`1px solid ${HOLO_THEME.hairlineSoft}`, display:"flex", justifyContent:"space-between", alignItems:"flex-start", position:"relative" }}>
             <div>
               <div style={{ fontFamily:"'Cinzel',serif", fontSize:20, color:HOLO_THEME.text, letterSpacing:".02em" }}>Mensajes</div>
@@ -85,17 +90,17 @@ export default function ChatPage() {
             {/* Panel desplegable de solicitudes de mensaje (gente que no es tu amigo y no le respondiste todavía) */}
             {showSolicitudes && (
               <div style={{ position:"absolute", top:"100%", right:14, marginTop:6, width:260, border:`1px solid ${HOLO_THEME.hairline}`, borderRadius:10, background:HOLO_THEME.panel, boxShadow:"0 8px 24px rgba(0,0,0,.5)", zIndex:10, maxHeight:280, overflowY:"auto" }}>
-                <div style={{ fontSize:11, letterSpacing:".14em", color:"rgba(255,255,255,.3)", padding:"10px 14px 6px", fontFamily:"'Space Mono',monospace" }}>SOLICITUDES</div>
+                <div className="conv-sec conv-sec--sm">SOLICITUDES</div>
                 {chat.solicitudes.length === 0 ? (
                   <div style={{ padding:"6px 14px 14px", fontSize:12, color:"rgba(255,255,255,.2)", fontFamily:"'Space Mono',monospace" }}>sin solicitudes pendientes</div>
                 ) : chat.solicitudes.map(s => (
                   <div key={s.userId} className="conv-item" onClick={() => handleOpenChat(s)}>
                     <div className="avatar" style={avatarSrc(s.imagen) ? { backgroundImage:`url(${avatarSrc(s.imagen)})`, backgroundSize:"cover", backgroundPosition:"center" } : undefined}>
-                      {!avatarSrc(s.imagen) && "◈"}
+                      {!avatarSrc(s.imagen) && initial(s.username)}
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
-                        <span style={{ fontSize:14, fontFamily:"'Inter',sans-serif", color:HOLO_THEME.text }}>{s.username}</span>
+                        <span className="conv-name" style={{ color:HOLO_THEME.text }}>{s.username}</span>
                         {s.unread > 0 && <span style={{ background:"#cc3344", color:"#fff", fontSize:10, padding:"2px 7px", borderRadius:999, fontFamily:"'Space Mono',monospace", fontWeight:600 }}>{s.unread}</span>}
                       </div>
                       <div style={{ fontSize:12, color:"rgba(255,255,255,.22)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontFamily:"'Space Mono',monospace" }}>{s.lastMsg}</div>
@@ -110,15 +115,15 @@ export default function ChatPage() {
           <div style={{ flex:1, display:"flex", flexDirection:"column", minHeight:0 }}>
 
             <div className="conv-half">
-              <div style={{ fontSize:11, letterSpacing:".18em", color:"rgba(255,255,255,.22)", padding:"10px 18px 4px", fontFamily:"'Space Mono',monospace" }}>RECIENTES</div>
+              <div className="conv-sec">RECIENTES</div>
               {chat.recientes.length > 0 ? chat.recientes.map(c => (
                 <div key={c.userId} className={`conv-item${chat.isActive(c.userId) ? " active" : ""}`} onClick={() => handleOpenChat(c)}>
                   <div className="avatar" style={avatarSrc(c.imagen) ? { backgroundImage:`url(${avatarSrc(c.imagen)})`, backgroundSize:"cover", backgroundPosition:"center" } : undefined}>
-                    {!avatarSrc(c.imagen) && "◈"}<div className="status-dot" style={{ background: chat.isOnline(c.userId) ? "#3ddc84" : "#2a2a2a" }} />
+                    {!avatarSrc(c.imagen) && initial(c.username)}<div className="status-dot" style={{ background: chat.isOnline(c.userId) ? "#3ddc84" : "#2a2a2a" }} />
                   </div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
-                      <span style={{ fontSize:14, fontFamily:"'Inter',sans-serif", color: chat.isActive(c.userId) ? HOLO_THEME.text : "rgba(255,255,255,.65)" }}>{c.username}</span>
+                      <span className="conv-name" style={{ color: chat.isActive(c.userId) ? HOLO_THEME.text : "rgba(255,255,255,.65)" }}>{c.username}</span>
                       {c.unread > 0 && <span style={{ background:HOLO_THEME.text, color:HOLO_THEME.bg, fontSize:10, padding:"2px 7px", borderRadius:999, fontFamily:"'Space Mono',monospace", fontWeight:600 }}>{c.unread}</span>}
                     </div>
                     <div style={{ fontSize:12, color:"rgba(255,255,255,.22)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontFamily:"'Space Mono',monospace" }}>{c.lastMsg}</div>
@@ -130,14 +135,14 @@ export default function ChatPage() {
             </div>
 
             <div className="conv-half" style={{ borderTop:`1px solid ${HOLO_THEME.hairlineSoft}` }}>
-              <div style={{ fontSize:11, letterSpacing:".18em", color:"rgba(255,255,255,.22)", padding:"10px 18px 4px", fontFamily:"'Space Mono',monospace" }}>AMIGOS</div>
+              <div className="conv-sec">AMIGOS</div>
               {chat.amigos.length > 0 ? chat.amigos.map(a => (
                 <div key={a.userId} className={`conv-item${chat.isActive(a.userId) ? " active" : ""}`} onClick={() => handleOpenChat(a)}>
                   <div className="avatar" style={avatarSrc(a.imagen) ? { backgroundImage:`url(${avatarSrc(a.imagen)})`, backgroundSize:"cover", backgroundPosition:"center" } : undefined}>
-                    {!avatarSrc(a.imagen) && "◈"}<div className="status-dot" style={{ background: chat.isOnline(a.userId) ? "#3ddc84" : "#2a2a2a" }} />
+                    {!avatarSrc(a.imagen) && initial(a.username)}<div className="status-dot" style={{ background: chat.isOnline(a.userId) ? "#3ddc84" : "#2a2a2a" }} />
                   </div>
                   <div style={{ flex:1, minWidth:0 }}>
-                    <span style={{ fontSize:14, fontFamily:"'Inter',sans-serif", color: chat.isActive(a.userId) ? HOLO_THEME.text : "rgba(255,255,255,.65)" }}>{a.username}</span>
+                    <span className="conv-name" style={{ color: chat.isActive(a.userId) ? HOLO_THEME.text : "rgba(255,255,255,.65)" }}>{a.username}</span>
                   </div>
                 </div>
               )) : (
@@ -304,11 +309,13 @@ export default function ChatPage() {
             </div>
           </div>
         ) : (
-          // Recuadro limpio de "nueva conversación" — sin chat abierto, solo
-          // el buscador arriba a la izquierda. El resto queda vacío a propósito:
-          // ahí va la función de video en ASCII (pendiente, se hace mañana).
-          <div style={{ flex:1, background:HOLO_THEME.bg, position:"relative" }}>
-            <div style={{ padding:"20px 24px", width:420 }}>
+          // Recuadro de "nueva conversación" — sin chat abierto. El buscador
+          // va arriba a la izquierda por delante (.empty-search, z-index alto);
+          // detrás, el fondo decorativo red-letter + las dos figuras al pie
+          // (components/chat/EmptyStateBg.js).
+          <div style={{ flex:1, background:HOLO_THEME.bg, position:"relative", overflow:"hidden" }}>
+            <EmptyStateBg />
+            <div className="empty-search" style={{ padding:"20px 24px", width:420 }}>
               <div style={{ position:"relative" }}>
                 <input className="buscar-input" placeholder="buscar usuario para nueva conversación..." value={search.busqueda}
                   onChange={e => search.setBusqueda(e.target.value)} />
