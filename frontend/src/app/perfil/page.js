@@ -15,6 +15,7 @@ import TerminalCounter from "@/components/perfil/TerminalCounter";
 import EditModal from "@/components/perfil/EditModal";
 import FriendsModal from "@/components/perfil/FriendsModal";
 import Lightbox from "@/components/Lightbox";
+import { escudoUrl } from "@/lib/facultades";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: app/perfil/page.js — TU perfil (propio, editable)
@@ -51,11 +52,6 @@ export default function ProfilePage() {
     fetchPerfil,
   } = useOwnProfile({ status, session });
 
-  // El "Sobre mí" ya no es una tarjeta propia — vive plegado adentro de
-  // "Información" (antes "Stats"), atrás del ícono de info. Acá, a
-  // diferencia del perfil público, el ícono siempre está aunque no haya
-  // bio todavía: es también la puerta para agregarla (abre el modal).
-  const [showBio, setShowBio] = useState(false);
   // "Recopilación" de amigos — modal que abre el contador "amigos" de acá
   // abajo (ver components/perfil/FriendsModal.js).
   const [showFriends, setShowFriends] = useState(false);
@@ -76,11 +72,9 @@ export default function ProfilePage() {
 
   const { user, profile, stats } = perfil;
 
-  // ── Parsear intereses y links (pueden venir como JSON o array) ──
+  // ── Parsear intereses (pueden venir como JSON o array) ──
   const intereses = Array.isArray(profile.intereses) ? profile.intereses
     : profile.intereses ? Object.values(profile.intereses) : [];
-  const links = Array.isArray(profile.links) ? profile.links
-    : profile.links ? Object.values(profile.links) : [];
 
   // Nombre a mostrar arriba de todo — respeta la elección de "Información"
   // (mostrarNombreCompleto, default true). Si eligió @usuario, se muestra
@@ -144,7 +138,9 @@ export default function ProfilePage() {
                 muro; ya no comparte fila con Spotify (ver header, arriba),
                 así no se achica para hacerle lugar. ── */}
             <AvatarMenu
+              className="profile-avatar-box"
               currentAvatar={user.imagen}
+              escudoUrl={escudoUrl(user.facultad)}
               canEdit={true}
               size={165}
               onAvatarChange={(url) => {
@@ -159,16 +155,18 @@ export default function ProfilePage() {
             />
 
             {/* ── Información (antes "Stats") — el "Sobre mí" vive plegado
-                atrás del ícono de info, para ver o (si está vacío) agregarlo. ── */}
+                atrás del ícono de info, para ver o (si está vacío) agregarlo. ──
+                2026-09-11: el lápiz ya no despliega nada acá — abre directo
+                el EditModal, que es donde vive TODO lo editable (nombre a
+                mostrar, bio, links, intereses, facultad...). Esta tarjeta
+                solo muestra los contadores, nada más. ── */}
             <div style={card}>
               <div className="sec-title" style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
                 Información
-                <button onClick={() => setShowBio(v => !v)} title={showBio ? "ocultar sobre mí" : "editar sobre mí"}
-                  style={{ background:"none", border:"none", padding:2, cursor:"pointer", color: showBio ? HOLO_THEME.text : HOLO_THEME.textDim, transition:"color .15s", display:"flex" }}
+                <button onClick={() => setShowEdit(true)} title="editar información"
+                  style={{ background:"none", border:"none", padding:2, cursor:"pointer", color:HOLO_THEME.textDim, transition:"color .15s", display:"flex" }}
                   onMouseEnter={e => e.currentTarget.style.color = HOLO_THEME.text}
-                  onMouseLeave={e => e.currentTarget.style.color = showBio ? HOLO_THEME.text : HOLO_THEME.textDim}>
-                  {/* Acá es TU perfil: un lápiz (editar), no la flechita que
-                      usa el perfil público (ver "espectadores" en [id]/page.js). */}
+                  onMouseLeave={e => e.currentTarget.style.color = HOLO_THEME.textDim}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 20h9" />
                     <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
@@ -177,71 +175,10 @@ export default function ProfilePage() {
               </div>
               <TerminalCounter label="visitas" value={stats?.visitas || 0} />
               <TerminalCounter label="vlogs"   value={stats?.vlogs   || 0} />
-              <TerminalCounter label="amigos"  value={stats?.amigos  || 0} />
+              <TerminalCounter label="amigos"  value={stats?.amigos  || 0} onClick={() => setShowFriends(true)} />
               <TerminalCounter label="desde"   value={null} text={
                 user.creadoEn ? new Date(user.creadoEn).toLocaleDateString("es-MX", { month:"short", year:"numeric" }) : "—"
               } />
-              {showBio && (
-                <div style={{ marginTop:10, paddingTop:10, borderTop:`1px solid ${HOLO_THEME.hairlineSoft}` }}>
-                  {/* Nombre a mostrar — varios amigos de Erick pidieron
-                      poder elegir esto (algunos no querían que se viera el
-                      nombre completo). Guarda al toque, sin pasar por el
-                      modal grande. */}
-                  <div style={{ marginBottom:14 }}>
-                    <div style={{ fontSize:11, fontWeight:500, color:HOLO_THEME.textDim, letterSpacing:".04em", marginBottom:7, fontFamily:"'Inter',sans-serif" }}>Nombre a mostrar</div>
-                    <div style={{ display:"flex", gap:8 }}>
-                      {[
-                        { label:"Nombre completo", val:true },
-                        { label:"Usuario",         val:false },
-                      ].map(({ label, val }) => {
-                        const active = (profile.mostrarNombreCompleto !== false) === val;
-                        return (
-                          <button key={label} onClick={() => handleSave({ mostrarNombreCompleto: val })}
-                            style={{
-                              background: active ? HOLO_THEME.text : "rgba(255,255,255,.05)",
-                              border: `1px solid ${active ? HOLO_THEME.text : HOLO_THEME.hairline}`,
-                              borderRadius: 999,
-                              color: active ? HOLO_THEME.bg : HOLO_THEME.textDim,
-                              fontFamily: "'Inter',sans-serif",
-                              fontSize: 11.5,
-                              fontWeight: active ? 500 : 400,
-                              padding: "6px 13px",
-                              cursor: "pointer",
-                              transition: "all .15s",
-                            }}>
-                            {label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  {profile.bio
-                    ? <div style={{ fontSize:13, color:"rgba(242,240,248,.65)", lineHeight:1.9, fontFamily:"'Inter',sans-serif" }}>{profile.bio}</div>
-                    : <div style={{ fontSize:12, color:HOLO_THEME.textDim, cursor:"pointer" }} onClick={() => setShowEdit(true)}>+ agregar bio...</div>
-                  }
-                  {/* Links — ya no es una tarjeta aparte, vive acá adentro
-                      (se edita en el mismo modal que la bio). */}
-                  {links.length > 0
-                    ? (
-                      <div style={{ marginTop:10, display:"flex", flexDirection:"column" }}>
-                        {links.map((l, i) => {
-                          const lbl = typeof l === "string" ? l : l.label;
-                          const url = typeof l === "string" ? "#" : (l.url || "#");
-                          return (
-                            <a key={i} href={url} target="_blank" rel="noopener noreferrer"
-                              style={{ display:"flex", gap:8, padding:"5px 0", fontSize:12, color:HOLO_THEME.textDim, cursor:"pointer", transition:"color .2s", textDecoration:"none", fontFamily:"'Inter',sans-serif" }}
-                              onMouseEnter={e => e.currentTarget.style.color = HOLO_THEME.text}
-                              onMouseLeave={e => e.currentTarget.style.color = HOLO_THEME.textDim}>
-                              <span style={{ color:"rgba(159,224,255,.5)" }}>→</span> {lbl}
-                            </a>
-                          );
-                        })}
-                      </div>
-                    )
-                    : <div style={{ marginTop:10, fontSize:12, color:HOLO_THEME.textDim, cursor:"pointer" }} onClick={() => setShowEdit(true)}>+ agregar links...</div>
-                  }
-                </div>
-              )}
             </div>
 
             {/* ── Pictures, debajo de Información — miniaturas un poco más

@@ -18,6 +18,7 @@ import PostCard from "@/components/feed/PostCard";
 import AvatarBadge from "@/components/feed/AvatarBadge";
 import { feedStyles } from "./feedStyles";
 import { HOLO_THEME } from "@/lib/theme";
+import { escudoUrl } from "@/lib/facultades";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: app/feed/page.js — el MURO (feed principal)
@@ -44,7 +45,7 @@ export default function FeedPage() {
   const [dlTrigger,  setDlTrigger]  = useState(0);
   const [dlFilename, setDlFilename] = useState("");
 
-  const { posts, loading, newCount, resetNewCount, removePost, toggleReaction, toggleShare, ownImagen } =
+  const { posts, loading, newCount, resetNewCount, removePost, toggleReaction, toggleShare, ownImagen, ownFacultad } =
     useFeedPosts({ activeTab, status, session });
 
   const {
@@ -72,7 +73,7 @@ export default function FeedPage() {
       {/* Recuadro de tu perfil — EXACTAMENTE el mismo AvatarMenu y tamaño (165)
           que la columna izquierda de /perfil, sticky. */}
       <div className="feed-sidebar">
-        <AvatarMenu currentAvatar={ownImagen} canEdit={false} size={165} onViewClick={() => router.push("/perfil")} />
+        <AvatarMenu currentAvatar={ownImagen} canEdit={false} size={165} onViewClick={() => router.push("/perfil")} escudoUrl={escudoUrl(ownFacultad)} />
       </div>
 
       <div className="feed-wrap">
@@ -89,10 +90,8 @@ export default function FeedPage() {
         <div style={{ padding:16, marginBottom:28, background:HOLO_THEME.panel, borderRadius:10, border:`1px solid ${HOLO_THEME.hairlineSoft}` }}>
           <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
             {/* Se agranda y se empuja a la esquina superior-izquierda del
-                recuadro (margen negativo = padding del recuadro, 16px) —
-                ahí queda listo el slot para el escudo de facultad cuando
-                exista esa configuración; por ahora siempre vacío. */}
-            <AvatarBadge imagen={ownImagen} size={56} escudoUrl={null} style={{ marginTop:-16, marginLeft:-16 }} />
+                recuadro (margen negativo = padding del recuadro, 16px). */}
+            <AvatarBadge imagen={ownImagen} size={56} escudoUrl={escudoUrl(ownFacultad)} style={{ marginTop:-16, marginLeft:-16 }} />
             <div style={{ flex:1 }}>
               <input className="post-title-input" placeholder="Título (opcional)" value={postTitle} onChange={e => setPostTitle(e.target.value)} />
               <textarea className="post-body-input" placeholder="¿Qué está pasando en tu realidad?" value={postContent} onChange={handleContentChange} rows={2} />

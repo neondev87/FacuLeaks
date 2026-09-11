@@ -11,6 +11,7 @@ import PostComments from "./PostComments";
 import TrashIcon from "./TrashIcon";
 import ShareIcon from "./ShareIcon";
 import AvatarBadge from "./AvatarBadge";
+import { escudoUrl } from "@/lib/facultades";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: components/feed/PostCard.js — la tarjeta de un post en el MURO
@@ -101,7 +102,7 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, onSha
                 tarjeta (margen negativo = padding del header, 14/18px) —
                 ahí queda listo el slot para el escudo de facultad cuando
                 exista esa configuración; por ahora siempre vacío. */}
-            <AvatarBadge imagen={post.autor?.imagen} size={48} escudoUrl={null} style={{ marginTop:-14, marginLeft:-18 }} />
+            <AvatarBadge imagen={post.autor?.imagen} size={48} escudoUrl={escudoUrl(post.autor?.facultad)} style={{ marginTop:-14, marginLeft:-18 }} />
             <div style={{ marginTop:4 }}>
               <div style={{ fontSize:13, color:HOLO_THEME.text, fontFamily:"'Cinzel',serif", fontWeight:600, transition:"color .15s" }}
                 onMouseEnter={e => e.currentTarget.style.color = "#fff"}

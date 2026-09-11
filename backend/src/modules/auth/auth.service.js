@@ -24,11 +24,11 @@ const findUserByGoogleId = async (googleId) => {
   if (!googleId || typeof googleId !== 'string') return null;
   return prisma.users.findFirst({
     where: { googleId },
-    select: { id: true, username: true, email: true, nombre: true, imagen: true, rol: true }
+    select: { id: true, username: true, email: true, nombre: true, imagen: true, facultad: true, rol: true }
   });
 };
 
-const registerUser = async ({ googleId, email, nombre, username, password }) => {
+const registerUser = async ({ googleId, email, nombre, username, password, facultad }) => {
   const existingUsername = await prisma.users.findUnique({ where: { username } });
   if (existingUsername) throw new Error('USERNAME_TAKEN');
 
@@ -38,8 +38,8 @@ const registerUser = async ({ googleId, email, nombre, username, password }) => 
   const hashedPassword = await bcrypt.hash(password, 12);
 
   const user = await prisma.users.create({
-    data: { googleId, email, nombre, username, password: hashedPassword },
-    select: { id: true, username: true, email: true, nombre: true, creadoEn: true }
+    data: { googleId, email, nombre, username, password: hashedPassword, facultad },
+    select: { id: true, username: true, email: true, nombre: true, facultad: true, creadoEn: true }
   });
 
   return user;

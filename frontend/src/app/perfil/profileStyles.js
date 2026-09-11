@@ -26,11 +26,26 @@ export const profileStyles = `
       .profile-grid { display:grid; grid-template-columns:284px 1fr; gap:18px; }
       .sec-title { font-family:'Cinzel',serif; font-size:12px; letter-spacing:.16em; margin-bottom:16px; color:rgba(242,240,248,.75); }
 
+      /* Spotify vive al lado del nombre en el header — ancho fijo en PC,
+         se achica en celular (ver @media abajo) para dejarle aire al nombre. */
+      .profile-spotify-box { width:230px; flex-shrink:0; }
+
       /* ── Celular: las tres columnas se apilan (avatar/stats, cuerpo, extras) ── */
       @media (max-width:880px) {
         .profile-grid { grid-template-columns:1fr; }
       }
       @media (max-width:760px) {
         .profile-wrap { padding:60px 16px 32px; }
+        /* El nombre + Spotify ya no entran cómodos en una sola fila angosta:
+           Spotify se acorta (230 → 132) y el nombre baja un poco de tamaño
+           para no chocar con él. */
+        .profile-header { gap:12px; }
+        .profile-name { font-size:24px; }
+        .profile-spotify-box { width:132px; }
+        /* El avatar gana un poco de tamaño (165 → 196): en celular la
+           columna es de ancho completo, hay lugar de sobra y se ve chico
+           al lado del resto. !important porque AvatarMenu ya trae su propio
+           width inline (prop size, pensado para PC). */
+        .profile-avatar-box { width:196px !important; }
       }
     `;

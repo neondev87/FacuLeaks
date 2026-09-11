@@ -36,7 +36,8 @@ export default function useFeedPosts({ activeTab, status, session }) {
   const [posts,     setPosts]     = useState([]);
   const [loading,   setLoading]   = useState(false);
   const [newCount,  setNewCount]  = useState(0);
-  const [ownImagen, setOwnImagen] = useState(null);
+  const [ownImagen,   setOwnImagen]   = useState(null);
+  const [ownFacultad, setOwnFacultad] = useState(null);
 
   const activeTabRef  = useRef(activeTab);
   const trendingTimer = useRef(null);
@@ -80,6 +81,7 @@ export default function useFeedPosts({ activeTab, status, session }) {
         if (!res.ok) return;
         const data = await res.json();
         setOwnImagen(data.imagen || null);
+        setOwnFacultad(data.facultad || null);
       } catch {}
     })();
   }, [status]);
@@ -215,5 +217,5 @@ export default function useFeedPosts({ activeTab, status, session }) {
     }
   }, []);
 
-  return { posts, loading, newCount, resetNewCount, removePost, toggleReaction, toggleShare, ownImagen };
+  return { posts, loading, newCount, resetNewCount, removePost, toggleReaction, toggleShare, ownImagen, ownFacultad };
 }

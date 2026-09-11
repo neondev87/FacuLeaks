@@ -31,8 +31,11 @@
 //     POST /login desde el servidor de Next, nunca el browser.
 // ════════════════════════════════════════════════════════════════════════
 const { registerUser, findUserByGoogleId } = require('./auth.service');
+const { users_facultad } = require('@prisma/client');
 const jwt    = require('jsonwebtoken');
 const crypto = require('crypto');
+
+const FACULTADES_VALIDAS = new Set(Object.values(users_facultad));
 
 // Comparación en tiempo constante para el secreto interno
 const timingSafeEq = (a = '', b = '') => {
@@ -61,11 +64,13 @@ const setAuthCookie = (res, user) => {
 // POST /api/auth/register
 const register = async (req, res) => {
   try {
-    const { googleId, email, nombre, username, password } = req.body;
+    const { googleId, email, nombre, username, password, facultad } = req.body;
     if (!googleId || !email || !nombre || !username || !password)
       return res.status(400).json({ error: 'Faltan campos requeridos' });
+    if (!facultad || !FACULTADES_VALIDAS.has(facultad))
+      return res.status(400).json({ error: 'Elegí tu facultad' });
 
-    const user = await registerUser({ googleId, email, nombre, username, password });
+    const user = await registerUser({ googleId, email, nombre, username, password, facultad });
     setAuthCookie(res, user);
     return res.status(201).json({ user });
   } catch (error) {

@@ -6,6 +6,7 @@ import useRegister from "@/hooks/useRegister";
 import TermLine from "@/components/register/TermLine";
 import ProgressBar from "@/components/register/ProgressBar";
 import { registerStyles } from "./registerStyles";
+import { FACULTADES, nombreFacultad } from "@/lib/facultades";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: app/register/page.js — completar el registro (por pasos)
@@ -28,9 +29,9 @@ export default function RegisterPage() {
 
   const {
     checking, step, inputRef, introText,
-    username, setUsername, password, setPassword, confirm, setConfirm,
+    username, setUsername, facultad, password, setPassword, confirm, setConfirm,
     error, setError, progress, pwReqs,
-    handleUsername, handlePassword, handleConfirm,
+    handleUsername, handleFacultad, handlePassword, handleConfirm,
   } = useRegister({ status, session });
 
   useInjectedStyles("register-styles", registerStyles);
@@ -67,7 +68,7 @@ export default function RegisterPage() {
           {introText}
         </div>
 
-        {step >= 1 && step < 4 && (
+        {step >= 1 && step < 5 && (
           <div style={{ marginBottom:20, animation:"fadeIn .3s ease" }}>
             <TermLine text="> elige tu identificador público" color={CD} />
             <TermLine text="> será tu nombre en el vlog y tu login" delay={120} color={CF} style={{ fontSize:10, marginBottom:10 }} />
@@ -94,11 +95,53 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {step >= 2 && step < 4 && (
+        {step >= 2 && step < 5 && (
+          <div style={{ marginBottom:20, animation:"fadeIn .3s ease" }}>
+            <div style={{ height:1, background:CB, margin:"16px 0" }} />
+            <TermLine text="> ¿de qué facultad sos?" color={CD} />
+            <TermLine text="> así te va a identificar el resto de la comunidad" delay={120} color={CF} style={{ fontSize:10, marginBottom:10 }} />
+            {step === 2 ? (
+              <div>
+                {["San Nicolás", "Mederos"].map(campus => (
+                  <div key={campus} style={{ marginBottom:10 }}>
+                    <div style={{ fontSize:9, letterSpacing:".18em", color:CF, marginBottom:6, textTransform:"uppercase" }}>{campus}</div>
+                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(64px, 1fr))", gap:8 }}>
+                      {FACULTADES.filter(f => f.campus === campus).map(f => (
+                        <button
+                          key={f.value}
+                          type="button"
+                          onClick={() => handleFacultad(f.value)}
+                          title={f.nombre}
+                          style={{
+                            background:"none", border:`1px solid ${CB}`, borderRadius:6, padding:"8px 4px",
+                            cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:5,
+                            transition:"border-color .15s, background .15s",
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = CD; e.currentTarget.style.background = "rgba(255,255,255,.03)"; }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = CB; e.currentTarget.style.background = "none"; }}
+                        >
+                          <img src={`/facultades/${f.archivo}`} alt="" width={30} height={30} style={{ objectFit:"contain" }} />
+                          <span style={{ fontSize:8, color:CF, textAlign:"center", lineHeight:1.3 }}>{f.nombre}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ marginTop:8, display:"flex", alignItems:"center", gap:8, fontSize:13, color:"rgba(100,220,120,.9)", letterSpacing:".06em" }}>
+                <img src={`/facultades/${FACULTADES.find(f => f.value === facultad)?.archivo}`} alt="" width={18} height={18} style={{ objectFit:"contain" }} />
+                {nombreFacultad(facultad)} <span style={{ color:"rgba(100,220,120,.5)", fontSize:10 }}>✓ confirmado</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {step >= 3 && step < 5 && (
           <div style={{ marginBottom:20, animation:"fadeIn .3s ease" }}>
             <div style={{ height:1, background:CB, margin:"16px 0" }} />
             <TermLine text="> define tu clave de acceso" color={CD} />
-            {step === 2 ? (
+            {step === 3 ? (
               <form onSubmit={handlePassword}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, borderBottom:`1px solid ${CB}`, paddingBottom:6, marginTop:8 }}>
                   <span style={{ color:CD, fontSize:12 }}>$</span>
@@ -128,7 +171,7 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <div style={{ marginBottom:20, animation:"fadeIn .3s ease" }}>
             <div style={{ height:1, background:CB, margin:"16px 0" }} />
             <TermLine text="> confirma tu clave de acceso" color={CD} />
@@ -155,7 +198,7 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {step === 4 && (
+        {step === 5 && (
           <div style={{ animation:"fadeIn .3s ease", marginTop:8 }}>
             <div style={{ height:1, background:CB, margin:"16px 0" }} />
             <TermLine text="> creando perfil..."               delay={0}    color={CD} />
@@ -166,7 +209,7 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {step === 5 && (
+        {step === 6 && (
           <div style={{ animation:"fadeIn .4s ease", marginTop:8 }}>
             <div style={{ height:1, background:CB, margin:"16px 0" }} />
             <div style={{ fontSize:12, color:"rgba(100,220,120,.95)", letterSpacing:".08em", lineHeight:2 }}>

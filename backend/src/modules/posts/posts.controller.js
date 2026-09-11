@@ -48,7 +48,7 @@ const mapPost = (p) => {
 };
 
 const feedInclude = (userId) => ({
-  users: { select: { id: true, username: true, nombre: true, imagen: true } },
+  users: { select: { id: true, username: true, nombre: true, imagen: true, facultad: true } },
   _count: { select: { comments: true } },
   post_likes: userId
     ? { where: { userId }, select: { tipo: true } }
@@ -62,7 +62,7 @@ const feedInclude = (userId) => ({
     orderBy: { creadoEn: 'asc' },
     select: {
       id: true, contenido: true, creadoEn: true,
-      users: { select: { id: true, username: true, imagen: true } },
+      users: { select: { id: true, username: true, imagen: true, facultad: true } },
     },
   },
 });
@@ -71,7 +71,7 @@ const createPost = async (autorId, { titulo, contenido = "", privacidad = 'PUBLI
   const post = await prisma.posts.create({
     data: { autorId, titulo, contenido, privacidad, imagen },
     include: {
-      users: { select: { id: true, username: true, nombre: true, imagen: true } }
+      users: { select: { id: true, username: true, nombre: true, imagen: true, facultad: true } }
     }
   });
   return { ...post, autor: post.users };
@@ -364,7 +364,7 @@ const listComments = async (req, res) => {
 
     const comments = await prisma.comments.findMany({
       where: { postId },
-      include: { users: { select: { id: true, username: true, nombre: true, imagen: true } } },
+      include: { users: { select: { id: true, username: true, nombre: true, imagen: true, facultad: true } } },
       orderBy: { creadoEn: 'asc' },
     });
     res.json({ comments: comments.map(c => ({ ...c, autor: c.users })) });
@@ -395,7 +395,7 @@ const createComment = async (req, res) => {
     await prisma.$transaction(async (tx) => {
       comment = await tx.comments.create({
         data: { postId, autorId, contenido },
-        include: { users: { select: { id: true, username: true, nombre: true, imagen: true } } },
+        include: { users: { select: { id: true, username: true, nombre: true, imagen: true, facultad: true } } },
       });
       // Recuento exacto (no increment): evita drift y contadores negativos si
       // hay comentarios previos a B3 que nunca tocaron totalComentarios.

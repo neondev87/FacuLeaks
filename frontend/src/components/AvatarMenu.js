@@ -39,7 +39,7 @@ const EyeIcon = () => (
   </svg>
 );
 
-export default function AvatarMenu({ currentAvatar, canEdit = true, onAvatarChange, onViewClick, size, className }) {
+export default function AvatarMenu({ currentAvatar, canEdit = true, onAvatarChange, onViewClick, size, className, escudoUrl = null }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [lightbox, setLightbox] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -193,6 +193,18 @@ export default function AvatarMenu({ currentAvatar, canEdit = true, onAvatarChan
             }}>
               {"  ░▒▒▒▒▒░\n ▒██████▒\n▒████████▒\n▒██▒▒▒██▒\n ▒██████▒\n  ░▒▒▒▒░"}
             </div>
+          )}
+
+          {/* Escudo de facultad — misma idea que components/feed/AvatarBadge.js,
+              adaptado al marco cuadrado: esquina superior-izquierda, en % del
+              contenedor para escalar igual con size fijo o con 100%. */}
+          {escudoUrl && (
+            <div style={{
+              position: 'absolute', top: '-4%', left: '-4%',
+              width: '22%', aspectRatio: '1',
+              backgroundImage: `url(${escudoUrl})`, backgroundSize: 'contain', backgroundPosition: 'center', backgroundRepeat: 'no-repeat',
+              filter: 'drop-shadow(0 1px 2px rgba(0,0,0,.7))', zIndex: 2,
+            }} />
           )}
 
           {/* Overlay de uploading */}

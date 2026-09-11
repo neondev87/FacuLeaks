@@ -48,6 +48,7 @@ export default function useChat({ session, status, inputRef }) {
   const [isAudio,     setIsAudio]     = useState(false);
   const [streak,      setStreak]      = useState({ count:0, dying:false, progress:1.0, loaded:false });
   const [ownImagen,   setOwnImagen]   = useState(null);
+  const [ownFacultad, setOwnFacultad] = useState(null);
 
   const socketRef     = useRef(null);
   const typingTimer   = useRef(null);
@@ -101,6 +102,7 @@ export default function useChat({ session, status, inputRef }) {
         if (!res.ok) return;
         const data = await res.json();
         setOwnImagen(data.imagen || null);
+        setOwnFacultad(data.facultad || null);
       } catch {}
     })();
   }, [status]);
@@ -162,7 +164,7 @@ export default function useChat({ session, status, inputRef }) {
 
   const openChat = async user => {
     setIsTyping(false); setIsAudio(false);
-    const chatUser = { userId: user.userId || user.id, username: user.username, imagen: user.imagen || null };
+    const chatUser = { userId: user.userId || user.id, username: user.username, imagen: user.imagen || null, facultad: user.facultad || null };
     setActiveChat(chatUser);
     setLoading(true); setMensajes([]); setReplyingTo(null);
     try {
@@ -239,6 +241,6 @@ export default function useChat({ session, status, inputRef }) {
     handleDeleteMsg,
     formatDate,
     socketRef, addMensaje,
-    ownImagen,
+    ownImagen, ownFacultad,
   };
 }

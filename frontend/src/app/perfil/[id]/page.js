@@ -12,6 +12,7 @@ import usePublicProfile from "@/hooks/usePublicProfile";
 import TerminalCounter from "@/components/perfil/TerminalCounter";
 import Lightbox from "@/components/Lightbox";
 import { publicStyles } from "./publicStyles";
+import { escudoUrl } from "@/lib/facultades";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: app/perfil/[id]/page.js — perfil de OTRO usuario (público)
@@ -145,6 +146,7 @@ export default function PerfilPublicoPage() {
                 pantalla) eso lo hacía gigante y deforme. ESTE era el bug. */}
             <AvatarMenu
               currentAvatar={user.imagen}
+              escudoUrl={escudoUrl(user.facultad)}
               canEdit={false}
               size={165}
               onViewClick={() => user.imagen && setLightboxSrc(user.imagen)}

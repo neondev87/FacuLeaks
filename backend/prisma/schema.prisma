@@ -221,6 +221,7 @@ model users {
   creadoEn                                         DateTime         @default(now()) @db.DateTime(0)
   actualizadoEn                                    DateTime         @default(now()) @db.DateTime(0)
   imagen                                           String?          @db.VarChar(300)
+  facultad                                         users_facultad?
   amistades_amistades_solicitanteIdTousers         amistades[]      @relation("amistades_solicitanteIdTousers")
   amistades_amistades_receptorIdTousers            amistades[]      @relation("amistades_receptorIdTousers")
   comments                                         comments[]
@@ -306,6 +307,30 @@ enum post_likes_tipo {
 enum users_rol {
   ADMIN
   USUARIO
+}
+
+// Las 17 facultades de UANL con escudo verificado en frontend/public/facultades/
+// (11 Ciudad Universitaria/San Nicolás + 6 Unidad Mederos). Cada valor es el
+// nombre de archivo en SCREAMING_SNAKE — ver frontend/src/lib/facultades.js,
+// que es la fuente única para mapear valor → nombre/escudo del lado del front.
+enum users_facultad {
+  FIME
+  DERECHO_Y_CRIMINOLOGIA
+  FACPYA
+  ARQUITECTURA
+  INGENIERIA_CIVIL
+  CIENCIAS_BIOLOGICAS
+  CIENCIAS_FISICO_MATEMATICAS
+  ORGANIZACION_DEPORTIVA
+  CIENCIAS_QUIMICAS
+  FILOSOFIA_Y_LETRAS
+  TRABAJO_SOCIAL
+  CIENCIAS_DE_LA_COMUNICACION
+  MUSICA
+  ARTES_ESCENICAS
+  ARTES_VISUALES
+  CIENCIAS_POLITICAS_Y_RRI
+  ECONOMIA
 }
 
 // ── Foro ──────────────────────────────────────────────────────────────────

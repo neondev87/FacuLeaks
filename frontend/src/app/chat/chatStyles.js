@@ -59,7 +59,8 @@ export const chatStyles = `
       .conv-item.active .conv-name { color:#fff; }
       .avatar { width:42px; height:42px; border-radius:6px; background:#191920; border:1.5px solid rgba(184,179,194,.34); display:flex; align-items:center; justify-content:center; font-family:'Cinzel',serif; font-size:16px; text-transform:uppercase; color:rgba(238,235,242,.82); flex-shrink:0; position:relative; box-shadow:inset 0 1px 0 rgba(255,255,255,.04); }
       .conv-item.active .avatar { border-color:rgba(184,179,194,.6); }
-      .avatar-sm { width:36px; height:36px; border-radius:6px; background:#191920; border:1.5px solid rgba(184,179,194,.24); display:flex; align-items:center; justify-content:center; font-size:11px; color:${HOLO_THEME.textDim}; flex-shrink:0; font-family:'Cinzel',serif; text-transform:uppercase; }
+      .avatar-sm { width:36px; height:36px; border-radius:6px; background:#191920; border:1.5px solid rgba(184,179,194,.24); display:flex; align-items:center; justify-content:center; font-size:11px; color:${HOLO_THEME.textDim}; flex-shrink:0; font-family:'Cinzel',serif; text-transform:uppercase; position:relative; }
+      .fac-badge { position:absolute; top:-1px; left:-1px; width:13px; height:13px; background-size:contain; background-position:center; background-repeat:no-repeat; filter:drop-shadow(0 1px 2px rgba(0,0,0,.7)); }
       .status-dot { position:absolute; bottom:1px; right:1px; width:11px; height:11px; border-radius:50%; border:2px solid #0c0c0e; }
       .status-dot-hdr { position:absolute; bottom:1px; right:1px; width:12px; height:12px; border-radius:50%; border:2px solid ${HOLO_THEME.bg}; }
       /* Cabecera del chat: avatar + nombre son un botón que lleva a

@@ -41,6 +41,9 @@ const sharp  = require('sharp');
 const crypto = require('crypto');
 const prisma = require('../../config/db');
 const { verificarMagicBytes } = require('../upload/upload.security');
+const { users_facultad } = require('@prisma/client');
+
+const FACULTADES_VALIDAS = new Set(Object.values(users_facultad));
 
 // profile_visits y user_photos están modeladas en Prisma: se usan por el client,
 // NO por SQL crudo. Helper para no repetir el mapeo photoUrl -> url.
@@ -79,7 +82,7 @@ const getPostsConAutor = (userId, privacidadFiltro, viewerId) =>
     select: {
       id: true, titulo: true, contenido: true, imagen: true, creadoEn: true, totalVistas: true,
       totalLikes: true, totalDislikes: true,
-      users: { select: { id: true, username: true, nombre: true, imagen: true } },
+      users: { select: { id: true, username: true, nombre: true, imagen: true, facultad: true } },
       post_likes: viewerId ? { where: { userId: viewerId }, select: { tipo: true } } : false,
     },
   }).then(rows => rows.map(({ users, ...p }) => conReacciones({ ...p, autor: users }, viewerId)));
@@ -99,7 +102,7 @@ const getSharedPosts = (userId, onlyPublicOriginal, viewerId) =>
         select: {
           id: true, titulo: true, contenido: true, imagen: true, creadoEn: true, totalVistas: true, privacidad: true,
           totalLikes: true, totalDislikes: true,
-          users: { select: { id: true, username: true, nombre: true, imagen: true } },
+          users: { select: { id: true, username: true, nombre: true, imagen: true, facultad: true } },
           post_likes: viewerId ? { where: { userId: viewerId }, select: { tipo: true } } : false,
         },
       },
@@ -130,7 +133,7 @@ const getPerfil = async (req, res) => {
 
     const user = await prisma.users.findUnique({
       where:  { id: userId },
-      select: { id:true, username:true, nombre:true, email:true, imagen:true, creadoEn:true }
+      select: { id:true, username:true, nombre:true, email:true, imagen:true, facultad:true, creadoEn:true }
     });
 
     const profile = await prisma.user_profiles.findUnique({ where: { userId } });
@@ -172,7 +175,7 @@ const getPerfilPublico = async (req, res) => {
 
     const user = await prisma.users.findUnique({
       where:  { id: profileUserId },
-      select: { id:true, username:true, nombre:true, imagen:true, creadoEn:true }
+      select: { id:true, username:true, nombre:true, imagen:true, facultad:true, creadoEn:true }
     });
 
     if (!user) return res.status(404).json({ error:'Usuario no encontrado' });
@@ -213,11 +216,13 @@ const getPerfilPublico = async (req, res) => {
 
 // PUT /api/perfil — actualizar datos
 const updatePerfil = async (req, res) => {
-  const { bio, statusText, intereses, links, nombre, mostrarNombreCompleto } = req.body;
+  const { bio, statusText, intereses, links, nombre, mostrarNombreCompleto, facultad } = req.body;
   // Solo tocar el campo si vino en el body (boolean explícito) — si no,
   // dejar Prisma usar lo que ya había (undefined = "no actualizar esta
   // columna" en un upsert/update, no la pisa con null).
   const nombreField = typeof mostrarNombreCompleto === 'boolean' ? { mostrarNombreCompleto } : {};
+  if (facultad !== undefined && !FACULTADES_VALIDAS.has(facultad))
+    return res.status(400).json({ error: 'Facultad inválida' });
   try {
     const profile = await prisma.user_profiles.upsert({
       where:  { userId:req.userId },
@@ -225,6 +230,7 @@ const updatePerfil = async (req, res) => {
       create: { userId:req.userId, bio, statusText, intereses, links, ...nombreField }
     });
     if (nombre) await prisma.users.update({ where:{ id:req.userId }, data:{ nombre } });
+    if (facultad) await prisma.users.update({ where:{ id:req.userId }, data:{ facultad } });
     res.json({ ok:true, profile });
   } catch (err) {
     console.error('updatePerfil error:', err.message);
@@ -237,8 +243,8 @@ const updatePerfil = async (req, res) => {
 // el perfil (composer del muro, chat).
 const getAvatar = async (req, res) => {
   try {
-    const user = await prisma.users.findUnique({ where:{ id:req.userId }, select:{ imagen:true } });
-    res.json({ imagen: user?.imagen || null });
+    const user = await prisma.users.findUnique({ where:{ id:req.userId }, select:{ imagen:true, facultad:true } });
+    res.json({ imagen: user?.imagen || null, facultad: user?.facultad || null });
   } catch (err) {
     console.error('getAvatar error:', err.message);
     res.status(500).json({ error:'Error al obtener avatar' });

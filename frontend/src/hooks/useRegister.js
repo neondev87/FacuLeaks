@@ -6,8 +6,9 @@
 // QUÉ HACE:
 //   - Si ya tenés cuenta (dbId en sesión, o el backend confirma que existe),
 //     te manda directo a /feed en vez de mostrar el formulario.
-//   - Maneja los 6 pasos (0=intro, 1=username, 2=password, 3=confirmar,
-//     4=creando cuenta con progreso falso, 5=éxito) con sus validaciones.
+//   - Maneja los 7 pasos (0=intro, 1=username, 2=facultad, 3=password,
+//     4=confirmar, 5=creando cuenta con progreso falso, 6=éxito) con sus
+//     validaciones.
 //   - El texto de bienvenida con efecto de máquina de escribir
 //     (hooks/useTypewriter.js).
 //   - El foco automático del input al cambiar de paso.
@@ -47,6 +48,7 @@ export default function useRegister({ status, session }) {
   const [checking, setChecking] = useState(true);
   const [step,     setStep]     = useState(0);
   const [username, setUsername] = useState("");
+  const [facultad, setFacultad] = useState("");
   const [password, setPassword] = useState("");
   const [confirm,  setConfirm]  = useState("");
   const [error,    setError]    = useState("");
@@ -95,7 +97,9 @@ export default function useRegister({ status, session }) {
   }, [step, session, checking]);
 
   useEffect(() => {
-    if (step >= 1 && step <= 3) {
+    // Paso 2 (facultad) es un grid de escudos, no un input de texto — no
+    // hay nada que enfocar ahí.
+    if (step === 1 || step === 3 || step === 4) {
       setTimeout(() => inputRef.current?.focus(), 80);
     }
   }, [step]);
@@ -107,18 +111,23 @@ export default function useRegister({ status, session }) {
     setError(""); setStep(2);
   };
 
+  const handleFacultad = (value) => {
+    setFacultad(value);
+    setError(""); setStep(3);
+  };
+
   const handlePassword = (e) => {
     e.preventDefault();
     const err = validatePassword(password);
     if (err) { setError(err); return; }
-    setError(""); setStep(3);
+    setError(""); setStep(4);
   };
 
   const handleConfirm = async (e) => {
     e.preventDefault();
     if (confirm !== password) { setError("las contraseñas no coinciden"); return; }
     setError("");
-    setStep(4);
+    setStep(5);
 
     [{ p:20,d:300 },{ p:45,d:700 },{ p:70,d:1200 },{ p:90,d:1800 },{ p:100,d:2400 }]
       .forEach(({ p, d }) => setTimeout(() => setProgress(p), d));
@@ -135,23 +144,24 @@ export default function useRegister({ status, session }) {
             nombre:   session?.user?.name,
             username,
             password,
+            facultad,
           }),
         });
 
         const data = await res.json();
 
         if (!res.ok) {
-          setStep(3);
+          setStep(4);
           setProgress(0);
           setError(data.error || 'Error al registrar');
           return;
         }
 
-        setStep(5);
+        setStep(6);
         setTimeout(() => { window.location.href = '/feed'; }, 2000);
 
       } catch {
-        setStep(3);
+        setStep(4);
         setProgress(0);
         setError('No se pudo conectar con el servidor');
       }
@@ -167,8 +177,8 @@ export default function useRegister({ status, session }) {
 
   return {
     checking, step, inputRef, introText,
-    username, setUsername, password, setPassword, confirm, setConfirm,
+    username, setUsername, facultad, password, setPassword, confirm, setConfirm,
     error, setError, progress, pwReqs,
-    handleUsername, handlePassword, handleConfirm,
+    handleUsername, handleFacultad, handlePassword, handleConfirm,
   };
 }

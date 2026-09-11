@@ -27,6 +27,15 @@ import { API } from '@/lib/api';
 import { HOLO_THEME } from '@/lib/theme';
 import { REACTIONS } from '@/components/feed/reactions';
 import TrashGlyph from '@/components/TrashGlyph';
+import { escudoUrl } from '@/lib/facultades';
+
+// Mini escudo superpuesto — mismo patrón que components/feed/AvatarBadge.js,
+// para los 3 avatares que este archivo dibuja a mano (no usa AvatarBadge
+// porque el diseño de esta tarjeta es independiente del muro, ver comentario
+// de arriba).
+const Escudo = ({ url, size }) => url ? (
+  <div style={{ position:'absolute', top:-1, left:-1, width:size*0.78, height:size*0.78, backgroundImage:`url(${url})`, backgroundSize:'contain', backgroundPosition:'center', backgroundRepeat:'no-repeat', filter:'drop-shadow(0 1px 2px rgba(0,0,0,.7))' }} />
+) : null;
 
 // Botón de borrar (post del perfil) — misma animación de tres fases y el
 // mismo ícono de papelera (components/TrashGlyph.js) que el resto de la app.
@@ -113,13 +122,16 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
             const mine = uid != null && Number(autor.id) === Number(uid);
             return (
               <div key={comment.id} style={{ display: "flex", gap: 8, fontSize: 13 }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: "50%",
-                  backgroundColor: "rgba(255,255,255,.1)",
-                  backgroundImage: avatar ? `url(${avatar.startsWith('http') ? avatar : `${API}${avatar}`})` : "none",
-                  backgroundSize: "100% 100%", backgroundPosition: "center",
-                  flexShrink: 0, border: "1px solid rgba(255,255,255,.08)"
-                }} />
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: "50%",
+                    backgroundColor: "rgba(255,255,255,.1)",
+                    backgroundImage: avatar ? `url(${avatar.startsWith('http') ? avatar : `${API}${avatar}`})` : "none",
+                    backgroundSize: "100% 100%", backgroundPosition: "center",
+                    border: "1px solid rgba(255,255,255,.08)"
+                  }} />
+                  <Escudo url={escudoUrl(autor.facultad)} size={13} />
+                </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "8px 12px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -151,13 +163,16 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
       )}
 
       <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: "50%",
-          backgroundColor: "rgba(255,255,255,.1)",
-          backgroundImage: currentUser.imagen ? `url(${currentUser.imagen.startsWith('http') ? currentUser.imagen : `${API}${currentUser.imagen}`})` : "none",
-          backgroundSize: "100% 100%", backgroundPosition: "center",
-          flexShrink: 0, border: "1px solid rgba(255,255,255,.08)"
-        }} />
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: "50%",
+            backgroundColor: "rgba(255,255,255,.1)",
+            backgroundImage: currentUser.imagen ? `url(${currentUser.imagen.startsWith('http') ? currentUser.imagen : `${API}${currentUser.imagen}`})` : "none",
+            backgroundSize: "100% 100%", backgroundPosition: "center",
+            border: "1px solid rgba(255,255,255,.08)"
+          }} />
+          <Escudo url={escudoUrl(currentUser.facultad)} size={13} />
+        </div>
         <div style={{ flex: 1, display: "flex", gap: 8, alignItems: "flex-end" }}>
           <textarea
             ref={commentRef}
@@ -215,18 +230,21 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           {/* Avatar */}
-          <div style={{
-            width: 40,
-            height: 40,
-            borderRadius: "50%",
-            backgroundColor: "#1c1c24",
-            backgroundImage: post.autor?.imagen
-              ? `url(${post.autor.imagen.startsWith('http') ? post.autor.imagen : `${API}${post.autor.imagen}`})`
-              : "none",
-            backgroundSize: "100% 100%",
-            backgroundPosition: "center",
-            border: `1px solid ${HOLO_THEME.hairline}`
-          }} />
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <div style={{
+              width: 40,
+              height: 40,
+              borderRadius: "50%",
+              backgroundColor: "#1c1c24",
+              backgroundImage: post.autor?.imagen
+                ? `url(${post.autor.imagen.startsWith('http') ? post.autor.imagen : `${API}${post.autor.imagen}`})`
+                : "none",
+              backgroundSize: "100% 100%",
+              backgroundPosition: "center",
+              border: `1px solid ${HOLO_THEME.hairline}`
+            }} />
+            <Escudo url={escudoUrl(post.autor?.facultad)} size={16} />
+          </div>
 
           <div>
             <div style={{ fontSize: 14, fontWeight: 500, color: HOLO_THEME.text, fontFamily: "'Cinzel',serif" }}>

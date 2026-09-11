@@ -98,7 +98,7 @@ function registerChatSocketHandlers(io, socket) {
           ...(replyToId ? { replyToId: parseInt(replyToId) } : {}),
         },
         include: {
-          users_messages_emisorIdTousers: { select: { id: true, username: true, imagen: true } },
+          users_messages_emisorIdTousers: { select: { id: true, username: true, imagen: true, facultad: true } },
         },
       });
 

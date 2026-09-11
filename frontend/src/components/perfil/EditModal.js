@@ -10,6 +10,7 @@ import TagInput from "./edit/TagInput";
 import LinkRow from "./edit/LinkRow";
 import PDivider from "./edit/PDivider";
 import PTab from "./edit/PTab";
+import { FACULTADES } from "@/lib/facultades";
 
 // Opciones de "Situación sentimental" — reemplaza al viejo campo de texto
 // libre "Estado" (2026-09-10, a pedido explícito).
@@ -36,6 +37,13 @@ export default function EditModal({ profile, user, onClose, onSave }) {
 
   // Estado del formulario
   const [username,   setUsername]   = useState(user.username || "");
+  // "Nombre a mostrar" — antes vivía como pills sueltas en la tarjeta
+  // "Información" de app/perfil/page.js, ahora se edita solo acá adentro
+  // junto con el resto (2026-09-11, a pedido de Erick).
+  const [nombreDisplay, setNombreDisplay] = useState(
+    profile.mostrarNombreCompleto === false ? "Usuario" : "Nombre completo"
+  );
+  const [facultad,   setFacultad]   = useState(user.facultad || "");
   const [situacion,  setSituacion]  = useState(profile.statusText || "");
   const [bio,        setBio]        = useState(profile.bio || "");
   const [tags,       setTags]       = useState(
@@ -68,7 +76,10 @@ export default function EditModal({ profile, user, onClose, onSave }) {
   const handleSave = async () => {
     setSaving(true);
     const linksArr = links.filter(l=>l.url).map(l=>({ label:l.plat, url:l.url }));
-    await onSave({ bio, statusText:situacion, intereses:tags, links:linksArr });
+    await onSave({
+      bio, statusText:situacion, intereses:tags, links:linksArr, facultad: facultad || undefined,
+      mostrarNombreCompleto: nombreDisplay === "Nombre completo",
+    });
     setSaved(true);
     setTimeout(() => { setSaved(false); setSaving(false); onClose(); }, 1200);
   };
@@ -107,6 +118,29 @@ export default function EditModal({ profile, user, onClose, onSave }) {
               <PDivider/>
               <PField label="Usuario" hint="@">
                 <PInput value={username} onChange={e=>setUsername(e.target.value)} placeholder="usuario"/>
+              </PField>
+              <PField label="Nombre a mostrar">
+                <PPills options={["Nombre completo","Usuario"]} value={nombreDisplay} onChange={setNombreDisplay}/>
+              </PField>
+              <PField label="Facultad" hint={facultad ? "" : "obligatorio"}>
+                <div style={{ display:"flex", flexWrap:"wrap", gap:6, maxHeight:180, overflowY:"auto", padding:2 }}>
+                  {FACULTADES.map(f => {
+                    const active = facultad === f.value;
+                    return (
+                      <button key={f.value} type="button" onClick={()=>setFacultad(f.value)} title={f.nombre}
+                        style={{
+                          display:"flex", alignItems:"center", gap:6, background: active ? "rgba(255,255,255,.12)" : "rgba(255,255,255,.03)",
+                          border:`1px solid ${active ? "rgba(255,255,255,.35)" : "rgba(255,255,255,.08)"}`, borderRadius:20,
+                          padding:"5px 10px 5px 5px", cursor:"pointer", transition:"all .15s",
+                        }}
+                        onMouseEnter={e=>{ if(!active) e.currentTarget.style.borderColor="rgba(255,255,255,.2)"; }}
+                        onMouseLeave={e=>{ if(!active) e.currentTarget.style.borderColor="rgba(255,255,255,.08)"; }}>
+                        <img src={`/facultades/${f.archivo}`} alt="" width={18} height={18} style={{ objectFit:"contain", borderRadius:"50%" }} />
+                        <span style={{ fontFamily:INTER, fontSize:11, color: active ? "rgba(255,255,255,.9)" : "rgba(255,255,255,.5)" }}>{f.nombre}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </PField>
               <PField label="Situación sentimental">
                 <PPills options={SITUACIONES} value={situacion} onChange={setSituacion}/>

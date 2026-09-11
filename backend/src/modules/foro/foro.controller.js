@@ -30,7 +30,7 @@ const esAdmin = async (userId) => {
   return u.rol === 'ADMIN' || (adminEmail && u.email.toLowerCase() === adminEmail);
 };
 
-const autorSelect = { id: true, username: true, nombre: true, imagen: true };
+const autorSelect = { id: true, username: true, nombre: true, imagen: true, facultad: true };
 
 // "Diseño Web 2" -> "diseno-web-2". Sin acentos, sin símbolos, sin espacios.
 const slugify = (s) =>

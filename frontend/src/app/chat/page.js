@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { avatarSrc } from "@/lib/api";
+import { escudoUrl } from "@/lib/facultades";
 import Navbar from "@/components/Navbar";
 import useInjectedStyles from "@/hooks/useInjectedStyles";
 import useChat from "@/hooks/useChat";
@@ -174,6 +175,7 @@ export default function ChatPage() {
             <div key={s.userId} className="conv-item" onClick={() => handleOpenChat(s)}>
               <div className="avatar" style={avatarSrc(s.imagen) ? { backgroundImage:`url(${avatarSrc(s.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : undefined}>
                 {!avatarSrc(s.imagen) && initial(s.username)}
+                {escudoUrl(s.facultad) && <div className="fac-badge" style={{ backgroundImage:`url(${escudoUrl(s.facultad)})` }} />}
               </div>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
@@ -196,6 +198,7 @@ export default function ChatPage() {
         <div key={c.userId} className={`conv-item${chat.isActive(c.userId) ? " active" : ""}`} onClick={() => handleOpenChat(c)}>
           <div className="avatar" style={avatarSrc(c.imagen) ? { backgroundImage:`url(${avatarSrc(c.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : undefined}>
             {!avatarSrc(c.imagen) && initial(c.username)}<div className="status-dot" style={{ background: chat.isOnline(c.userId) ? "#3ddc84" : "#2a2a2a" }} />
+            {escudoUrl(c.facultad) && <div className="fac-badge" style={{ backgroundImage:`url(${escudoUrl(c.facultad)})` }} />}
           </div>
           <div style={{ flex:1, minWidth:0 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
@@ -218,6 +221,7 @@ export default function ChatPage() {
         <div key={a.userId} className={`conv-item${chat.isActive(a.userId) ? " active" : ""}`} onClick={() => handleOpenChat(a)}>
           <div className="avatar" style={avatarSrc(a.imagen) ? { backgroundImage:`url(${avatarSrc(a.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : undefined}>
             {!avatarSrc(a.imagen) && initial(a.username)}<div className="status-dot" style={{ background: chat.isOnline(a.userId) ? "#3ddc84" : "#2a2a2a" }} />
+            {escudoUrl(a.facultad) && <div className="fac-badge" style={{ backgroundImage:`url(${escudoUrl(a.facultad)})` }} />}
           </div>
           <div style={{ flex:1, minWidth:0 }}>
             <span className="conv-name" style={{ color: chat.isActive(a.userId) ? HOLO_THEME.text : "rgba(255,255,255,.65)" }}>{a.username}</span>
@@ -249,6 +253,7 @@ export default function ChatPage() {
               <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                 <div className="avatar-sm" style={avatarSrc(u.imagen) ? { backgroundImage:`url(${avatarSrc(u.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : undefined}>
                   {!avatarSrc(u.imagen) && "◈"}
+                  {escudoUrl(u.facultad) && <div className="fac-badge" style={{ backgroundImage:`url(${escudoUrl(u.facultad)})` }} />}
                 </div>
                 <div>
                   <div style={{ fontSize:14, color:HOLO_THEME.text, fontFamily:"'Inter',sans-serif" }}>@{u.username}</div>
@@ -304,6 +309,7 @@ export default function ChatPage() {
               <button className="chat-hdr-id" onClick={goToProfile} title={`Ver perfil de @${activeChat.username}`}>
                 <div className="avatar" style={{ width:46, height:46, ...(avatarSrc(activeChat.imagen) ? { backgroundImage:`url(${avatarSrc(activeChat.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : {}) }}>
                   {!avatarSrc(activeChat.imagen) && initial(activeChat.username)}<div className="status-dot-hdr" style={{ background: chat.isOnline(activeChat.userId) ? "#3ddc84" : "#2a2a2a" }} />
+                  {escudoUrl(activeChat.facultad) && <div className="fac-badge" style={{ backgroundImage:`url(${escudoUrl(activeChat.facultad)})` }} />}
                 </div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div className="chat-hdr-name" style={{ fontFamily:"'Cinzel',serif", fontSize:20, color:HOLO_THEME.text, lineHeight:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{activeChat.username}</div>
@@ -338,6 +344,7 @@ export default function ChatPage() {
                           {!prevSame ? (
                             <div className="avatar-sm" style={avatarSrc(esPropio ? chat.ownImagen : activeChat.imagen) ? { backgroundImage:`url(${avatarSrc(esPropio ? chat.ownImagen : activeChat.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : undefined}>
                               {!avatarSrc(esPropio ? chat.ownImagen : activeChat.imagen) && (esPropio ? "◎" : "◈")}
+                              {escudoUrl(esPropio ? chat.ownFacultad : activeChat.facultad) && <div className="fac-badge" style={{ backgroundImage:`url(${escudoUrl(esPropio ? chat.ownFacultad : activeChat.facultad)})` }} />}
                             </div>
                           ) : <div style={{ width:36 }} />}
                         </div>

@@ -35,8 +35,8 @@ const getAmigos = async (req, res) => {
         OR: [{ solicitanteId: userId }, { receptorId: userId }]
       },
       include: {
-        users_amistades_solicitanteIdTousers: { select: { id: true, username: true, nombre: true, imagen: true } },
-        users_amistades_receptorIdTousers:    { select: { id: true, username: true, nombre: true, imagen: true } },
+        users_amistades_solicitanteIdTousers: { select: { id: true, username: true, nombre: true, imagen: true, facultad: true } },
+        users_amistades_receptorIdTousers:    { select: { id: true, username: true, nombre: true, imagen: true, facultad: true } },
       }
     });
 
@@ -82,7 +82,7 @@ const buscarUsuarios = async (req, res) => {
         id: { not: userId },
         activo: true,
       },
-      select: { id: true, username: true, nombre: true, imagen: true },
+      select: { id: true, username: true, nombre: true, imagen: true, facultad: true },
       take: 10,
     });
 

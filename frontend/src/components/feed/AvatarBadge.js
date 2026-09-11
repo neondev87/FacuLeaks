@@ -5,11 +5,11 @@ import { avatarSrc } from "@/lib/api";
 
 // MÓDULO: components/feed/AvatarBadge.js
 // Avatar circular reutilizable para el composer y las publicaciones del
-// Muro. Trae preparado el slot del escudo de facultad en la esquina
-// superior izquierda (prop `escudoUrl`) — hoy no hay universidad/facultad
-// configurable todavía, así que ese slot siempre viene vacío y solo se ve
-// el avatar (agrandado). El `style` se mergea encima para que cada caller
-// lo empuje a su propia esquina (ver feed/page.js y PostCard.js).
+// Muro. Trae el slot del escudo de facultad en la esquina superior
+// izquierda (prop `escudoUrl`, ver lib/facultades.js → escudoUrl()) — si el
+// usuario no eligió facultad, `escudoUrl` viene null y no se dibuja nada.
+// El `style` se mergea encima para que cada caller lo empuje a su propia
+// esquina (ver feed/page.js y PostCard.js).
 export default function AvatarBadge({ imagen, size = 48, escudoUrl = null, onClick, glyph = "◈", style }) {
   const bg = avatarSrc(imagen);
 
@@ -30,10 +30,10 @@ export default function AvatarBadge({ imagen, size = 48, escudoUrl = null, onCli
       {!bg && glyph}
       {escudoUrl && (
         <div style={{
-          position: "absolute", top: -size * 0.1, left: -size * 0.1,
-          width: size * 0.42, height: size * 0.42, borderRadius: "50%",
-          backgroundImage: `url(${escudoUrl})`, backgroundSize: "cover", backgroundPosition: "center",
-          border: `2px solid ${HOLO_THEME.panel}`,
+          position: "absolute", top: -size * 0.06, left: -size * 0.06,
+          width: size * 0.32, height: size * 0.32,
+          backgroundImage: `url(${escudoUrl})`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat",
+          filter: "drop-shadow(0 1px 2px rgba(0,0,0,.7))",
         }} />
       )}
     </div>
