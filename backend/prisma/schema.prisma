@@ -184,6 +184,10 @@ model user_profiles {
   statusText            String?  @db.VarChar(80)
   bio                   String?  @db.VarChar(300)
   linkPersonal          String?  @db.VarChar(200)
+  // Qué nombre mostrar en el perfil (propio y público): true = nombre
+  // completo, false = solo @usuario. Pedido de varios usuarios que no
+  // querían que se viera su nombre completo. 2026-09-11.
+  mostrarNombreCompleto Boolean  @default(true)
   perfilPublico         Boolean  @default(true)
   mostrarSpotify        Boolean  @default(true)
   mostrarUltimaConexion Boolean  @default(true)

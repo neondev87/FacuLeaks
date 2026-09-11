@@ -21,7 +21,18 @@ export const profileStyles = `
       body { background:${HOLO_THEME.bg}; color:${HOLO_THEME.text}; font-family:'Inter',sans-serif; font-size:13px; overflow-x:hidden; }
       ${SCROLLBAR_THIN}
       .profile-wrap { padding:68px 28px 48px; max-width:1040px; margin:0 auto; animation:fadeIn .5s ease; }
+      /* Sin columna derecha: Links se mudó adentro de "Información" (ver
+         app/perfil/page.js) — ya no queda nada ahí para esa tercera columna. */
+      .profile-grid { display:grid; grid-template-columns:284px 1fr; gap:18px; }
       .sec-title { font-family:'Cinzel',serif; font-size:12px; letter-spacing:.16em; margin-bottom:16px; color:rgba(242,240,248,.75); }
       .post-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid ${HOLO_THEME.hairlineSoft}; font-size:12px; font-family:'Inter',sans-serif; }
       .post-row:last-child { border-bottom:none; }
+
+      /* ── Celular: las tres columnas se apilan (avatar/stats, cuerpo, extras) ── */
+      @media (max-width:880px) {
+        .profile-grid { grid-template-columns:1fr; }
+      }
+      @media (max-width:760px) {
+        .profile-wrap { padding:60px 16px 32px; }
+      }
     `;

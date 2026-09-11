@@ -8,13 +8,14 @@ import Uploader from "@/components/Uploader";
 import DownloadBar from "@/components/DownloadBar";
 import BgCross from "@/components/BgCross";
 import AvatarMenu from "@/components/AvatarMenu";
-import { API, avatarSrc } from "@/lib/api";
+import { API } from "@/lib/api";
 import useInjectedStyles from "@/hooks/useInjectedStyles";
 import useFeedPosts from "@/hooks/useFeedPosts";
 import usePostComposer from "@/hooks/usePostComposer";
 import LinkPreview from "@/components/feed/LinkPreview";
 import EmptyState from "@/components/feed/EmptyState";
 import PostCard from "@/components/feed/PostCard";
+import AvatarBadge from "@/components/feed/AvatarBadge";
 import { feedStyles } from "./feedStyles";
 import { HOLO_THEME } from "@/lib/theme";
 
@@ -68,16 +69,16 @@ export default function FeedPage() {
       <BgCross />
       <div className="feed-page">
 
-      {/* Recuadro de tu perfil — EXACTAMENTE el mismo AvatarMenu y tamaño (150)
+      {/* Recuadro de tu perfil — EXACTAMENTE el mismo AvatarMenu y tamaño (165)
           que la columna izquierda de /perfil, sticky. */}
       <div className="feed-sidebar">
-        <AvatarMenu currentAvatar={ownImagen} canEdit={false} size={150} onViewClick={() => router.push("/perfil")} />
+        <AvatarMenu currentAvatar={ownImagen} canEdit={false} size={165} onViewClick={() => router.push("/perfil")} />
       </div>
 
       <div className="feed-wrap">
 
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
-          <div style={{ fontFamily:"'Cinzel',serif", fontSize:16, color:HOLO_THEME.text, letterSpacing:".2em" }}>† MURO · {activeTab}</div>
+          <div style={{ fontFamily:"'Cinzel',serif", fontSize:16, color:HOLO_THEME.text, letterSpacing:".2em" }}>MURO · {activeTab}</div>
           <div style={{ display:"flex", gap:20, fontSize:12, fontFamily:"'Inter',sans-serif" }}>
             {["RECIENTES", "TRENDING", "SIGUIENDO"].map(t => (
               <span key={t} onClick={() => setActiveTab(t)} className={`feed-tab${activeTab === t ? " active" : ""}`}>{t}</span>
@@ -87,7 +88,11 @@ export default function FeedPage() {
 
         <div style={{ padding:16, marginBottom:28, background:HOLO_THEME.panel, borderRadius:10, border:`1px solid ${HOLO_THEME.hairlineSoft}` }}>
           <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
-            <div className="composer-avatar" style={{ width:34, height:34, backgroundImage: avatarSrc(ownImagen) ? `url(${avatarSrc(ownImagen)})` : "none", backgroundSize:"100% 100%", backgroundPosition:"center", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, color:HOLO_THEME.textDim }}>{!avatarSrc(ownImagen) && "◈"}</div>
+            {/* Se agranda y se empuja a la esquina superior-izquierda del
+                recuadro (margen negativo = padding del recuadro, 16px) —
+                ahí queda listo el slot para el escudo de facultad cuando
+                exista esa configuración; por ahora siempre vacío. */}
+            <AvatarBadge imagen={ownImagen} size={56} escudoUrl={null} style={{ marginTop:-16, marginLeft:-16 }} />
             <div style={{ flex:1 }}>
               <input className="post-title-input" placeholder="Título (opcional)" value={postTitle} onChange={e => setPostTitle(e.target.value)} />
               <textarea className="post-body-input" placeholder="¿Qué está pasando en tu realidad?" value={postContent} onChange={handleContentChange} rows={2} />
@@ -106,7 +111,7 @@ export default function FeedPage() {
                   />
                 ) : <div />}
                 <button className="publish-btn" onClick={handlePublish} disabled={publishing || (!postContent.trim() && !postImagen)}>
-                  {publishing ? <span className="spinner" /> : "PUBLICAR †"}
+                  {publishing ? <span className="spinner" /> : "PUBLICAR"}
                 </button>
               </div>
             </div>

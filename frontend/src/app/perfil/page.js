@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
@@ -47,7 +47,14 @@ export default function ProfilePage() {
   const {
     perfil, setPerfil, loading, showEdit, setShowEdit, saveMsg,
     posts, lightboxSrc, setLightboxSrc, photos, handleSave, handleDeletePost, handleUnshare, toggleReaction,
+    fetchPerfil,
   } = useOwnProfile({ status, session });
+
+  // El "Sobre mí" ya no es una tarjeta propia — vive plegado adentro de
+  // "Información" (antes "Stats"), atrás del ícono de info. Acá, a
+  // diferencia del perfil público, el ícono siempre está aunque no haya
+  // bio todavía: es también la puerta para agregarla (abre el modal).
+  const [showBio, setShowBio] = useState(false);
 
   // ── Estilos ──
   const card = { border: `1px solid ${HOLO_THEME.hairlineSoft}`, borderRadius: 12, padding: 24, background: HOLO_THEME.panel };
@@ -71,6 +78,13 @@ export default function ProfilePage() {
   const links = Array.isArray(profile.links) ? profile.links
     : profile.links ? Object.values(profile.links) : [];
 
+  // Nombre a mostrar arriba de todo — respeta la elección de "Información"
+  // (mostrarNombreCompleto, default true). Si eligió @usuario, se muestra
+  // ESO tal cual lo va a ver cualquiera que entre a tu perfil público.
+  const displayName = profile.mostrarNombreCompleto === false
+    ? user.username
+    : (user.nombre || user.username);
+
   return (
     <>
       <Navbar />
@@ -90,31 +104,42 @@ export default function ProfilePage() {
 
       <div className="profile-wrap">
 
-        {/* ── Header ── */}
-        <div style={{ borderBottom:`1px solid ${HOLO_THEME.hairlineSoft}`, paddingBottom:20, marginBottom:26 }}>
-          <div style={{ fontFamily:"'Cinzel',serif", fontSize:30, fontWeight:600, color:HOLO_THEME.text, letterSpacing:".06em", lineHeight:1.1 }}>
-            {user.nombre || user.username}
-          </div>
-          {profile.statusText && (
-            <div style={{ fontFamily:"'Inter',sans-serif", fontSize:12, color:HOLO_THEME.textDim, marginTop:6, fontStyle:"italic" }}>
-              {profile.statusText}
+        {/* ── Header — el nombre respeta "Información › nombre a mostrar"
+            (nombre completo o @usuario, ver más abajo). Spotify vive acá al
+            lado del nombre, NO al lado de la foto — así el avatar no se
+            tiene que achicar para hacerle lugar. ── */}
+        <div style={{ borderBottom:`1px solid ${HOLO_THEME.hairlineSoft}`, paddingBottom:20, marginBottom:26, display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:24 }}>
+          <div>
+            <div style={{ fontFamily:"'Cinzel',serif", fontSize:30, fontWeight:600, color:HOLO_THEME.text, letterSpacing:".06em", lineHeight:1.1 }}>
+              {displayName}
             </div>
-          )}
+            {profile.statusText && (
+              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:12, color:HOLO_THEME.textDim, marginTop:6, fontStyle:"italic" }}>
+                {profile.statusText}
+              </div>
+            )}
+          </div>
+          <div style={{ width:230, flexShrink:0 }}>
+            <SpotifyWidget userId={user.id}
+              onConnect={() => window.location.href = `${API}/api/spotify/auth`}
+              onDisconnect={fetchPerfil} />
+          </div>
         </div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"200px 1fr 240px", gap:18 }}>
+        <div className="profile-grid">
 
           {/* ════════════════════════════════════════════════ */}
           {/* ── COLUMNA IZQUIERDA ── */}
           {/* ════════════════════════════════════════════════ */}
           <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
 
-            {/* ── Avatar con menú contextual — mismo tamaño (150) que el
-                recuadro de perfil del muro. ── */}
+            {/* ── Avatar — mismo tamaño (165) que el recuadro de perfil del
+                muro; ya no comparte fila con Spotify (ver header, arriba),
+                así no se achica para hacerle lugar. ── */}
             <AvatarMenu
               currentAvatar={user.imagen}
               canEdit={true}
-              size={150}
+              size={165}
               onAvatarChange={(url) => {
                 setPerfil(p => ({
                   ...p,
@@ -126,20 +151,102 @@ export default function ProfilePage() {
               }}
             />
 
-            {/* ── Spotify Widget ── */}
-            <SpotifyWidget userId={user.id}
-              onConnect={() => window.location.href = `${API}/api/spotify/auth`}
-              onDisconnect={() => fetchPerfil()} />
-
-            {/* ── Stats ── */}
+            {/* ── Información (antes "Stats") — el "Sobre mí" vive plegado
+                atrás del ícono de info, para ver o (si está vacío) agregarlo. ── */}
             <div style={card}>
-              <div className="sec-title">† Stats</div>
+              <div className="sec-title" style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                Información
+                <button onClick={() => setShowBio(v => !v)} title={showBio ? "ocultar sobre mí" : "editar sobre mí"}
+                  style={{ background:"none", border:"none", padding:2, cursor:"pointer", color: showBio ? HOLO_THEME.text : HOLO_THEME.textDim, transition:"color .15s", display:"flex" }}
+                  onMouseEnter={e => e.currentTarget.style.color = HOLO_THEME.text}
+                  onMouseLeave={e => e.currentTarget.style.color = showBio ? HOLO_THEME.text : HOLO_THEME.textDim}>
+                  {/* Acá es TU perfil: un lápiz (editar), no la flechita que
+                      usa el perfil público (ver "espectadores" en [id]/page.js). */}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                  </svg>
+                </button>
+              </div>
               <TerminalCounter label="visitas" value={stats?.visitas || 0} />
               <TerminalCounter label="vlogs"   value={stats?.vlogs   || 0} />
               <TerminalCounter label="amigos"  value={stats?.amigos  || 0} />
               <TerminalCounter label="desde"   value={null} text={
                 user.creadoEn ? new Date(user.creadoEn).toLocaleDateString("es-MX", { month:"short", year:"numeric" }) : "—"
               } />
+              {showBio && (
+                <div style={{ marginTop:10, paddingTop:10, borderTop:`1px solid ${HOLO_THEME.hairlineSoft}` }}>
+                  {/* Nombre a mostrar — varios amigos de Erick pidieron
+                      poder elegir esto (algunos no querían que se viera el
+                      nombre completo). Guarda al toque, sin pasar por el
+                      modal grande. */}
+                  <div style={{ marginBottom:14 }}>
+                    <div style={{ fontSize:11, fontWeight:500, color:HOLO_THEME.textDim, letterSpacing:".04em", marginBottom:7, fontFamily:"'Inter',sans-serif" }}>Nombre a mostrar</div>
+                    <div style={{ display:"flex", gap:8 }}>
+                      {[
+                        { label:"Nombre completo", val:true },
+                        { label:"Usuario",         val:false },
+                      ].map(({ label, val }) => {
+                        const active = (profile.mostrarNombreCompleto !== false) === val;
+                        return (
+                          <button key={label} onClick={() => handleSave({ mostrarNombreCompleto: val })}
+                            style={{
+                              background: active ? HOLO_THEME.text : "rgba(255,255,255,.05)",
+                              border: `1px solid ${active ? HOLO_THEME.text : HOLO_THEME.hairline}`,
+                              borderRadius: 999,
+                              color: active ? HOLO_THEME.bg : HOLO_THEME.textDim,
+                              fontFamily: "'Inter',sans-serif",
+                              fontSize: 11.5,
+                              fontWeight: active ? 500 : 400,
+                              padding: "6px 13px",
+                              cursor: "pointer",
+                              transition: "all .15s",
+                            }}>
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  {profile.bio
+                    ? <div style={{ fontSize:13, color:"rgba(242,240,248,.65)", lineHeight:1.9, fontFamily:"'Inter',sans-serif" }}>{profile.bio}</div>
+                    : <div style={{ fontSize:12, color:HOLO_THEME.textDim, cursor:"pointer" }} onClick={() => setShowEdit(true)}>+ agregar bio...</div>
+                  }
+                  {/* Links — ya no es una tarjeta aparte, vive acá adentro
+                      (se edita en el mismo modal que la bio). */}
+                  {links.length > 0
+                    ? (
+                      <div style={{ marginTop:10, display:"flex", flexDirection:"column" }}>
+                        {links.map((l, i) => {
+                          const lbl = typeof l === "string" ? l : l.label;
+                          const url = typeof l === "string" ? "#" : (l.url || "#");
+                          return (
+                            <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                              style={{ display:"flex", gap:8, padding:"5px 0", fontSize:12, color:HOLO_THEME.textDim, cursor:"pointer", transition:"color .2s", textDecoration:"none", fontFamily:"'Inter',sans-serif" }}
+                              onMouseEnter={e => e.currentTarget.style.color = HOLO_THEME.text}
+                              onMouseLeave={e => e.currentTarget.style.color = HOLO_THEME.textDim}>
+                              <span style={{ color:"rgba(159,224,255,.5)" }}>→</span> {lbl}
+                            </a>
+                          );
+                        })}
+                      </div>
+                    )
+                    : <div style={{ marginTop:10, fontSize:12, color:HOLO_THEME.textDim, cursor:"pointer" }} onClick={() => setShowEdit(true)}>+ agregar links...</div>
+                  }
+                </div>
+              )}
+            </div>
+
+            {/* ── Pictures, debajo de Información — miniaturas un poco más
+                grandes (72x94) para que llenen el ancho de la columna sin
+                dejar franja vacía. ── */}
+            <div style={card}>
+              <div className="sec-title">Pictures</div>
+              <PicturesGrid
+                userId={user.id}
+                initialPhotos={photos}
+                canEdit={true}
+              />
             </div>
           </div>
 
@@ -148,18 +255,9 @@ export default function ProfilePage() {
           {/* ════════════════════════════════════════════════ */}
           <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
 
-            {/* ── Sobre mí ── */}
-            <div style={card}>
-              <div className="sec-title">† Sobre mí</div>
-              {profile.bio
-                ? <div style={{ fontSize:13, color:"rgba(242,240,248,.65)", lineHeight:1.9, fontFamily:"'Inter',sans-serif" }}>{profile.bio}</div>
-                : <div style={{ fontSize:12, color:HOLO_THEME.textDim, cursor:"pointer" }} onClick={() => setShowEdit(true)}>+ agregar bio...</div>
-              }
-            </div>
-
             {/* ── Posts ── */}
             <div style={card}>
-              <div className="sec-title">† Posts</div>
+              <div className="sec-title">Posts</div>
               {posts.length > 0
                 ? posts.map(p => (
                     <PostCard
@@ -174,42 +272,6 @@ export default function ProfilePage() {
                     />
                   ))
                 : <div style={{ fontSize:12, color:HOLO_THEME.textDim }}>no hay posts aún</div>
-              }
-            </div>
-          </div>
-
-          {/* ════════════════════════════════════════════════ */}
-          {/* ── COLUMNA DERECHA ── */}
-          {/* ════════════════════════════════════════════════ */}
-          <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
-
-            {/* ── Pictures (Grid de fotos) ── */}
-            <div style={card}>
-              <div className="sec-title">† Pictures</div>
-              <PicturesGrid
-                userId={user.id}
-                initialPhotos={photos}
-                canEdit={true}
-              />
-            </div>
-
-            {/* ── Links ── */}
-            <div style={card}>
-              <div className="sec-title">† Links</div>
-              {links.length > 0
-                ? links.map((l, i) => {
-                  const lbl = typeof l === "string" ? l : l.label;
-                  const url = typeof l === "string" ? "#" : (l.url || "#");
-                  return (
-                    <a key={i} href={url} target="_blank" rel="noopener noreferrer"
-                      style={{ display:"flex", gap:8, padding:"9px 0", fontSize:12, color:HOLO_THEME.textDim, cursor:"pointer", transition:"color .2s", textDecoration:"none", fontFamily:"'Inter',sans-serif" }}
-                      onMouseEnter={e => e.currentTarget.style.color = HOLO_THEME.text}
-                      onMouseLeave={e => e.currentTarget.style.color = HOLO_THEME.textDim}>
-                      <span style={{ color:"rgba(159,224,255,.5)" }}>→</span> {lbl}
-                    </a>
-                  );
-                })
-                : <div style={{ fontSize:12, color:HOLO_THEME.textDim }}>+ agregar links...</div>
               }
             </div>
           </div>

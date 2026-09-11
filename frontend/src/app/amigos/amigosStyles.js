@@ -132,4 +132,12 @@ export const amigosStyles = `
         padding: 2px 6px;
         border-radius: 8px;
       }
+
+      .amigos-grid-2 { display: grid; grid-template-columns: 1fr 1fr; }
+
+      /* ── Celular: solicitudes/enviadas y la grilla de amigos, en una sola columna ── */
+      @media (max-width: 640px) {
+        .page-wrap { padding: 60px 16px 32px; }
+        .amigos-grid-2 { grid-template-columns: 1fr; }
+      }
     `;

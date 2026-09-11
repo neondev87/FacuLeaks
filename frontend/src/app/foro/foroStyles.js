@@ -20,7 +20,7 @@ export const foroStyles = `
       body { background:${HOLO_THEME.bg}; color:${HOLO_THEME.text}; font-family:'Inter',sans-serif; font-size:13px; overflow:hidden; }
       ::-webkit-scrollbar { width:5px } ::-webkit-scrollbar-track { background:transparent } ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.14); border-radius:99px }
 
-      .foro { display:flex; height:calc(100vh - 48px); margin-top:48px; }
+      .foro { display:flex; height:calc(100vh - 58px); margin-top:58px; }
 
       /* ── canales ── */
       .foro-side { width:200px; flex-shrink:0; border-right:1px solid ${HOLO_THEME.hairlineSoft}; background:${HOLO_THEME.panel}; display:flex; flex-direction:column; }
@@ -110,4 +110,14 @@ export const foroStyles = `
       .foro-admin button:hover { color:${HOLO_THEME.text}; border-color:${HOLO_THEME.hairline}; }
 
       .spinner { width:12px; height:12px; border:1px solid rgba(255,255,255,.15); border-top-color:rgba(255,255,255,.55); border-radius:50%; animation:spin .7s linear infinite; display:inline-block; }
+
+      /* ── Celular: canales arriba (franja angosta con scroll propio) y el
+         tema/comentarios abajo, en vez de dos columnas apretadas. El body
+         sigue con overflow:hidden así que cada panel scrollea por su lado,
+         igual que en escritorio — solo cambia la dirección del flex. ── */
+      @media (max-width:760px) {
+        .foro { flex-direction:column; }
+        .foro-side { width:100%; height:32vh; flex:0 0 32vh; border-right:none; border-bottom:1px solid ${HOLO_THEME.hairlineSoft}; }
+        .foro-board { min-height:0; }
+      }
     `;

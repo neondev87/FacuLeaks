@@ -15,8 +15,8 @@
 //   - Lo consume: app/foro/page.js.
 // ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback, useRef } from "react";
-import { io } from "socket.io-client";
-import { API, SOCKET_URL } from "@/lib/api";
+import { API } from "@/lib/api";
+import { createAuthedSocket } from "@/lib/socket";
 
 // Un canal de la API { id, slug, nombre, orden } -> la forma que usa la UI.
 const toCanal = (c) => ({ id: c.id, slug: c.slug, nombre: c.nombre, name: `# ${c.nombre}` });
@@ -102,7 +102,7 @@ export default function useForo() {
 
   // ── socket (tiempo real) ──
   useEffect(() => {
-    const socket = io(SOCKET_URL);
+    const socket = createAuthedSocket();
 
     socket.on("foro:canal", (c) => {
       setCanales(prev => prev.some(x => x.id === c.id) ? prev : [...prev, toCanal(c)]);

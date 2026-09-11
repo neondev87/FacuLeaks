@@ -20,8 +20,8 @@
 //   - Lo consumen: components/feed/PostComments.js y components/PostCard.js.
 // ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback } from "react";
-import { io } from "socket.io-client";
-import { API, SOCKET_URL } from "@/lib/api";
+import { API } from "@/lib/api";
+import { createAuthedSocket } from "@/lib/socket";
 export default function usePostComments(postId, enabled) {
   const [comments, setComments] = useState([]);
   const [loading,  setLoading]  = useState(false);
@@ -53,7 +53,7 @@ export default function usePostComments(postId, enabled) {
 
   useEffect(() => {
     if (!enabled || !postId) return;
-    const socket = io(SOCKET_URL);
+    const socket = createAuthedSocket();
     socket.on("post:comment", ({ postId: pid, comment }) => {
       if (pid === postId && comment) upsert(comment);
     });

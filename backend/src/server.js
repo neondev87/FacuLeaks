@@ -51,6 +51,7 @@ const perfilRoutes  = require('./modules/perfil/perfil.routes');
 const foroRoutes    = require('./modules/foro/foro.routes');
 const { authMiddleware } = require('./middleware/auth');
 const { serveAudio }     = require('./modules/chat/chat.controller');
+const { registerChatSocketHandlers, socketAuthMiddleware } = require('./modules/chat/chat.socket');
 
 // ── Asegurar carpetas de uploads antes de aceptar peticiones ──
 ['uploads/tmp', 'uploads/imagenes', 'uploads/documentos', 'uploads/audios'].forEach(dir => {
@@ -79,7 +80,7 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-app.use((req, res, next) => { req.io = io; req.onlineUsers = onlineUsers; next(); });
+app.use((req, res, next) => { req.io = io; next(); });
 
 // ── Rate limiting en superficies sensibles (login/registro y uploads) ──
 const authLimiter = rateLimit({
@@ -111,33 +112,47 @@ app.use('/api/spotify', spotifyRoutes);
 app.use('/api/perfil',  perfilRoutes);
 app.use('/api/foro',    foroRoutes);
 
+// Presencia: userId (string) → Set de socketIds (una persona puede tener
+// varias pestañas/dispositivos abiertos). La lista de "quién está online"
+// son las claves. La ENTREGA de mensajes NO usa este Map: se hace por rooms
+// `user:<id>` (ver chat.socket.js) para que llegue a todas sus pestañas.
 const onlineUsers = new Map();
-const { registerChatSocketHandlers } = require('./modules/chat/chat.socket');
+const roomFor = (userId) => `user:${userId}`;
+
+// Portero del WebSocket. Es LENIENTE a propósito: si viene un JWT válido deja
+// la identidad en socket.userId; si no, la conexión sigue pero ANÓNIMA. Los
+// eventos públicos (feed, foro, comentarios) los recibe cualquiera — lo que
+// se protege es el chat: sin socket.userId no entrás a tu sala `user:<id>`
+// (no recibís DMs de nadie) y los handlers de chat te ignoran.
+io.use(socketAuthMiddleware);
 
 io.on('connection', (socket) => {
+  const userId = socket.userId || null;
 
-  socket.on('user:connect', (userId) => {
-    onlineUsers.set(String(userId), socket.id);
-    socket.userId = String(userId);
+  // Solo los sockets autenticados entran a su sala privada y cuentan como
+  // "online". Los anónimos solo escuchan los broadcasts públicos.
+  if (userId) {
+    socket.join(roomFor(userId));
+    if (!onlineUsers.has(userId)) onlineUsers.set(userId, new Set());
+    onlineUsers.get(userId).add(socket.id);
     io.emit('users:online', Array.from(onlineUsers.keys()));
-  });
+  }
 
-  // Todos los handlers del dominio chat (message:send, messages:read,
-  // typing/audio) viven en el módulo chat, no acá.
-  registerChatSocketHandlers(io, socket, onlineUsers);
+  // Los handlers del dominio chat (message:send, messages:read, typing/audio)
+  // viven en el módulo chat. Cada uno chequea socket.userId por su cuenta.
+  registerChatSocketHandlers(io, socket);
 
   socket.on('disconnect', () => {
-    if (socket.userId) {
-      onlineUsers.forEach((socketId, userId) => {
-        if (userId !== socket.userId) {
-          io.to(socketId).emit('typing:stop', { userId: socket.userId });
-        }
-      });
-      onlineUsers.delete(socket.userId);
-      io.emit('users:online', Array.from(onlineUsers.keys()));
-    }
+    if (!userId) return;
+    const set = onlineUsers.get(userId);
+    if (!set) return;
+    set.delete(socket.id);
+    if (set.size > 0) return;              // le quedan otras pestañas abiertas
+    onlineUsers.delete(userId);
+    io.emit('users:online', Array.from(onlineUsers.keys()));
+    // Cortar cualquier indicador de "escribiendo" que haya quedado colgado.
+    io.emit('typing:stop', { userId });
   });
-
 });
 
 const PORT = process.env.PORT || 4000;

@@ -138,6 +138,7 @@ export default function ChatPage() {
   })();
 
   const handleOpenChat = user => { search.closeSearch(); setShowSolicitudes(false); chat.openChat(user); };
+  const goToProfile = () => { if (chat.activeChat?.userId) router.push(`/perfil/${chat.activeChat.userId}`); };
   const totalSolicitudes = chat.solicitudes.reduce((acc, s) => acc + (s.unread || 0), 0) || chat.solicitudes.length;
 
   // Inicial para el avatar cuadrado (cuando el usuario no tiene foto) — dirección
@@ -148,105 +149,169 @@ export default function ChatPage() {
 
   const { activeChat, streak } = chat;
 
+  // Estos tres bloques se arman UNA vez y se usan en dos lugares distintos
+  // del JSX de abajo: la barra angosta de siempre (cuando hay un chat
+  // abierto, para poder cambiar de conversación) y la tarjeta grande
+  // centrada (cuando no hay ninguno — ver "chat-landing" más abajo). Son
+  // mutuamente excluyentes (activeChat ? uno : el otro), así que reusar el
+  // mismo JSX acá no duplica nada montado — solo evita copiar y pegar el
+  // mapeo de Recientes/Amigos/solicitudes dos veces.
+  const solicitudesPanel = (
+    <div ref={solicitudesRef} style={{ position:"relative" }}>
+      <RequestsIcon count={totalSolicitudes} active={showSolicitudes} onClick={() => setShowSolicitudes(v => !v)} />
+      {/* Panel desplegable de solicitudes de mensaje (gente que no es tu amigo y no le respondiste todavía).
+          Se cierra clickeando en cualquier lado o con Escape (ver useEffect). */}
+      {showSolicitudes && (
+        // zIndex 30: tiene que ganarle al buscador de nueva conversación
+        // (.empty-search, zIndex 20 en chatStyles.js) — si no, el panel de
+        // solicitudes se abre TAPADO por la caja de búsqueda que está
+        // justo debajo en "chat-landing" (bug reportado 2026-09-11).
+        <div style={{ position:"absolute", top:"100%", right:0, marginTop:6, width:260, border:`1px solid ${HOLO_THEME.hairline}`, borderRadius:10, background:HOLO_THEME.panel, boxShadow:"0 8px 24px rgba(0,0,0,.5)", zIndex:30, maxHeight:280, overflowY:"auto" }}>
+          <div className="conv-sec conv-sec--sm">SOLICITUDES</div>
+          {chat.solicitudes.length === 0 ? (
+            <div style={{ padding:"6px 14px 14px", fontSize:12, color:"rgba(255,255,255,.2)", fontFamily:"'Space Mono',monospace" }}>sin solicitudes pendientes</div>
+          ) : chat.solicitudes.map(s => (
+            <div key={s.userId} className="conv-item" onClick={() => handleOpenChat(s)}>
+              <div className="avatar" style={avatarSrc(s.imagen) ? { backgroundImage:`url(${avatarSrc(s.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : undefined}>
+                {!avatarSrc(s.imagen) && initial(s.username)}
+              </div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+                  <span className="conv-name" style={{ color:HOLO_THEME.text }}>{s.username}</span>
+                  {s.unread > 0 && <span style={{ background:"#cc3344", color:"#fff", fontSize:10, padding:"2px 7px", borderRadius:999, fontFamily:"'Space Mono',monospace", fontWeight:600 }}>{s.unread}</span>}
+                </div>
+                <div style={{ fontSize:12, color:"rgba(255,255,255,.22)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontFamily:"'Space Mono',monospace" }}>{s.lastMsg}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const recientesList = (
+    <div className="conv-half">
+      <div className="conv-sec">RECIENTES</div>
+      {chat.recientes.length > 0 ? chat.recientes.map(c => (
+        <div key={c.userId} className={`conv-item${chat.isActive(c.userId) ? " active" : ""}`} onClick={() => handleOpenChat(c)}>
+          <div className="avatar" style={avatarSrc(c.imagen) ? { backgroundImage:`url(${avatarSrc(c.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : undefined}>
+            {!avatarSrc(c.imagen) && initial(c.username)}<div className="status-dot" style={{ background: chat.isOnline(c.userId) ? "#3ddc84" : "#2a2a2a" }} />
+          </div>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+              <span className="conv-name" style={{ color: chat.isActive(c.userId) ? HOLO_THEME.text : "rgba(255,255,255,.65)" }}>{c.username}</span>
+              {c.unread > 0 && <span style={{ background:"#b8b3c2", color:"#151318", fontSize:10, padding:"2px 7px", borderRadius:999, fontFamily:"'Space Mono',monospace", fontWeight:600 }}>{c.unread}</span>}
+            </div>
+            <div style={{ fontSize:12, color:"rgba(255,255,255,.22)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontFamily:"'Space Mono',monospace" }}>{c.lastMsg}</div>
+          </div>
+        </div>
+      )) : (
+        <div style={{ padding:"6px 18px", fontSize:12, color:"rgba(255,255,255,.2)", fontFamily:"'Space Mono',monospace" }}>sin conversaciones recientes</div>
+      )}
+    </div>
+  );
+
+  const amigosList = (
+    <div className="conv-half" style={{ borderTop:`1px solid ${HOLO_THEME.hairlineSoft}` }}>
+      <div className="conv-sec">AMIGOS</div>
+      {chat.amigos.length > 0 ? chat.amigos.map(a => (
+        <div key={a.userId} className={`conv-item${chat.isActive(a.userId) ? " active" : ""}`} onClick={() => handleOpenChat(a)}>
+          <div className="avatar" style={avatarSrc(a.imagen) ? { backgroundImage:`url(${avatarSrc(a.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : undefined}>
+            {!avatarSrc(a.imagen) && initial(a.username)}<div className="status-dot" style={{ background: chat.isOnline(a.userId) ? "#3ddc84" : "#2a2a2a" }} />
+          </div>
+          <div style={{ flex:1, minWidth:0 }}>
+            <span className="conv-name" style={{ color: chat.isActive(a.userId) ? HOLO_THEME.text : "rgba(255,255,255,.65)" }}>{a.username}</span>
+          </div>
+        </div>
+      )) : (
+        <div style={{ padding:"6px 18px", fontSize:12, color:"rgba(255,255,255,.2)", fontFamily:"'Space Mono',monospace" }}>
+          sin amigos aún —{" "}
+          <span style={{ color:"rgba(255,255,255,.6)", cursor:"pointer", textDecoration:"underline" }} onClick={() => router.push("/amigos")}>ir a amigos</span>
+        </div>
+      )}
+    </div>
+  );
+
+  // El buscador de "nueva conversación" — antes vivía en el panel vacío de
+  // la derecha, ahora va adentro de la tarjeta "chat-landing", debajo del
+  // título y la campanita.
+  const buscarUsuarioBox = (
+    <div className="empty-search">
+      <div style={{ position:"relative" }}>
+        <input className="buscar-input" placeholder="buscar usuario para nueva conversación..." value={search.busqueda}
+          onChange={e => search.setBusqueda(e.target.value)} />
+        {search.buscando && <span className="spinner" style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)" }} />}
+      </div>
+      {search.resultados.length > 0 && (
+        <div style={{ marginTop:6, border:`1px solid ${HOLO_THEME.hairlineSoft}`, borderRadius:10, maxHeight:220, overflowY:"auto", background:HOLO_THEME.panel }}>
+          {search.resultados.map(u => (
+            <div key={u.id} className="resultado-item" onClick={() => handleOpenChat(u)}>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                <div className="avatar-sm" style={avatarSrc(u.imagen) ? { backgroundImage:`url(${avatarSrc(u.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : undefined}>
+                  {!avatarSrc(u.imagen) && "◈"}
+                </div>
+                <div>
+                  <div style={{ fontSize:14, color:HOLO_THEME.text, fontFamily:"'Inter',sans-serif" }}>@{u.username}</div>
+                  <div style={{ fontSize:12, color:"rgba(255,255,255,.35)", fontFamily:"'Space Mono',monospace" }}>{u.nombre}</div>
+                </div>
+              </div>
+              <span style={{ fontSize:14, color:"rgba(255,255,255,.25)" }}>→</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <>
       <Navbar />
-      <div style={{ display:"flex", height:"calc(100vh - 48px)", marginTop:48 }}>
+      {/* "chat-shell--open" (con conversación activa) es lo que la media query
+          de celular usa para decidir qué panel mostrar — ver chatStyles.js. */}
+      <div className={`chat-shell${activeChat ? " chat-shell--open" : ""}`} style={{ display:"flex", height:"calc(100vh - 58px)", marginTop:58 }}>
 
-        <div className="chat-side" style={{ width:300, borderRight:`1px solid ${HOLO_THEME.hairlineSoft}`, display:"flex", flexDirection:"column", flexShrink:0 }}>
-          <div className="chat-side__hdr" style={{ padding:"20px 22px 18px", display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-            <div>
-              <div className="side-title">Mensajes</div>
-              <div className="side-kicker">{"// FacuLeaks"}</div>
-            </div>
-
-            <div ref={solicitudesRef}>
-            <RequestsIcon count={totalSolicitudes} active={showSolicitudes} onClick={() => setShowSolicitudes(v => !v)} />
-
-            {/* Panel desplegable de solicitudes de mensaje (gente que no es tu amigo y no le respondiste todavía).
-                Se cierra clickeando en cualquier lado o con Escape (ver useEffect). */}
-            {showSolicitudes && (
-              <div style={{ position:"absolute", top:"100%", right:14, marginTop:6, width:260, border:`1px solid ${HOLO_THEME.hairline}`, borderRadius:10, background:HOLO_THEME.panel, boxShadow:"0 8px 24px rgba(0,0,0,.5)", zIndex:10, maxHeight:280, overflowY:"auto" }}>
-                <div className="conv-sec conv-sec--sm">SOLICITUDES</div>
-                {chat.solicitudes.length === 0 ? (
-                  <div style={{ padding:"6px 14px 14px", fontSize:12, color:"rgba(255,255,255,.2)", fontFamily:"'Space Mono',monospace" }}>sin solicitudes pendientes</div>
-                ) : chat.solicitudes.map(s => (
-                  <div key={s.userId} className="conv-item" onClick={() => handleOpenChat(s)}>
-                    <div className="avatar" style={avatarSrc(s.imagen) ? { backgroundImage:`url(${avatarSrc(s.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : undefined}>
-                      {!avatarSrc(s.imagen) && initial(s.username)}
-                    </div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
-                        <span className="conv-name" style={{ color:HOLO_THEME.text }}>{s.username}</span>
-                        {s.unread > 0 && <span style={{ background:"#cc3344", color:"#fff", fontSize:10, padding:"2px 7px", borderRadius:999, fontFamily:"'Space Mono',monospace", fontWeight:600 }}>{s.unread}</span>}
-                      </div>
-                      <div style={{ fontSize:12, color:"rgba(255,255,255,.22)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontFamily:"'Space Mono',monospace" }}>{s.lastMsg}</div>
-                    </div>
-                  </div>
-                ))}
+        {/* La barra angosta de siempre — solo mientras hay un chat abierto,
+            para poder cambiar de conversación sin volver a la pantalla de
+            inicio. Sin chat abierto, Recientes/Amigos viven en "chat-landing"
+            más abajo (mismo JSX, ver los const de arriba). */}
+        {activeChat && (
+          <div className="chat-side">
+            <div className="chat-side__hdr" style={{ padding:"20px 22px 18px", display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+              <div>
+                <div className="side-title">Mensajes</div>
+                <div className="side-kicker">{"// FacuLeaks"}</div>
               </div>
-            )}
+              {solicitudesPanel}
+            </div>
+
+            {/* Dividido en 2 mitades independientes, cada una con su propio scroll — RECIENTES arriba, AMIGOS abajo */}
+            <div style={{ flex:1, display:"flex", flexDirection:"column", minHeight:0 }}>
+              {recientesList}
+              {amigosList}
             </div>
           </div>
-
-          {/* Dividido en 2 mitades independientes, cada una con su propio scroll — RECIENTES arriba, AMIGOS abajo */}
-          <div style={{ flex:1, display:"flex", flexDirection:"column", minHeight:0 }}>
-
-            <div className="conv-half">
-              <div className="conv-sec">RECIENTES</div>
-              {chat.recientes.length > 0 ? chat.recientes.map(c => (
-                <div key={c.userId} className={`conv-item${chat.isActive(c.userId) ? " active" : ""}`} onClick={() => handleOpenChat(c)}>
-                  <div className="avatar" style={avatarSrc(c.imagen) ? { backgroundImage:`url(${avatarSrc(c.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : undefined}>
-                    {!avatarSrc(c.imagen) && initial(c.username)}<div className="status-dot" style={{ background: chat.isOnline(c.userId) ? "#3ddc84" : "#2a2a2a" }} />
-                  </div>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
-                      <span className="conv-name" style={{ color: chat.isActive(c.userId) ? HOLO_THEME.text : "rgba(255,255,255,.65)" }}>{c.username}</span>
-                      {c.unread > 0 && <span style={{ background:"#b8b3c2", color:"#151318", fontSize:10, padding:"2px 7px", borderRadius:999, fontFamily:"'Space Mono',monospace", fontWeight:600 }}>{c.unread}</span>}
-                    </div>
-                    <div style={{ fontSize:12, color:"rgba(255,255,255,.22)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontFamily:"'Space Mono',monospace" }}>{c.lastMsg}</div>
-                  </div>
-                </div>
-              )) : (
-                <div style={{ padding:"6px 18px", fontSize:12, color:"rgba(255,255,255,.2)", fontFamily:"'Space Mono',monospace" }}>sin conversaciones recientes</div>
-              )}
-            </div>
-
-            <div className="conv-half" style={{ borderTop:`1px solid ${HOLO_THEME.hairlineSoft}` }}>
-              <div className="conv-sec">AMIGOS</div>
-              {chat.amigos.length > 0 ? chat.amigos.map(a => (
-                <div key={a.userId} className={`conv-item${chat.isActive(a.userId) ? " active" : ""}`} onClick={() => handleOpenChat(a)}>
-                  <div className="avatar" style={avatarSrc(a.imagen) ? { backgroundImage:`url(${avatarSrc(a.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : undefined}>
-                    {!avatarSrc(a.imagen) && initial(a.username)}<div className="status-dot" style={{ background: chat.isOnline(a.userId) ? "#3ddc84" : "#2a2a2a" }} />
-                  </div>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <span className="conv-name" style={{ color: chat.isActive(a.userId) ? HOLO_THEME.text : "rgba(255,255,255,.65)" }}>{a.username}</span>
-                  </div>
-                </div>
-              )) : (
-                <div style={{ padding:"6px 18px", fontSize:12, color:"rgba(255,255,255,.2)", fontFamily:"'Space Mono',monospace" }}>
-                  sin amigos aún —{" "}
-                  <span style={{ color:"rgba(255,255,255,.6)", cursor:"pointer", textDecoration:"underline" }} onClick={() => router.push("/amigos")}>ir a amigos</span>
-                </div>
-              )}
-            </div>
-
-          </div>
-        </div>
+        )}
 
         {activeChat ? (
           <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, background:HOLO_THEME.bg }}>
 
             <div style={{ padding:"14px 24px", background:HOLO_THEME.bg, borderBottom:`1px solid ${HOLO_THEME.hairlineSoft}`, display:"flex", alignItems:"center", gap:16 }}>
-              <div className="avatar" style={{ width:46, height:46, ...(avatarSrc(activeChat.imagen) ? { backgroundImage:`url(${avatarSrc(activeChat.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : {}) }}>
-                {!avatarSrc(activeChat.imagen) && initial(activeChat.username)}<div className="status-dot-hdr" style={{ background: chat.isOnline(activeChat.userId) ? "#3ddc84" : "#2a2a2a" }} />
-              </div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontFamily:"'Cinzel',serif", fontSize:20, color:HOLO_THEME.text, lineHeight:1 }}>{activeChat.username}</div>
-                <div style={{ fontFamily:"'Space Mono',monospace", fontSize:12, color: chat.isOnline(activeChat.userId) ? "rgba(255,255,255,.35)" : "rgba(255,255,255,.2)", letterSpacing:".08em", marginTop:4 }}>
-                  {chat.isOnline(activeChat.userId) ? "en línea ahora" : "desconectado"}
+              {/* Solo visible en celular (chatStyles.js) — la lista y la
+                  conversación no entran juntas, esto vuelve a la lista. */}
+              <button className="chat-back" onClick={chat.closeChat} aria-label="Volver a la lista">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+              </button>
+              <button className="chat-hdr-id" onClick={goToProfile} title={`Ver perfil de @${activeChat.username}`}>
+                <div className="avatar" style={{ width:46, height:46, ...(avatarSrc(activeChat.imagen) ? { backgroundImage:`url(${avatarSrc(activeChat.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : {}) }}>
+                  {!avatarSrc(activeChat.imagen) && initial(activeChat.username)}<div className="status-dot-hdr" style={{ background: chat.isOnline(activeChat.userId) ? "#3ddc84" : "#2a2a2a" }} />
                 </div>
-              </div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div className="chat-hdr-name" style={{ fontFamily:"'Cinzel',serif", fontSize:20, color:HOLO_THEME.text, lineHeight:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{activeChat.username}</div>
+                  <div style={{ fontFamily:"'Space Mono',monospace", fontSize:12, color: chat.isOnline(activeChat.userId) ? "rgba(255,255,255,.35)" : "rgba(255,255,255,.2)", letterSpacing:".08em", marginTop:4 }}>
+                    {chat.isOnline(activeChat.userId) ? "en línea ahora" : "desconectado"}
+                  </div>
+                </div>
+              </button>
               {streak.loaded && <StreakC count={streak.count} dying={streak.dying} progress={streak.progress} />}
             </div>
 
@@ -375,36 +440,29 @@ export default function ChatPage() {
             </div>
           </div>
         ) : (
-          // Recuadro de "nueva conversación" — sin chat abierto. El buscador
-          // va arriba a la izquierda por delante (.empty-search, z-index alto);
-          // detrás, el fondo decorativo red-letter + las dos figuras al pie
-          // (components/chat/EmptyStateBg.js).
-          <div style={{ flex:1, background:HOLO_THEME.bg, position:"relative", overflow:"hidden" }}>
+          // Pantalla de "elegí con quién hablar" — sin chat abierto. Una
+          // tarjeta centrada (título + campanita, buscador, Recientes y
+          // Amigos mitad y mitad) flotando sobre el fondo decorativo grande
+          // — ver components/chat/EmptyStateBg.js: ya no es el texto bíblico
+          // + 3 figuras, ahora son solo 2 (la "monita de anime" del login y
+          // el ángel del centro), más grandes, fondo transparente.
+          <div className="chat-landing">
             <EmptyStateBg />
-            <div className="empty-search" style={{ padding:"20px 24px", width:420 }}>
-              <div style={{ position:"relative" }}>
-                <input className="buscar-input" placeholder="buscar usuario para nueva conversación..." value={search.busqueda}
-                  onChange={e => search.setBusqueda(e.target.value)} />
-                {search.buscando && <span className="spinner" style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)" }} />}
-              </div>
-              {search.resultados.length > 0 && (
-                <div style={{ marginTop:6, border:`1px solid ${HOLO_THEME.hairlineSoft}`, borderRadius:10, maxHeight:220, overflowY:"auto", background:HOLO_THEME.panel }}>
-                  {search.resultados.map(u => (
-                    <div key={u.id} className="resultado-item" onClick={() => handleOpenChat(u)}>
-                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                        <div className="avatar-sm" style={avatarSrc(u.imagen) ? { backgroundImage:`url(${avatarSrc(u.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : undefined}>
-                          {!avatarSrc(u.imagen) && "◈"}
-                        </div>
-                        <div>
-                          <div style={{ fontSize:14, color:HOLO_THEME.text, fontFamily:"'Inter',sans-serif" }}>@{u.username}</div>
-                          <div style={{ fontSize:12, color:"rgba(255,255,255,.35)", fontFamily:"'Space Mono',monospace" }}>{u.nombre}</div>
-                        </div>
-                      </div>
-                      <span style={{ fontSize:14, color:"rgba(255,255,255,.25)" }}>→</span>
-                    </div>
-                  ))}
+            <div className="chat-landing-card">
+              <div className="chat-side__hdr" style={{ padding:"22px 24px 16px", display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                <div>
+                  <div className="side-title">Mensajes</div>
+                  <div className="side-kicker">{"// FacuLeaks"}</div>
                 </div>
-              )}
+                {solicitudesPanel}
+              </div>
+
+              {buscarUsuarioBox}
+
+              <div className="chat-landing-lists">
+                {recientesList}
+                {amigosList}
+              </div>
             </div>
           </div>
         )}

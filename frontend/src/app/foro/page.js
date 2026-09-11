@@ -254,7 +254,7 @@ export default function ForoPage() {
               <div className="foro-c02__row">
                 <button className="foro-c02__cancel" onClick={() => setWriting(false)}>CANCELAR</button>
                 <button className="foro-c02__send" onClick={submitComentario} disabled={sending || !draft.trim()}>
-                  {sending ? <span className="spinner" /> : "PUBLICAR †"}
+                  {sending ? <span className="spinner" /> : "PUBLICAR"}
                 </button>
               </div>
               <div className="foro-c02__hint">ESC PARA CERRAR · EL COMENTARIO NO LLEVA TÍTULO</div>

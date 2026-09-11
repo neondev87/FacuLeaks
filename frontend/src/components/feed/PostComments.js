@@ -15,7 +15,7 @@ import TrashGlyph from "@/components/TrashGlyph";
 // PostCard.js (no antes — así no se piden comentarios de posts que nadie
 // abrió). TODA la lógica de datos (cargar, mandar, borrar, tiempo real) vive
 // en el hook — este archivo es solo el dibujo con el estilo visual del feed
-// (hairlines, Space Mono, el símbolo †).
+// (hairlines, Space Mono). La cruz gótica que tenía antes se sacó (2026-09-10).
 //
 // CON QUÉ SE CONECTA:
 //   - hooks/usePostComments.js → toda la lógica real (compartida con la
@@ -52,7 +52,7 @@ export default function PostComments({ postId, currentUserId }) {
         <div style={{ textAlign:"center", padding:"12px 0" }}><span className="spinner" /></div>
       ) : comments.length === 0 ? (
         <div style={{ fontSize:11, color:HOLO_THEME.textDim, fontFamily:"'Space Mono',monospace", letterSpacing:".08em", padding:"4px 0 10px" }}>
-          † sin comentarios todavía
+          sin comentarios todavía
         </div>
       ) : (
         <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:12 }}>
@@ -115,7 +115,7 @@ export default function PostComments({ postId, currentUserId }) {
           }}
           onMouseEnter={e => { if (text.trim()) e.currentTarget.style.borderColor = "rgba(255,255,255,.4)"; }}
           onMouseLeave={e => e.currentTarget.style.borderColor = HOLO_THEME.hairline}
-        >{sending ? "..." : "† enviar"}</button>
+        >{sending ? "..." : "enviar"}</button>
       </div>
     </div>
   );

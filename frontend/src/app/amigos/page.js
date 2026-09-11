@@ -47,7 +47,7 @@ export default function AmigosPage() {
 
         {/* ── BUSCADOR ── */}
         <div style={{ marginBottom: 40 }}>
-          <div className="section-header">† BUSCAR USUARIOS</div>
+          <div className="section-header">BUSCAR USUARIOS</div>
           <div style={{ position: "relative" }}>
             <input
               className="search-input"
@@ -87,12 +87,12 @@ export default function AmigosPage() {
           )}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+        <div className="amigos-grid-2" style={{ gap: 32 }}>
 
           {/* ── SOLICITUDES RECIBIDAS ── */}
           <div>
             <div className="section-header">
-              † SOLICITUDES
+              SOLICITUDES
               {recibidas.length > 0 && <span className="badge">{recibidas.length}</span>}
             </div>
             {loading ? (
@@ -117,7 +117,7 @@ export default function AmigosPage() {
 
           {/* ── ENVIADAS ── */}
           <div>
-            <div className="section-header">† ENVIADAS</div>
+            <div className="section-header">ENVIADAS</div>
             {enviadas.length === 0 ? (
               <div className="empty-state">sin solicitudes enviadas</div>
             ) : (
@@ -135,7 +135,7 @@ export default function AmigosPage() {
         {/* ── AMIGOS ── */}
         <div style={{ marginTop: 40 }}>
           <div className="section-header">
-            † MIS AMIGOS
+            MIS AMIGOS
             <span style={{ fontSize: 11, color: HOLO_THEME.textDim, letterSpacing: ".1em" }}>{amigos.length}</span>
           </div>
           {loading ? (
@@ -146,7 +146,7 @@ export default function AmigosPage() {
               <div>aún no tienes amigos — busca usuarios arriba</div>
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div className="amigos-grid-2" style={{ gap: 8 }}>
               {amigos.map(({ amistadId, user }) => (
                 <UserCard
                   key={amistadId}

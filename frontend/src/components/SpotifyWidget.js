@@ -1,19 +1,26 @@
 "use client";
 
 // ════════════════════════════════════════════════════════════════════════
-// MÓDULO: components/SpotifyWidget.js — tarjeta de Spotify del perfil
+// MÓDULO: components/SpotifyWidget.js — chip de Spotify del perfil
 // ════════════════════════════════════════════════════════════════════════
-// QUÉ HACE: muestra la canción actual (o la última escuchada) con carátula,
-// barra de progreso y botón de conectar/desconectar la cuenta. Actualiza
-// cada 5 segundos preguntándole al backend.
+// QUÉ HACE: muestra la cancion actual (o la ultima escuchada), chiquito,
+// pensado para vivir al lado de la foto de perfil (ver app/perfil/page.js) —
+// no abajo, a un costado, en un espacio angosto. Actualiza cada 5 segundos
+// preguntandole al backend. Sin conexion o sin actividad, se recorta a un
+// boton/label minimo (nunca ocupa mas que un renglon o dos).
+//
+// OJO (2026-09-10): antes era una tarjeta completa a lo ancho del panel,
+// con barra de progreso grande y boton de desconectar de fila propia. Se
+// recorto entero a pedido explicito para que entre al lado del avatar —
+// esta version reemplaza esa, no conviven las dos.
 //
 // IMPORTANTE — regla del proyecto: este archivo debe quedar SIEMPRE sin
-// caracteres UTF-8 raros (emojis, tildes en identificadores, símbolos
-// especiales fuera de comentarios) — es una convención vieja del proyecto
+// caracteres UTF-8 raros (emojis, tildes en identificadores, simbolos
+// especiales fuera de comentarios) — es una convencion vieja del proyecto
 // para evitar problemas de encoding en Windows. Los estilos van como
 // objetos JS al final del archivo, no como string de CSS.
 //
-// PARA QUÉ SIRVE: es el widget "completo" — para el mini-widget de la
+// PARA QUÉ SIRVE: es el widget de perfil — para el mini-widget de la
 // navbar ver components/Navbar.js (SpotifyNavWidget, adentro del archivo).
 //
 // CON QUÉ SE CONECTA:
@@ -81,141 +88,121 @@ export default function SpotifyWidget({ userId, onConnect, onDisconnect }) {
     setDisconnecting(false);
   };
 
-  // ── Estados ──
-  if (loading) return (
-    <div style={wrapStyle}>
-      <span style={metaStyle}>cargando spotify...</span>
-    </div>
+  // Boton chiquito de desconectar (una X dibujada, no un caracter suelto)
+  // que se repite en los tres estados "conectado".
+  const disconnectBtn = (
+    <button onClick={handleDisconnect} disabled={disconnecting} title="desconectar spotify" style={xBtnStyle}
+      onMouseEnter={e => { e.currentTarget.style.color = "#ff4444"; }}
+      onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,.2)"; }}>
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+        <path d="M18 6 6 18M6 6l12 12" />
+      </svg>
+    </button>
   );
 
+  // ── Estados ──
+  // Nada visible mientras carga: en un espacio tan chico, un texto
+  // "cargando..." solo parpadea y molesta mas de lo que informa.
+  if (loading) return null;
+
   if (!data?.connected) return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <div style={wrapStyle}>
-        <span style={{ ...metaStyle, color: "rgba(255,255,255,.18)", fontSize: 8 }}>
-          cuenta no conectada a spotify
-        </span>
-      </div>
-      <button onClick={onConnect} style={connectBtnStyle}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,.4)"; e.currentTarget.style.color = "#fff"; }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,.15)"; e.currentTarget.style.color = "rgba(255,255,255,.4)"; }}>
-        conectar spotify
-      </button>
-    </div>
+    <button onClick={onConnect} style={connectStyle}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = "#1db954"; e.currentTarget.style.color = "#1db954"; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,.12)"; e.currentTarget.style.color = "rgba(255,255,255,.35)"; }}>
+      + spotify
+    </button>
   );
 
   if (!data.track) return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <div style={wrapStyle}>
-        <span style={metaStyle}>sin actividad reciente</span>
-      </div>
-      <button onClick={handleDisconnect} disabled={disconnecting} style={disconnectBtnStyle}
-        onMouseEnter={e => { e.currentTarget.style.color = "#ff4444"; e.currentTarget.style.borderColor = "rgba(255,68,68,.3)"; }}
-        onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,.2)"; e.currentTarget.style.borderColor = "rgba(255,255,255,.08)"; }}>
-        {disconnecting ? "desconectando..." : "desconectar spotify"}
-      </button>
+    <div style={wrapStyle}>
+      <span style={metaStyle}>sin actividad</span>
+      {disconnectBtn}
     </div>
   );
 
   const pct = data.duration ? (progress / data.duration) * 100 : null;
-  const fmtTime = (ms) => {
-    if (!ms) return "0:00";
-    const s = Math.floor(ms / 1000);
-    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-  };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      {/* Track info */}
-      <div style={{ ...wrapStyle, padding: "10px 12px", display: "flex", gap: 10, alignItems: "center" }}>
-        {data.albumArt && (
-          <img src={data.albumArt} alt="album"
-            style={{ width: 40, height: 40, objectFit: "cover", flexShrink: 0, border: "1px solid rgba(255,255,255,.08)" }} />
-        )}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ marginBottom: 3 }}>
-            <span style={{ fontSize: 7, fontFamily: "'IBM Plex Mono',monospace", color: data.isPlaying ? "#1db954" : "rgba(255,255,255,.3)", letterSpacing: ".12em" }}>
-              {data.isPlaying ? "AHORA" : "ULTIMO"}
-            </span>
-          </div>
-          <div style={{ fontSize: 11, color: "#e8e4d9", fontFamily: "'IBM Plex Sans',sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {data.track}
-          </div>
-          <div style={{ fontSize: 9, color: "rgba(255,255,255,.4)", fontFamily: "'IBM Plex Mono',monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 1 }}>
-            {data.artist}
-          </div>
-
-          {/* Barra de progreso */}
-          {pct !== null && (
-            <>
-              <div style={{ height: 2, background: "rgba(255,255,255,.08)", borderRadius: 1, marginTop: 6, overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${pct}%`, background: data.isPlaying ? "#1db954" : "rgba(255,255,255,.2)", borderRadius: 1, transition: "width 1s linear" }} />
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 2 }}>
-                <span style={{ fontSize: 7, fontFamily: "'IBM Plex Mono',monospace", color: "rgba(255,255,255,.2)" }}>{fmtTime(progress)}</span>
-                <span style={{ fontSize: 7, fontFamily: "'IBM Plex Mono',monospace", color: "rgba(255,255,255,.2)" }}>{fmtTime(data.duration)}</span>
-              </div>
-            </>
-          )}
+    <div style={{ ...wrapStyle, alignItems: "flex-start" }}>
+      {data.albumArt && (
+        <img src={data.albumArt} alt="album"
+          style={{ width: 30, height: 30, objectFit: "cover", flexShrink: 0, border: "1px solid rgba(255,255,255,.08)" }} />
+      )}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 7, fontFamily: MONO, color: data.isPlaying ? "#1db954" : "rgba(255,255,255,.3)", letterSpacing: ".1em", marginBottom: 2 }}>
+          {data.isPlaying ? "sonando" : "ultimo"}
+        </div>
+        <div style={{ fontSize: 10, color: "#e8e4d9", fontFamily: SANS, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {data.track}
+        </div>
+        <div style={{ fontSize: 8, color: "rgba(255,255,255,.4)", fontFamily: MONO, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 1 }}>
+          {data.artist}
         </div>
 
-        {data.spotifyUrl && (
-          <a href={data.spotifyUrl} target="_blank" rel="noopener noreferrer"
-            style={{ fontSize: 14, color: "rgba(255,255,255,.2)", textDecoration: "none", flexShrink: 0, transition: "color .2s" }}
-            onMouseEnter={e => e.currentTarget.style.color = "#1db954"}
-            onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,.2)"}>
-            +
-          </a>
+        {pct !== null && (
+          <div style={{ height: 2, background: "rgba(255,255,255,.08)", borderRadius: 1, marginTop: 5, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${pct}%`, background: data.isPlaying ? "#1db954" : "rgba(255,255,255,.2)", borderRadius: 1, transition: "width 1s linear" }} />
+          </div>
         )}
       </div>
-
-      {/* Botón desconectar */}
-      <button onClick={handleDisconnect} disabled={disconnecting} style={disconnectBtnStyle}
-        onMouseEnter={e => { e.currentTarget.style.color = "#ff4444"; e.currentTarget.style.borderColor = "rgba(255,68,68,.3)"; }}
-        onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,.2)"; e.currentTarget.style.borderColor = "rgba(255,255,255,.08)"; }}>
-        {disconnecting ? "desconectando..." : "desconectar spotify"}
-      </button>
+      {disconnectBtn}
     </div>
   );
 }
 
 // ── Estilos compartidos ──
+const MONO = "'IBM Plex Mono',monospace";
+const SANS = "'IBM Plex Sans',sans-serif";
+
 const wrapStyle = {
-  padding: "8px 12px",
+  width: "100%",
+  minWidth: 0,
+  padding: "8px",
   border: "1px solid rgba(255,255,255,.06)",
   background: "rgba(255,255,255,.02)",
   display: "flex",
   alignItems: "center",
+  gap: 6,
+  boxSizing: "border-box",
 };
 
 const metaStyle = {
+  flex: 1,
+  minWidth: 0,
   fontSize: 9,
-  fontFamily: "'IBM Plex Mono',monospace",
+  fontFamily: MONO,
   color: "rgba(255,255,255,.2)",
-  letterSpacing: ".1em",
+  letterSpacing: ".08em",
 };
 
-const connectBtnStyle = {
+const connectStyle = {
+  width: "100%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
   background: "transparent",
-  border: "1px solid rgba(255,255,255,.15)",
-  color: "rgba(255,255,255,.4)",
-  fontFamily: "'IBM Plex Mono',monospace",
+  border: "1px solid rgba(255,255,255,.12)",
+  color: "rgba(255,255,255,.35)",
+  fontFamily: MONO,
   fontSize: 9,
-  letterSpacing: ".15em",
-  padding: "8px 16px",
+  letterSpacing: ".08em",
+  padding: "10px 6px",
   cursor: "pointer",
   transition: "all .2s",
-  width: "100%",
+  boxSizing: "border-box",
 };
 
-const disconnectBtnStyle = {
+const xBtnStyle = {
+  flexShrink: 0,
+  width: 16,
+  height: 16,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
   background: "transparent",
-  border: "1px solid rgba(255,255,255,.08)",
+  border: "none",
   color: "rgba(255,255,255,.2)",
-  fontFamily: "'IBM Plex Mono',monospace",
-  fontSize: 8,
-  letterSpacing: ".12em",
-  padding: "5px 10px",
   cursor: "pointer",
-  transition: "all .2s",
-  width: "100%",
+  padding: 0,
+  transition: "color .15s",
 };

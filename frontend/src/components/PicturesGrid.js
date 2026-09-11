@@ -20,8 +20,8 @@ import { API } from '@/lib/api';
 import { HOLO_THEME } from '@/lib/theme';
 import TrashGlyph from '@/components/TrashGlyph';
 
-const EyeIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+const EyeIcon = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
     <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
     <circle cx="12" cy="12" r="3" />
   </svg>
@@ -91,14 +91,22 @@ export default function PicturesGrid({ userId, initialPhotos = [], canEdit = tru
   const slots = [...photos.slice(0, 5)];
   while (slots.length < 5) slots.push(null);
 
+  // "Paradas" (verticales, ~3:4), 3 por fila (3 arriba + 3 abajo — van
+  // hacia la derecha, no hacia abajo). Tamaño FIJO calculado para llenar
+  // casi todo el ancho de la tarjeta angosta donde vive esto (perfil,
+  // debajo de "Información") sin dejar franja vacía al costado.
+  const CELL_W = 72;
+  const CELL_H = 94;
+
   return (
     <>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(3, ${CELL_W}px)`, gap: 6, justifyContent: 'center' }}>
         {slots.map((photo, idx) => (
           <div
             key={photo?.id || `empty-${idx}`}
             style={{
-              aspectRatio: '1',
+              width: CELL_W,
+              height: CELL_H,
               background: HOLO_THEME.panel,
               border: `1px solid ${HOLO_THEME.hairlineSoft}`,
               borderRadius: 8,
@@ -141,7 +149,8 @@ export default function PicturesGrid({ userId, initialPhotos = [], canEdit = tru
                   onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                 />
 
-                {/* Overlay con botones (solo si canEdit) */}
+                {/* Overlay con botones (solo si canEdit) — chico, para la
+                    miniatura de 62px de ancho */}
                 {canEdit && hoveredPhotoId === photo.id && (
                   <div
                     style={{
@@ -152,7 +161,7 @@ export default function PicturesGrid({ userId, initialPhotos = [], canEdit = tru
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: 10,
+                      gap: 5,
                       animation: 'fadeIn .15s ease'
                     }}
                   >
@@ -162,13 +171,13 @@ export default function PicturesGrid({ userId, initialPhotos = [], canEdit = tru
                       style={{
                         background: 'rgba(255,255,255,.08)',
                         border: '1px solid rgba(255,255,255,.16)',
-                        borderRadius: 9,
+                        borderRadius: 6,
                         color: 'rgba(242,240,248,.85)',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        padding: 8,
+                        padding: 4,
                         transition: 'all .15s'
                       }}
                       onMouseEnter={(e) => {
@@ -182,7 +191,7 @@ export default function PicturesGrid({ userId, initialPhotos = [], canEdit = tru
                         e.currentTarget.style.color = 'rgba(242,240,248,.85)';
                       }}
                     >
-                      <EyeIcon />
+                      <EyeIcon size={11} />
                     </button>
                     <button
                       onClick={() => handleDelete(photo.id)}
@@ -190,13 +199,13 @@ export default function PicturesGrid({ userId, initialPhotos = [], canEdit = tru
                       style={{
                         background: 'rgba(255,90,90,.1)',
                         border: '1px solid rgba(255,90,90,.28)',
-                        borderRadius: 9,
+                        borderRadius: 6,
                         color: 'rgba(255,110,110,.85)',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        padding: 8,
+                        padding: 4,
                         transition: 'all .15s'
                       }}
                       onMouseEnter={(e) => {
@@ -210,7 +219,7 @@ export default function PicturesGrid({ userId, initialPhotos = [], canEdit = tru
                         e.currentTarget.style.color = 'rgba(255,110,110,.85)';
                       }}
                     >
-                      <TrashGlyph size={16} />
+                      <TrashGlyph size={11} />
                     </button>
                   </div>
                 )}
@@ -227,7 +236,8 @@ export default function PicturesGrid({ userId, initialPhotos = [], canEdit = tru
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
             style={{
-              aspectRatio: '1',
+              width: CELL_W,
+              height: CELL_H,
               background: uploading ? 'rgba(255,255,255,.03)' : 'transparent',
               border: '2px dashed rgba(255,255,255,.12)',
               borderRadius: 0,
@@ -235,12 +245,12 @@ export default function PicturesGrid({ userId, initialPhotos = [], canEdit = tru
               alignItems: 'center',
               justifyContent: 'center',
               flexDirection: 'column',
-              gap: 4,
+              gap: 3,
               cursor: uploading ? 'not-allowed' : 'pointer',
               transition: 'all .2s',
               color: 'rgba(255,255,255,.2)',
               fontFamily: "'Inter',sans-serif",
-              fontSize: 11
+              fontSize: 9
             }}
             onMouseEnter={(e) => {
               if (!uploading) {
@@ -253,7 +263,7 @@ export default function PicturesGrid({ userId, initialPhotos = [], canEdit = tru
               e.currentTarget.style.color = 'rgba(255,255,255,.2)';
             }}
           >
-            <span style={{ fontSize: 24 }}>{uploading ? '...' : '+'}</span>
+            <span style={{ fontSize: 18 }}>{uploading ? '...' : '+'}</span>
             {uploading && <span>subiendo</span>}
           </button>
         )}

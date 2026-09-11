@@ -29,9 +29,10 @@
 //     consulta SQL escrita a mano en este archivo (se sacó el 2026-09-04).
 //   - upload/upload.security.js → verificarMagicBytes antes de aceptar
 //     cualquier imagen (avatar o foto de galería).
-//   - req.io + req.onlineUsers → el aviso en vivo de "visita a tu perfil" Y
-//     el de "cambié mi avatar" (`user:avatar`, escuchado por
-//     hooks/useFeedPosts.js, usePublicProfile.js y useChat.js).
+//   - req.io → el aviso en vivo de "visita a tu perfil" (a la sala privada
+//     `user:<id>` del dueño) Y el de "cambié mi avatar" (`user:avatar`,
+//     broadcast, escuchado por hooks/useFeedPosts.js, usePublicProfile.js y
+//     useChat.js).
 //   - Frontend: hooks/useOwnProfile.js y hooks/usePublicProfile.js.
 // ════════════════════════════════════════════════════════════════════════
 const fs     = require('fs');
@@ -193,8 +194,9 @@ const getPerfilPublico = async (req, res) => {
         });
       }
       visitas = await prisma.profile_visits.count({ where: { perfilId: profileUserId } });
-      const targetSocket = req.onlineUsers?.get(String(profileUserId));
-      if (targetSocket) req.io.to(targetSocket).emit('profile:visit', { visitas });
+      // Room por usuario (misma convención que chat) — llega a todas sus
+      // pestañas y a nadie más; si no está conectado, es un no-op.
+      req.io?.to(`user:${profileUserId}`).emit('profile:visit', { visitas });
     } catch (e) { console.error('[VISITAS] error:', e.message); }
 
     let photos = [];
@@ -211,12 +213,16 @@ const getPerfilPublico = async (req, res) => {
 
 // PUT /api/perfil — actualizar datos
 const updatePerfil = async (req, res) => {
-  const { bio, statusText, intereses, links, nombre } = req.body;
+  const { bio, statusText, intereses, links, nombre, mostrarNombreCompleto } = req.body;
+  // Solo tocar el campo si vino en el body (boolean explícito) — si no,
+  // dejar Prisma usar lo que ya había (undefined = "no actualizar esta
+  // columna" en un upsert/update, no la pisa con null).
+  const nombreField = typeof mostrarNombreCompleto === 'boolean' ? { mostrarNombreCompleto } : {};
   try {
     const profile = await prisma.user_profiles.upsert({
       where:  { userId:req.userId },
-      update: { bio, statusText, intereses, links },
-      create: { userId:req.userId, bio, statusText, intereses, links }
+      update: { bio, statusText, intereses, links, ...nombreField },
+      create: { userId:req.userId, bio, statusText, intereses, links, ...nombreField }
     });
     if (nombre) await prisma.users.update({ where:{ id:req.userId }, data:{ nombre } });
     res.json({ ok:true, profile });

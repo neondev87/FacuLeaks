@@ -10,6 +10,7 @@ import { REACTIONS } from "./reactions";
 import PostComments from "./PostComments";
 import TrashIcon from "./TrashIcon";
 import ShareIcon from "./ShareIcon";
+import AvatarBadge from "./AvatarBadge";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: components/feed/PostCard.js — la tarjeta de un post en el MURO
@@ -94,12 +95,14 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, onSha
         {/* Header — sin línea abajo: el nombre y lo que se posteó son un solo
             bloque, no dos secciones separadas. */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 18px 8px" }}>
-          <div style={{ display:"flex", gap:10, alignItems:"center", cursor: post.autor?.id ? "pointer" : "default" }}
+          <div style={{ display:"flex", gap:10, alignItems:"flex-start", cursor: post.autor?.id ? "pointer" : "default" }}
             onClick={() => post.autor?.id && router.push(`/perfil/${post.autor.id}`)}>
-            <div style={{ width:36, height:36, borderRadius:"50%", backgroundColor:"#1c1c24", backgroundImage: post.autor?.imagen ? `url(${post.autor.imagen.startsWith("http") ? post.autor.imagen : `${API}${post.autor.imagen}`})` : "none", backgroundSize:"100% 100%", backgroundPosition:"center", border:`1px solid ${HOLO_THEME.hairline}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, color:HOLO_THEME.textDim, transition:"border-color .2s", flexShrink:0 }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(255,255,255,.4)"}
-              onMouseLeave={e => e.currentTarget.style.borderColor = HOLO_THEME.hairline}>{!post.autor?.imagen && "◈"}</div>
-            <div>
+            {/* Se agranda y se empuja a la esquina superior-izquierda de la
+                tarjeta (margen negativo = padding del header, 14/18px) —
+                ahí queda listo el slot para el escudo de facultad cuando
+                exista esa configuración; por ahora siempre vacío. */}
+            <AvatarBadge imagen={post.autor?.imagen} size={48} escudoUrl={null} style={{ marginTop:-14, marginLeft:-18 }} />
+            <div style={{ marginTop:4 }}>
               <div style={{ fontSize:13, color:HOLO_THEME.text, fontFamily:"'Cinzel',serif", fontWeight:600, transition:"color .15s" }}
                 onMouseEnter={e => e.currentTarget.style.color = "#fff"}
                 onMouseLeave={e => e.currentTarget.style.color = HOLO_THEME.text}>{username}</div>
@@ -196,8 +199,8 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, onSha
         >
           <span style={{ fontSize:11, letterSpacing:".1em", color: showComments ? HOLO_THEME.text : HOLO_THEME.textDim, fontFamily:"'Space Mono',monospace" }}>
             {commentsHasMore
-              ? `† ${comments} comentario${comments === 1 ? "" : "s"}`
-              : (showComments ? "† ocultar" : "† comentar")}
+              ? `${comments} comentario${comments === 1 ? "" : "s"}`
+              : (showComments ? "ocultar" : "comentar")}
           </span>
           {commentsHasMore && (
             <motion.span

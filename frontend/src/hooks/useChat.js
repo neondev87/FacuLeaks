@@ -32,8 +32,8 @@
 //     puedan agregar mensajes a la lista.
 // ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useRef, useCallback } from "react";
-import { io } from "socket.io-client";
-import { API, SOCKET_URL } from "@/lib/api";
+import { API } from "@/lib/api";
+import { createAuthedSocket } from "@/lib/socket";
 export default function useChat({ session, status, inputRef }) {
   const [recientes,   setRecientes]   = useState([]);
   const [solicitudes, setSolicitudes] = useState([]);
@@ -49,8 +49,12 @@ export default function useChat({ session, status, inputRef }) {
   const [streak,      setStreak]      = useState({ count:0, dying:false, progress:1.0, loaded:false });
   const [ownImagen,   setOwnImagen]   = useState(null);
 
-  const socketRef   = useRef(null);
-  const typingTimer = useRef(null);
+  const socketRef     = useRef(null);
+  const typingTimer   = useRef(null);
+  // Espejo de `activeChat` para leerlo desde los callbacks del socket sin
+  // recrear la conexión cada vez que cambiás de conversación.
+  const activeChatRef = useRef(null);
+  useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
 
   const addMensaje = useCallback((msg) => {
     setMensajes(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
@@ -103,33 +107,58 @@ export default function useChat({ session, status, inputRef }) {
 
   useEffect(() => {
     if (status !== "authenticated" || !session?.user?.dbId) return;
-    const socket = io(SOCKET_URL);
+    const myId = String(session.user.dbId);
+
+    const socket = createAuthedSocket();
     socketRef.current = socket;
-    socket.emit("user:connect", session.user.dbId);
-    socket.on("users:online",    users => setOnlineUsers(users));
+
+    // ¿Este mensaje pertenece a la conversación abierta AHORA? Si no, no se
+    // pinta en el hilo visible — solo se refresca la lista lateral (contador
+    // de no leídos / último mensaje). Antes cualquier mensaje que llegara por
+    // socket se metía en el chat abierto, sin importar de quién fuera.
+    const perteneceAlChatActivo = (msg) => {
+      const otro = activeChatRef.current?.userId;
+      if (otro == null) return false;
+      const e  = Number(msg?.emisorId ?? msg?.emisor?.id);
+      const r  = Number(msg?.receptorId);
+      const me = Number(myId);
+      const o  = Number(otro);
+      return (e === me && r === o) || (e === o && r === me);
+    };
+    const onIncoming = (msg) => {
+      if (perteneceAlChatActivo(msg)) addMensaje(msg);
+      // Si le respondías a una solicitud, del lado del backend esa
+      // conversación ya pasó a "recientes" — refrescar para verla así.
+      loadConversaciones();
+    };
+
+    socket.on("users:online", users => setOnlineUsers(users));
     // Alguien cambió su foto de perfil — reflejarlo en vivo en la lista de
     // conversaciones, en la cabecera del chat activo, y en tu propio ícono.
     socket.on("user:avatar", ({ userId, imagen }) => {
-      if (String(userId) === String(session.user.dbId)) { setOwnImagen(imagen); return; }
+      if (String(userId) === myId) { setOwnImagen(imagen); return; }
       setRecientes(prev => prev.map(c => c.userId === userId ? { ...c, imagen } : c));
       setAmigos(prev => prev.map(a => a.userId === userId ? { ...a, imagen } : a));
       setActiveChat(prev => prev && prev.userId === userId ? { ...prev, imagen } : prev);
     });
-    socket.on("message:receive", msg   => { addMensaje(msg); loadConversaciones(); });
-    // Si le respondías a una solicitud, del lado del backend esa conversación
-    // ya pasó a "recientes" — hay que refrescar para que la vea así también.
-    socket.on("message:sent",    msg   => { addMensaje(msg); loadConversaciones(); });
-    socket.on("typing:start",    ({ userId }) => { setIsTyping(String(userId)); setIsAudio(false); });
-    socket.on("typing:stop",     ({ userId }) => { setIsTyping(prev => prev === String(userId) ? false : prev); });
-    socket.on("audio:start",     ({ userId }) => { setIsAudio(String(userId)); setIsTyping(false); });
-    socket.on("audio:stop",      ({ userId }) => { setIsAudio(prev => prev === String(userId) ? false : prev); });
-    socket.on("message:receive:audio", msg => { addMensaje(msg); loadConversaciones(); });
-    socket.on("message:receive:image", msg => { addMensaje(msg); loadConversaciones(); });
+    socket.on("message:receive",       onIncoming);
+    socket.on("message:sent",          onIncoming);
+    socket.on("message:receive:audio", onIncoming);
+    socket.on("message:receive:image", onIncoming);
+    socket.on("typing:start", ({ userId }) => { setIsTyping(String(userId)); setIsAudio(false); });
+    socket.on("typing:stop",  ({ userId }) => { setIsTyping(prev => prev === String(userId) ? false : prev); });
+    socket.on("audio:start",  ({ userId }) => { setIsAudio(String(userId)); setIsTyping(false); });
+    socket.on("audio:stop",   ({ userId }) => { setIsAudio(prev => prev === String(userId) ? false : prev); });
     socket.on("message:deleted", ({ id }) => {
       setMensajes(prev => prev.filter(m => m.id !== id));
     });
     return () => { socket?.disconnect(); socketRef.current = null; };
-  }, [status, session]);
+  }, [status, session, addMensaje, loadConversaciones]);
+
+  // Vuelve a la lista de conversaciones sin cerrar el socket ni perder nada
+  // más — lo usa la flechita de "volver" que aparece en celular, donde la
+  // lista y la conversación no entran juntas en pantalla (ver chat/page.js).
+  const closeChat = () => setActiveChat(null);
 
   const openChat = async user => {
     setIsTyping(false); setIsAudio(false);
@@ -142,7 +171,7 @@ export default function useChat({ session, status, inputRef }) {
       const msgs = data.mensajes || [];
       setMensajes(msgs.filter((m, i, arr) => arr.findIndex(x => x.id === m.id) === i));
       if (socketRef.current && session?.user?.dbId)
-        socketRef.current.emit("messages:read", { emisorId: chatUser.userId, receptorId: session.user.dbId });
+        socketRef.current.emit("messages:read", { emisorId: chatUser.userId });
     } catch {}
     setLoading(false);
     setTimeout(() => inputRef.current?.focus(), 100);
@@ -170,8 +199,9 @@ export default function useChat({ session, status, inputRef }) {
     if (!input.trim() || !activeChat || !socketRef.current || !session?.user?.dbId) return;
     clearTimeout(typingTimer.current);
     socketRef.current.emit("typing:stop",  { receptorId: activeChat.userId });
+    // Ojo: NO se manda `emisorId` — el backend usa la identidad autenticada
+    // del socket, mandar un id acá no tendría efecto (y no debería).
     socketRef.current.emit("message:send", {
-      emisorId:   session.user.dbId,
       receptorId: activeChat.userId,
       contenido:  input.trim(),
       replyToId:  replyingTo?.id || null,
@@ -201,7 +231,7 @@ export default function useChat({ session, status, inputRef }) {
 
   return {
     recientes, solicitudes, amigos, onlineUsers, isOnline, isActive,
-    activeChat, mensajes, loading, openChat,
+    activeChat, mensajes, loading, openChat, closeChat,
     input, setInput, handleInputChange, sendMessage,
     replyingTo, setReplyingTo,
     showTypingIndicator, showAudioIndicator,

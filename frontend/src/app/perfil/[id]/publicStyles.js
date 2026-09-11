@@ -15,7 +15,16 @@ export const publicStyles = `
       ${NOISE_TEXTURE}
       ${SCROLLBAR_THIN}
       .pub-wrap { padding:68px 28px 48px; max-width:960px; margin:0 auto; animation:fadeIn .5s ease; }
+      .pub-grid { display:grid; grid-template-columns:210px 1fr 230px; }
       .sec-title { font-family:'Cinzel',serif; font-size:12px; letter-spacing:.18em; margin-bottom:12px; color:rgba(255,255,255,.7); }
       .post-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,.04); font-size:12px; font-family:'Inter',sans-serif; }
       .post-row:last-child { border-bottom:none; }
+
+      /* ── Celular: mismo apilado que el perfil propio ── */
+      @media (max-width:880px) {
+        .pub-grid { grid-template-columns:1fr; }
+      }
+      @media (max-width:760px) {
+        .pub-wrap { padding:60px 16px 32px; }
+      }
     `;

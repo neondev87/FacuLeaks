@@ -6,6 +6,7 @@ import useAuth from "@/hooks/useAuth";
 import GothicCross from "@/components/auth/GothicCross";
 import NeonDevMark from "@/components/auth/NeonDevMark";
 import { authStyles } from "./authStyles";
+import girlImg from "@/assets/shared/girl.png";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: app/auth/page.js — la pantalla de login
@@ -25,7 +26,7 @@ import { authStyles } from "./authStyles";
 // ════════════════════════════════════════════════════════════════════════
 export default function AuthPage() {
   const { data: session, status } = useSession();
-  const { white, ready, checking, tcD, tcF } = useAuth({ status, session });
+  const { ready, checking, tcD, tcF } = useAuth({ status, session });
 
   useInjectedStyles("auth-styles", authStyles);
 
@@ -139,7 +140,7 @@ export default function AuthPage() {
           </span>
         </div>
 
-        <img src="/art/girl.png" alt="" className="girl-img" />
+        <img src={girlImg.src} alt="" className="girl-img" />
 
         <div style={{
           position: "absolute", inset: 0,

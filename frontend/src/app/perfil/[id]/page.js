@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
@@ -37,6 +37,11 @@ export default function PerfilPublicoPage() {
     lightboxSrc, setLightboxSrc, toggleReaction,
   } = usePublicProfile({ userId, status, session, router });
 
+  // El "Sobre mí" ya no es una tarjeta propia — vive plegado adentro de
+  // "Información" (antes "Stats"), atrás del ícono de info, y solo
+  // aparece si hay algo que mostrar (ver el `profile.bio &&` de abajo).
+  const [showBio, setShowBio] = useState(false);
+
   const border = "1px solid rgba(255,255,255,.07)";
   const card   = { border, padding:16, background:"#050505" };
 
@@ -49,7 +54,7 @@ export default function PerfilPublicoPage() {
   if (status === "loading" || loading) return (
     <>
       <Navbar />
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"calc(100vh - 48px)", marginTop:48, color:"rgba(255,255,255,.2)", fontFamily:"'Inter',sans-serif", fontSize:13 }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"calc(100vh - 58px)", marginTop:58, color:"rgba(255,255,255,.2)", fontFamily:"'Inter',sans-serif", fontSize:13 }}>
         cargando perfil...
       </div>
     </>
@@ -58,7 +63,7 @@ export default function PerfilPublicoPage() {
   if (notFound) return (
     <>
       <Navbar />
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"calc(100vh - 48px)", marginTop:48, flexDirection:"column", gap:12 }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"calc(100vh - 58px)", marginTop:58, flexDirection:"column", gap:12 }}>
         <div style={{ fontFamily:"'Cinzel',serif", fontSize:28, color:"rgba(255,255,255,.15)" }}>404</div>
         <div style={{ fontFamily:"'Inter',sans-serif", fontSize:13, color:"rgba(255,255,255,.3)" }}>perfil no encontrado</div>
         <button onClick={() => router.back()} style={{ marginTop:8, background:"transparent", border:"1px solid rgba(255,255,255,.15)", color:"rgba(255,255,255,.4)", fontFamily:"'Inter',sans-serif", fontSize:12, padding:"7px 18px", cursor:"pointer", transition:"all .2s" }}
@@ -79,6 +84,12 @@ export default function PerfilPublicoPage() {
   const links = Array.isArray(profile.links) ? profile.links
     : profile.links ? Object.values(profile.links) : [];
 
+  // Respeta lo que esa persona eligió en su "Información › nombre a
+  // mostrar" — si puso @usuario, el chip de @usuario de al lado sobraría
+  // (quedaría duplicado), así que se esconde.
+  const mostrarCompleto = profile.mostrarNombreCompleto !== false;
+  const displayName = mostrarCompleto ? (user.nombre || user.username) : user.username;
+
   return (
     <>
       <Navbar />
@@ -91,11 +102,13 @@ export default function PerfilPublicoPage() {
           <div>
             <div style={{ display:"flex", alignItems:"baseline", gap:12 }}>
               <div style={{ fontFamily:"'Cinzel',serif", fontSize:30, color:"#e8e4d9", letterSpacing:".06em", lineHeight:1.1 }}>
-                {user.nombre || user.username}
+                {displayName}
               </div>
-              <div style={{ fontFamily:"'Space Mono',monospace", fontSize:12, color:"rgba(255,255,255,.3)", letterSpacing:".04em" }}>
-                @{user.username}
-              </div>
+              {mostrarCompleto && (
+                <div style={{ fontFamily:"'Space Mono',monospace", fontSize:12, color:"rgba(255,255,255,.3)", letterSpacing:".04em" }}>
+                  @{user.username}
+                </div>
+              )}
             </div>
             {profile.statusText && (
               <div style={{ fontFamily:"'Inter',sans-serif", fontSize:12, color:"#555", marginTop:5, fontStyle:"italic" }}>
@@ -121,43 +134,96 @@ export default function PerfilPublicoPage() {
           </div>
         </div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"210px 1fr 230px", gap:12 }}>
+        <div className="pub-grid" style={{ gap:12 }}>
 
           {/* IZQUIERDA */}
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {/* Avatar (solo ver, no editar) */}
+            {/* Avatar (solo ver, no editar) — mismo tamaño (165) que el
+                perfil propio. Antes no llevaba `size`, y AvatarMenu sin
+                `size` se estira a 100% del contenedor con aspectRatio:1 —
+                en celular (donde esta columna pasa a ocupar toda la
+                pantalla) eso lo hacía gigante y deforme. ESTE era el bug. */}
             <AvatarMenu
               currentAvatar={user.imagen}
               canEdit={false}
+              size={165}
               onViewClick={() => user.imagen && setLightboxSrc(user.imagen)}
             />
 
-            {/* Stats */}
+            {/* Información (antes "Stats") — el "Sobre mí" Y los links de
+                la persona quedan plegados atrás del ícono de info, solo si
+                hay algo de eso para mostrar. */}
             <div style={card}>
-              <div className="sec-title">† Stats</div>
+              <div className="sec-title" style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                Información
+                {(profile.bio || links.length > 0) && (
+                  <button onClick={() => setShowBio(v => !v)} title={showBio ? "ocultar sobre mí" : "ver sobre mí"}
+                    style={{ background:"none", border:"none", padding:2, cursor:"pointer", color: showBio ? "#e8e4d9" : "#555", transition:"color .15s", display:"flex" }}
+                    onMouseEnter={e => e.currentTarget.style.color = "#e8e4d9"}
+                    onMouseLeave={e => e.currentTarget.style.color = showBio ? "#e8e4d9" : "#555"}>
+                    {/* Flechita que se da vuelta al abrir — no un ícono de
+                        "i" en círculo, que se leía más a error que a "tocá acá". */}
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                      style={{ transform: showBio ? "rotate(180deg)" : "none", transition:"transform .2s" }}>
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </button>
+                )}
+              </div>
               <TerminalCounter label="visitas" value={stats?.visitas || 0} />
               <TerminalCounter label="vlogs"   value={stats?.vlogs   || 0} />
               <TerminalCounter label="amigos"  value={stats?.amigos  || 0} />
               <TerminalCounter label="desde"   value={null} text={
                 user.creadoEn ? new Date(user.creadoEn).toLocaleDateString("es-MX", { month:"short", year:"numeric" }) : "—"
               } />
+              {showBio && (profile.bio || links.length > 0) && (
+                <div style={{ marginTop:10, paddingTop:10, borderTop:"1px solid rgba(255,255,255,.06)" }}>
+                  {profile.bio && (
+                    <div style={{ fontSize:13, color:"rgba(232,228,217,.65)", lineHeight:1.75, fontFamily:"'Inter',sans-serif" }}>
+                      {profile.bio}
+                    </div>
+                  )}
+                  {/* Links — ya no es tarjeta aparte, vive acá adentro. */}
+                  {links.length > 0 && (
+                    <div style={{ marginTop: profile.bio ? 10 : 0, display:"flex", flexDirection:"column" }}>
+                      {links.map((l, i) => {
+                        const lbl = typeof l === "string" ? l : l.label;
+                        const url = typeof l === "string" ? "#" : (l.url || "#");
+                        return (
+                          <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                            style={{ display:"flex", gap:8, padding:"5px 0", fontSize:12, color:"#555", cursor:"pointer", transition:"color .2s", textDecoration:"none", fontFamily:"'Inter',sans-serif" }}
+                            onMouseEnter={e => e.currentTarget.style.color = "#e8e4d9"}
+                            onMouseLeave={e => e.currentTarget.style.color = "#555"}>
+                            <span style={{ color:"rgba(255,255,255,.15)" }}>→</span> {lbl}
+                          </a>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
+
+            {/* Pictures, debajo de Información — miniaturas un poco más
+                grandes (72x94) para llenar el ancho de la columna. */}
+            {photos.length > 0 && (
+              <div style={card}>
+                <div className="sec-title">Pictures</div>
+                <PicturesGrid
+                  userId={parseInt(userId)}
+                  initialPhotos={photos}
+                  canEdit={false}
+                />
+              </div>
+            )}
           </div>
 
           {/* CENTRAL */}
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
 
-            <div style={card}>
-              <div className="sec-title">† Sobre mí</div>
-              {profile.bio
-                ? <div style={{ fontSize:13, color:"rgba(232,228,217,.65)", lineHeight:1.75, fontFamily:"'Inter',sans-serif" }}>{profile.bio}</div>
-                : <div style={{ fontSize:12, color:"#333", fontFamily:"'Inter',sans-serif" }}>sin bio</div>
-              }
-            </div>
-
             {intereses.length > 0 && (
               <div style={card}>
-                <div className="sec-title">† Intereses</div>
+                <div className="sec-title">Intereses</div>
                 {intereses.map((t, i) => (
                   <div key={i} style={{ display:"flex", gap:10, marginBottom:5, fontSize:13, color:"rgba(232,228,217,.6)", fontFamily:"'Inter',sans-serif" }}>
                     <span style={{ color:"rgba(255,255,255,.18)", flexShrink:0 }}>—</span><span>{t}</span>
@@ -168,7 +234,7 @@ export default function PerfilPublicoPage() {
 
             {posts.length > 0 && (
               <div style={card}>
-                <div className="sec-title">† Posts</div>
+                <div className="sec-title">Posts</div>
                 {posts.map(p => (
                   <PostCard
                     key={p.id}
@@ -184,38 +250,9 @@ export default function PerfilPublicoPage() {
             )}
           </div>
 
-          {/* DERECHA */}
+          {/* DERECHA — Links se mudó adentro de "Información" (izquierda);
+              acá ya solo queda el botón de mensaje. */}
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-
-            {/* ← NUEVO: Pictures (solo ver, no editar) */}
-            {photos.length > 0 && (
-              <div style={card}>
-                <div className="sec-title">† Pictures</div>
-                <PicturesGrid
-                  userId={parseInt(userId)}
-                  initialPhotos={photos}
-                  canEdit={false}
-                />
-              </div>
-            )}
-
-            {links.length > 0 && (
-              <div style={card}>
-                <div className="sec-title">† Links</div>
-                {links.map((l, i) => {
-                  const lbl = typeof l === "string" ? l : l.label;
-                  const url = typeof l === "string" ? "#" : (l.url || "#");
-                  return (
-                    <a key={i} href={url} target="_blank" rel="noopener noreferrer"
-                      style={{ display:"flex", gap:8, padding:"5px 0", fontSize:12, color:"#555", cursor:"pointer", transition:"color .2s", textDecoration:"none", fontFamily:"'Inter',sans-serif" }}
-                      onMouseEnter={e => e.currentTarget.style.color = "#e8e4d9"}
-                      onMouseLeave={e => e.currentTarget.style.color = "#555"}>
-                      <span style={{ color:"rgba(255,255,255,.15)" }}>→</span> {lbl}
-                    </a>
-                  );
-                })}
-              </div>
-            )}
 
             {/* Enviar mensaje */}
             {!isOwnProfile && (

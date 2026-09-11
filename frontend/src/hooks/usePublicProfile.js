@@ -18,8 +18,8 @@
 //   - Lo consume: app/perfil/[id]/page.js.
 // ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect } from "react";
-import { io } from "socket.io-client";
-import { API, SOCKET_URL } from "@/lib/api";
+import { API } from "@/lib/api";
+import { createAuthedSocket } from "@/lib/socket";
 export default function usePublicProfile({ userId, status, session, router }) {
   const [perfil,      setPerfil]      = useState(null);
   const [loading,     setLoading]     = useState(true);
@@ -61,8 +61,7 @@ export default function usePublicProfile({ userId, status, session, router }) {
 
   useEffect(() => {
     if (!session?.user?.dbId) return;
-    const socket = io(SOCKET_URL);
-    socket.emit("user:connect", session.user.dbId);
+    const socket = createAuthedSocket();
     socket.on("profile:visit", ({ visitas }) => {
       setPerfil(prev => prev ? { ...prev, stats: { ...prev.stats, visitas } } : prev);
     });

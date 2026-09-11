@@ -5,10 +5,15 @@ import { INTER } from "./edit/constants";
 import PField from "./edit/PField";
 import PInput from "./edit/PInput";
 import PTextarea from "./edit/PTextarea";
+import PPills from "./edit/PPills";
 import TagInput from "./edit/TagInput";
 import LinkRow from "./edit/LinkRow";
 import PDivider from "./edit/PDivider";
 import PTab from "./edit/PTab";
+
+// Opciones de "Situación sentimental" — reemplaza al viejo campo de texto
+// libre "Estado" (2026-09-10, a pedido explícito).
+const SITUACIONES = ["Soltero", "En una relación", "Casado"];
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: components/perfil/EditModal.js — modal de editar TU perfil
@@ -30,11 +35,10 @@ export default function EditModal({ profile, user, onClose, onSave }) {
   const [saving, setSaving] = useState(false);
 
   // Estado del formulario
-  const [nombre,    setNombre]    = useState(user.nombre || "");
-  const [username,  setUsername]  = useState(user.username || "");
-  const [estado,    setEstado]    = useState(profile.statusText || "");
-  const [bio,       setBio]       = useState(profile.bio || "");
-  const [tags,      setTags]      = useState(
+  const [username,   setUsername]   = useState(user.username || "");
+  const [situacion,  setSituacion]  = useState(profile.statusText || "");
+  const [bio,        setBio]        = useState(profile.bio || "");
+  const [tags,       setTags]       = useState(
     Array.isArray(profile.intereses) ? profile.intereses
     : profile.intereses ? Object.values(profile.intereses) : []
   );
@@ -43,16 +47,28 @@ export default function EditModal({ profile, user, onClose, onSave }) {
       ? profile.links.map((l,i) => ({ id:i+1, plat: l.label||"Discord", url: l.url||"" }))
       : []
   );
-  const [privacy, setPrivacy] = useState({ spotify:true, activity:true });
+  const [showEmail, setShowEmail] = useState(false);
 
   const updateLink = (id,key,val) => setLinks(ls=>ls.map(l=>l.id===id?{...l,[key]:val}:l));
   const removeLink = id => setLinks(ls=>ls.filter(l=>l.id!==id));
   const addLink    = () => setLinks(ls=>[...ls,{id:Date.now(),plat:"Discord",url:""}]);
 
+  // Oculta el correo por default — "al***@dominio.com" — hasta que se
+  // toque el ojito. No es una medida de seguridad real (el dato ya viaja
+  // al cliente), es nada más para que no quede a la vista de cualquiera
+  // que mire por encima del hombro.
+  const maskEmail = email => {
+    if (!email) return "";
+    const [nombre, dominio] = email.split("@");
+    if (!nombre || !dominio) return email;
+    const visible = nombre.slice(0, 2);
+    return `${visible}${"•".repeat(Math.max(nombre.length - 2, 3))}@${dominio}`;
+  };
+
   const handleSave = async () => {
     setSaving(true);
     const linksArr = links.filter(l=>l.url).map(l=>({ label:l.plat, url:l.url }));
-    await onSave({ bio, statusText:estado, intereses:tags, links:linksArr, nombre });
+    await onSave({ bio, statusText:situacion, intereses:tags, links:linksArr });
     setSaved(true);
     setTimeout(() => { setSaved(false); setSaving(false); onClose(); }, 1200);
   };
@@ -76,7 +92,7 @@ export default function EditModal({ profile, user, onClose, onSave }) {
           </div>
           {/* Tabs */}
           <div style={{ display:"flex", gap:20, borderBottom:"1px solid rgba(255,255,255,.07)" }}>
-            {[["perfil","Perfil"],["privacidad","Privacidad"],["cuenta","Cuenta"]].map(([k,l])=>(
+            {[["perfil","Perfil"],["cuenta","Cuenta"]].map(([k,l])=>(
               <PTab key={k} active={tab===k} onClick={()=>setTab(k)}>{l}</PTab>
             ))}
           </div>
@@ -89,16 +105,11 @@ export default function EditModal({ profile, user, onClose, onSave }) {
           {tab==="perfil" && (
             <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
               <PDivider/>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                <PField label="Nombre completo">
-                  <PInput value={nombre} onChange={e=>setNombre(e.target.value)} placeholder="Tu nombre"/>
-                </PField>
-                <PField label="Usuario" hint="@">
-                  <PInput value={username} onChange={e=>setUsername(e.target.value)} placeholder="usuario"/>
-                </PField>
-              </div>
-              <PField label="Estado" hint={`${estado.length}/60`}>
-                <PInput value={estado} onChange={e=>setEstado(e.target.value.slice(0,60))} placeholder="¿Qué está pasando?"/>
+              <PField label="Usuario" hint="@">
+                <PInput value={username} onChange={e=>setUsername(e.target.value)} placeholder="usuario"/>
+              </PField>
+              <PField label="Situación sentimental">
+                <PPills options={SITUACIONES} value={situacion} onChange={setSituacion}/>
               </PField>
               <PField label="Bio" hint={`${bio.length}/200`}>
                 <PTextarea value={bio} onChange={e=>setBio(e.target.value.slice(0,200))} placeholder="Cuéntale a la gente quién eres..." rows={4}/>
@@ -126,31 +137,31 @@ export default function EditModal({ profile, user, onClose, onSave }) {
             </div>
           )}
 
-          {/* ── TAB PRIVACIDAD ── */}
-          {tab==="privacidad" && (
-            <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
-              {[
-                { key:"spotify",  label:"Mostrar Spotify",   desc:"Tu actividad musical aparecerá en tu perfil" },
-                { key:"activity", label:"Mostrar actividad", desc:"Los demás verán cuando estás en línea" },
-              ].map(({ key, label, desc }, i, arr) => (
-                <div key={key} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 0", borderBottom:i<arr.length-1?"1px solid rgba(255,255,255,.05)":"none" }}>
-                  <div>
-                    <div style={{ fontSize:13, color:"rgba(255,255,255,.75)", fontFamily:INTER, fontWeight:500, marginBottom:3 }}>{label}</div>
-                    <div style={{ fontSize:11, color:"rgba(255,255,255,.3)", fontFamily:INTER }}>{desc}</div>
-                  </div>
-                  <div onClick={()=>setPrivacy(p=>({...p,[key]:!p[key]}))} style={{ width:40, height:22, borderRadius:999, background:privacy[key]?"rgba(255,255,255,.85)":"rgba(255,255,255,.1)", border:`1px solid ${privacy[key]?"rgba(255,255,255,.5)":"rgba(255,255,255,.15)"}`, cursor:"pointer", position:"relative", transition:"all .2s", flexShrink:0 }}>
-                    <div style={{ position:"absolute", top:2, left:privacy[key]?20:2, width:16, height:16, borderRadius:"50%", background:privacy[key]?"#1a1a1a":"rgba(255,255,255,.35)", transition:"left .2s, background .2s" }}/>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
           {/* ── TAB CUENTA ── */}
           {tab==="cuenta" && (
             <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
               <PField label="Correo electrónico">
-                <PInput value={user.email||""} onChange={()=>{}} placeholder=""/>
+                <div style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.08)", borderRadius:6, padding:"10px 12px" }}>
+                  <span style={{ flex:1, minWidth:0, fontFamily:INTER, fontSize:14, color:"rgba(255,255,255,.85)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                    {showEmail ? (user.email || "") : maskEmail(user.email)}
+                  </span>
+                  <button type="button" onClick={()=>setShowEmail(v=>!v)} title={showEmail ? "ocultar correo" : "mostrar correo"}
+                    style={{ flexShrink:0, width:26, height:26, display:"flex", alignItems:"center", justifyContent:"center", background:"transparent", border:"none", color:"rgba(255,255,255,.35)", cursor:"pointer", transition:"color .15s" }}
+                    onMouseEnter={e=>{e.currentTarget.style.color="rgba(255,255,255,.75)";}}
+                    onMouseLeave={e=>{e.currentTarget.style.color="rgba(255,255,255,.35)";}}>
+                    {showEmail ? (
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-10-8-10-8a18.4 18.4 0 0 1 4.22-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a18.42 18.42 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                        <line x1="2" y1="2" x2="22" y2="22" />
+                      </svg>
+                    ) : (
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 12s3.5-8 10-8 10 8 10 8-3.5 8-10 8-10-8-10-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </PField>
               <PDivider/>
               <div style={{ padding:"12px 14px", background:"rgba(255,50,50,.05)", border:"1px solid rgba(255,50,50,.1)", borderRadius:8, display:"flex", justifyContent:"space-between", alignItems:"center" }}>

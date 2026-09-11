@@ -136,5 +136,6 @@ export default function useOwnProfile({ status, session }) {
     lightboxSrc, setLightboxSrc,
     photos,
     handleSave, handleDeletePost, handleUnshare, toggleReaction,
+    fetchPerfil,
   };
 }

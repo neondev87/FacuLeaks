@@ -32,8 +32,15 @@ const fs     = require('fs');
 const path   = require('path');
 const sharp  = require('sharp');
 const crypto = require('crypto');
+const jwt    = require('jsonwebtoken');
 const prisma = require('../../config/db');
 const { verificarMagicBytes } = require('../upload/upload.security');
+
+// Room de Socket.io por usuario — misma convención que chat.socket.js /
+// server.js. Emitir acá llega a TODAS las pestañas de esa persona y a nadie
+// más (antes se hacía io.emit → broadcast de cada audio/imagen de DM a todos
+// los usuarios conectados).
+const roomFor = (userId) => `user:${userId}`;
 
 const getConversaciones = async (req, res) => {
   try {
@@ -183,12 +190,11 @@ const sendAudio = async (req, res) => {
 
     const msgNorm = { ...msg, emisor: msg.users_messages_emisorIdTousers };
 
-    // Notificar al receptor por socket si está conectado
-    const io = req.io;
-    if (io) {
-      // Buscar socket del receptor — el server.js expone onlineUsers en req.io
-      // Emitir a todos y el cliente filtra por emisorId/receptorId
-      io.emit('message:receive:audio', msgNorm);
+    // Entrega dirigida: al receptor y a las otras pestañas del emisor. Nunca
+    // broadcast — antes esto mandaba cada audio de DM a todos los conectados.
+    if (req.io) {
+      req.io.to(roomFor(receptorId)).emit('message:receive:audio', msgNorm);
+      req.io.to(roomFor(emisorId)).emit('message:receive:audio', msgNorm);
     }
 
     res.json({ ok: true, msg: msgNorm });
@@ -250,7 +256,11 @@ const sendImagen = async (req, res) => {
 
     const msgNorm = { ...msg, emisor: msg.users_messages_emisorIdTousers };
 
-    if (req.io) req.io.emit('message:receive:image', msgNorm);
+    // Entrega dirigida (ver sendAudio) — nunca broadcast.
+    if (req.io) {
+      req.io.to(roomFor(receptorId)).emit('message:receive:image', msgNorm);
+      req.io.to(roomFor(emisorId)).emit('message:receive:image', msgNorm);
+    }
 
     res.json({ ok: true, msg: msgNorm });
   } catch (err) {
@@ -294,9 +304,11 @@ const deletemensaje = async (req, res) => {
     if (!msg) return res.status(404).json({ error: 'Mensaje no encontrado' });
     if (msg.emisorId !== userId) return res.status(403).json({ error: 'No autorizado' });
     await prisma.messages.delete({ where: { id: msgId } });
-    // Notificar al receptor
-    const io = req.io;
-    if (io) io.emit('message:deleted', { id: msgId });
+    // Avisar solo a las dos partes de esa conversación — no a todo el mundo.
+    if (req.io) {
+      req.io.to(roomFor(msg.emisorId)).emit('message:deleted', { id: msgId });
+      req.io.to(roomFor(msg.receptorId)).emit('message:deleted', { id: msgId });
+    }
     res.json({ ok: true });
   } catch (err) {
     console.error('deletemensaje error:', err.message);
@@ -304,4 +316,21 @@ const deletemensaje = async (req, res) => {
   }
 };
 
-module.exports = { getConversaciones, getMensajes, sendAudio, sendImagen, deletemensaje, serveAudio };
+// GET /api/chat/socket-ticket — token corto para autenticar el WebSocket.
+// El navegador no puede leer la cookie `token` (es httpOnly), así que para
+// abrir el socket pide acá un "ticket" firmado con el MISMO secreto y de
+// vida corta (solo se usa en el handshake). chat.socket.js lo verifica.
+const getSocketTicket = (req, res) => {
+  try {
+    const ticket = jwt.sign({ id: req.userId }, process.env.JWT_SECRET, {
+      algorithm: 'HS256',
+      expiresIn: '120s',
+    });
+    res.json({ ticket });
+  } catch (err) {
+    console.error('getSocketTicket error:', err.message);
+    res.status(500).json({ error: 'No se pudo generar el ticket' });
+  }
+};
+
+module.exports = { getConversaciones, getMensajes, sendAudio, sendImagen, deletemensaje, serveAudio, getSocketTicket };

@@ -13,23 +13,23 @@
 // de esta página (detalle menor, no forma parte de la paleta/tipografía).
 //
 // Sin BgCross ni NOISE_TEXTURE global a propósito: el fondo del chat es
-// plano. El recuadro de "nueva conversación" (sin chat abierto) SÍ lleva un
-// fondo decorativo propio — tratamiento "red-letter": columnas de texto
-// serif (Reina-Valera 1909, palabras de Cristo en rojo) + las dos figuras
-// al pie. Ese fondo lo dibuja components/chat/EmptyStateBg.js y su CSS son
-// las clases .empty-bg / .bible-layer / .empty-fig* de acá abajo. (Reemplaza
-// la idea previa del "video en ASCII", que quedó descartada.)
-// 'EB Garamond' se importa solo acá porque es exclusiva de esa capa de
-// texto; el resto de la app usa el trío Cinzel/Inter/Space Mono de theme.js.
+// plano. "Mensajes" sin chat abierto (2026-09-10, reemplaza el tratamiento
+// "red-letter" bíblico anterior) es una tarjeta centrada — .chat-landing /
+// .chat-landing-card / .chat-landing-lists más abajo — flotando sobre un
+// fondo rojo (gradiente sobre HOLO_THEME.marker) con 2 figuras grandes
+// (.empty-bg / .empty-fig*, las dibuja
+// components/chat/EmptyStateBg.js).
 import { FONT_IMPORT_MAIN, KF, HOLO_THEME } from "@/lib/theme";
+import girlImg from "@/assets/shared/girl.png";
+import chatFigAscii from "@/assets/chat/chat-fig-ascii.png";
+import bgCelular from "@/assets/chat/bg-celular.jpg";
 
 // Acento gris-tinta de la barra lateral (dirección "Vitral editorial · Tinta").
-// Es el único "color" de la barra: no compite con el rojo del fondo red-letter.
+// Es el único "color" de la barra.
 const TINTA = "#b8b3c2";
 
 export const chatStyles = `
       ${FONT_IMPORT_MAIN}
-      @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital@0;1&display=swap');
       ${KF.spin}
       @keyframes fadeIn   { from{opacity:0} to{opacity:1} }
       ${KF.fadeUp}
@@ -44,7 +44,7 @@ export const chatStyles = `
          en Cinzel, un resplandor suave desde arriba y la fila activa marcada
          con una barra iluminada + lavado. El único color de la pantalla lo
          pone el fondo red-letter del lienzo; la barra no compite. */
-      .chat-side { background:radial-gradient(160% 46% at 50% -6%, rgba(184,179,194,.12), transparent 68%), #0c0c0e; }
+      .chat-side { background:radial-gradient(160% 46% at 50% -6%, rgba(184,179,194,.12), transparent 68%), #0c0c0e; width:300px; flex-shrink:0; display:flex; flex-direction:column; border-right:1px solid ${HOLO_THEME.hairlineSoft}; }
       .chat-side__hdr { position:relative; }
       .chat-side__hdr::after { content:''; position:absolute; left:22px; right:22px; bottom:0; height:1px; background:linear-gradient(90deg, rgba(184,179,194,.35), rgba(184,179,194,.04)); }
       .side-title { font-family:'Cinzel',serif; font-size:21px; color:${HOLO_THEME.text}; letter-spacing:.06em; }
@@ -62,6 +62,15 @@ export const chatStyles = `
       .avatar-sm { width:36px; height:36px; border-radius:6px; background:#191920; border:1.5px solid rgba(184,179,194,.24); display:flex; align-items:center; justify-content:center; font-size:11px; color:${HOLO_THEME.textDim}; flex-shrink:0; font-family:'Cinzel',serif; text-transform:uppercase; }
       .status-dot { position:absolute; bottom:1px; right:1px; width:11px; height:11px; border-radius:50%; border:2px solid #0c0c0e; }
       .status-dot-hdr { position:absolute; bottom:1px; right:1px; width:12px; height:12px; border-radius:50%; border:2px solid ${HOLO_THEME.bg}; }
+      /* Cabecera del chat: avatar + nombre son un botón que lleva a
+         /perfil/<id> de la persona con la que estás hablando. */
+      .chat-hdr-id { display:flex; align-items:center; gap:16px; flex:1; min-width:0; background:none; border:0; padding:6px 8px; margin:-6px -8px; border-radius:10px; cursor:pointer; text-align:left; font:inherit; color:inherit; transition:background .16s; }
+      .chat-hdr-id:hover { background:rgba(184,179,194,.06); }
+      .chat-hdr-name { transition:color .16s; }
+      .chat-hdr-id:hover .chat-hdr-name { color:#fff; text-decoration:underline; text-underline-offset:3px; text-decoration-thickness:1px; text-decoration-color:rgba(184,179,194,.5); }
+      .chat-hdr-id:focus-visible { outline:1px solid rgba(184,179,194,.5); outline-offset:2px; }
+      .chat-back { display:none; flex-shrink:0; width:32px; height:32px; align-items:center; justify-content:center; background:none; border:0; border-radius:50%; color:${HOLO_THEME.textDim}; cursor:pointer; transition:background .14s, color .14s; }
+      .chat-back:hover { background:rgba(184,179,194,.08); color:#fff; }
       /* Burbujas — rediseño de la conversación activa (paleta Tinta): propia en
          marfil frío, ajena en panel; esquina "doblada" del lado del emisor;
          entrada con un rise corto y tranquilo. */
@@ -137,22 +146,50 @@ export const chatStyles = `
       .date-pill::before,.date-pill::after { content:''; flex:1; height:1px; background:${HOLO_THEME.hairlineSoft}; }
       .date-pill span { font-size:11px; font-family:'Space Mono',monospace; color:${HOLO_THEME.textDim}; background:${HOLO_THEME.panel}; padding:4px 14px; border-radius:999px; letter-spacing:.1em; }
 
-      /* ── Fondo decorativo del recuadro "nueva conversación" (sin chat abierto) ──
-         Lo monta components/chat/EmptyStateBg.js. Acomodo "trío parejo": texto
-         red-letter al fondo + tres figuras al pie (manos / ángel con la cruz /
-         cráneo). Son PNG RGBA ya teñidos del rojo del tema (alpha por
-         luminancia — nada de blend mode, así no aparece el recuadro gris de
-         antes). El buscador (.empty-search) va SIEMPRE por delante. */
+      /* ── "Mensajes" sin chat abierto ──────────────────────────────────
+         .chat-landing = toda la pantalla (fondo + tarjeta centrada).
+         .empty-bg / .empty-fig* = las 2 figuras grandes de fondo, las
+         dibuja components/chat/EmptyStateBg.js. Son PNG RGBA ya teñidos
+         del rojo del tema (alpha por luminancia, sin blend mode). Se
+         funden hacia arriba con un mask-image. .chat-landing-card flota
+         encima (mayor z-index) con el título, el buscador y las listas.
+         En celular (media query más abajo) se reemplaza por
+         assets/chat/bg-celular.jpg estirada a pantalla completa. */
+      .chat-landing { flex:1; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; padding:24px; background:radial-gradient(130% 90% at 50% 100%, rgba(192,82,74,.4), transparent 65%), linear-gradient(180deg, #2a0a0c, #1a0506); }
       .empty-bg { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
-      .bible-layer { position:absolute; inset:0; padding:26px 30px; font-family:'EB Garamond',Georgia,'Times New Roman',serif; font-size:8.5px; line-height:1.5; text-align:justify; hyphens:auto; -webkit-hyphens:auto; column-count:5; column-gap:20px; color:rgba(255,244,240,.075); user-select:none; overflow:hidden; }
-      .bible-layer p { margin:0 0 7px; }
-      .bible-layer .rl-rojo { color:rgba(192,82,74,.46); }
       .empty-fig { position:absolute; bottom:0; background-repeat:no-repeat; background-size:contain; -webkit-mask-image:linear-gradient(to top,#000 66%,transparent 100%); mask-image:linear-gradient(to top,#000 66%,transparent 100%); }
-      /* Acomodo "trío parejo": las 3 figuras con peso parecido, el ángel del
-         centro un poco al frente (z-index + opacidad). */
-      .empty-fig-l { left:-4%; width:44%; height:84%; opacity:.7; background-image:url('/art/chat-fig-izq.png'); background-position:bottom left; }
-      .empty-fig-c { left:50%; transform:translateX(-50%); width:40%; height:94%; opacity:.95; z-index:1; background-image:url('/art/chat-fig-centro.png'); background-position:bottom center; }
-      .empty-fig-r { right:-3%; width:47%; height:90%; opacity:.8; background-image:url('/art/chat-fig-der.png'); background-position:bottom right; }
-      .empty-search { position:relative; z-index:20; }
-      @media (max-width:820px) { .bible-layer { column-count:3; } .empty-fig-l { width:52%; } .empty-fig-c { width:46%; } .empty-fig-r { width:58%; } }
+      .empty-fig-girl { left:-2%; width:64%; height:100%; opacity:.85; background-image:url(${girlImg.src}); background-position:bottom left; }
+      .empty-fig-ascii { right:-2%; width:62%; height:100%; opacity:.95; z-index:1; background-image:url(${chatFigAscii.src}); background-position:bottom right; }
+
+      .chat-landing-card { position:relative; z-index:5; width:100%; max-width:560px; height:min(660px, 84vh); display:flex; flex-direction:column; background:rgba(12,12,14,.06); border:1px solid ${HOLO_THEME.hairlineSoft}; border-radius:18px; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,.5); }
+      /* Con la tarjeta casi transparente el texto necesita más contraste
+         contra la imagen de fondo: blanco puro + sombra + un toque de peso. */
+      .chat-landing-card .side-title { color:#fff; text-shadow:0 1px 8px rgba(0,0,0,.7); }
+      .chat-landing-card .side-kicker { color:rgba(255,255,255,.7); text-shadow:0 1px 6px rgba(0,0,0,.7); }
+      .chat-landing-card .conv-sec { color:#fff; opacity:.95; text-shadow:0 1px 6px rgba(0,0,0,.7); }
+      .chat-landing-card .conv-name { color:#fff !important; font-weight:600; text-shadow:0 1px 6px rgba(0,0,0,.7); }
+      .empty-search { position:relative; z-index:20; padding:0 24px 16px; }
+      .chat-landing-lists { flex:1; display:flex; flex-direction:column; min-height:0; }
+
+      @media (max-width:820px) {
+        .empty-fig-girl { width:80%; }
+        .empty-fig-ascii { width:76%; }
+      }
+      @media (max-width:600px) {
+        .chat-landing { padding:14px; background-image:url(${bgCelular.src}); background-size:cover; background-position:center; }
+        .chat-landing-card { height:min(660px, 90vh); }
+        /* En celular el fondo ya es una imagen completa (arriba) — las 2
+           figuras recortadas quedan de más y se esconden. */
+        .empty-fig-girl, .empty-fig-ascii { display:none; }
+      }
+
+      /* ── Celular: con una conversación abierta, la lista angosta (.chat-side,
+         solo existe en ese estado — ver chat/page.js) no entra al lado de la
+         conversación, así que se esconde; la flechita (.chat-back) vuelve a
+         mostrarla. Sin conversación abierta no hay "lista angosta" que
+         esconder — .chat-landing ya es una sola columna centrada. ── */
+      @media (max-width:760px) {
+        .chat-shell--open .chat-side { display:none; }
+        .chat-back { display:flex; }
+      }
     `;

@@ -39,8 +39,19 @@ export default function useAuth({ status, session }) {
   }, []);
 
   // Cuando NextAuth tiene sesión → verificar cuenta → registro o sync-backend
+  //
+  // OJO (2026-09-10): antes esto disparaba apenas NextAuth confirmaba la
+  // sesión — si ya tenías cookie de una visita anterior, eso podía pasar
+  // en milisegundos y te mandaba a /feed a mitad de la animación blanco→
+  // negro ("se salteaba la pantalla de login"). El fix es únicamente de
+  // TIMING: se agrega `!ready` a la condición de salida, así que ahora
+  // SIEMPRE espera a que la animación termine (t=1600ms) antes de
+  // arrancar. La verificación en sí no cambia un carácter — sigue siendo
+  // el mismo viaje al backend (GET /api/auth/check/:googleId y después
+  // /api/auth/sync-backend, que fija la cookie server-to-server) — nada
+  // que se pueda falsear desde el cliente, ni un atajo nuevo.
   useEffect(() => {
-    if (status !== "authenticated" || !session?.user) return;
+    if (!ready || status !== "authenticated" || !session?.user) return;
 
     const googleId = session.user.googleId || session.user.id;
     if (!googleId) return;
@@ -71,7 +82,7 @@ export default function useAuth({ status, session }) {
     };
 
     doLogin();
-  }, [status, session]);
+  }, [status, session, ready]);
 
   return { white, ready, checking, tcD, tcF };
 }

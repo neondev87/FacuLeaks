@@ -28,21 +28,19 @@ export const feedStyles = `
       ${SCROLLBAR_THIN}
       .feed-page { display:flex; gap:28px; align-items:flex-start; max-width:1180px; margin:0 auto; padding:68px 28px 48px; }
       .feed-wrap { flex:1; min-width:0; max-width:860px; animation:fadeIn .5s ease; }
-      .feed-sidebar { width:150px; flex-shrink:0; position:sticky; top:84px; }
+      .feed-sidebar { width:165px; flex-shrink:0; position:sticky; top:84px; }
+
+      /* ── Celular: la columna del avatar pasa arriba del muro, ya no al costado ── */
+      @media (max-width:760px) {
+        .feed-page { flex-direction:column; align-items:stretch; gap:18px; padding:60px 16px 32px; }
+        .feed-sidebar { width:100%; position:static; top:auto; display:flex; justify-content:center; }
+        .feed-wrap { max-width:100%; }
+      }
 
       /* ── Tabs (RECIENTES/TRENDING/SIGUIENDO) ── */
       .feed-tab { cursor:pointer; transition:color .2s; color:${HOLO_THEME.textDim}; font-weight:400; }
       .feed-tab.active { color:${HOLO_THEME.text}; font-weight:500; }
       .feed-tab:hover { color:${HOLO_THEME.text}; }
-
-      /* ── Recuadro de usuario del composer — sin efecto animado a
-         propósito: el brillo "chrome aero" quedó reservado únicamente para
-         el rectángulo de perfil (AvatarMenu.js), no para íconos chicos. ── */
-      .composer-avatar {
-        position:relative; overflow:hidden; flex-shrink:0; border-radius:50%;
-        background-color: #1c1c24;
-        border:1px solid ${HOLO_THEME.hairline};
-      }
 
       .post-title-input { width:100%; background:transparent; border:none; outline:none; font-family:'Inter',sans-serif; font-size:14px; font-weight:500; color:rgba(242,240,248,.55); padding:4px 0; margin-bottom:6px; border-bottom:1px solid ${HOLO_THEME.hairlineSoft}; }
       .post-title-input::placeholder { color:rgba(242,240,248,.28); }

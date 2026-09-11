@@ -18,10 +18,20 @@
 // desde el navegador.)
 const API = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
+// Cuando el sitio se sirve por un dominio público (túnel/demo) en vez de
+// localhost, `next dev` bloquea por defecto los recursos de HMR pedidos
+// desde ese origen ("Blocked cross-origin request"). Se deriva de
+// NEXTAUTH_URL (la misma fuente que SITE_URL en lib/api.js) para no
+// hardcodear el dominio del túnel, que cambia cada vez que se reinicia.
+const siteHost = (() => {
+  try { return new URL(process.env.NEXTAUTH_URL || '').hostname; } catch { return null; }
+})();
+
 const nextConfig = {
   // Oculta el indicador de desarrollo de Next (el círculo con la "N").
   // Antes estaba en next.config.mjs, que Next ignora porque gana el .js.
   devIndicators: false,
+  ...(siteHost && siteHost !== 'localhost' ? { allowedDevOrigins: [siteHost] } : {}),
   async rewrites() {
     return [
       { source: '/api/auth/check/:path*',    destination: `${API}/api/auth/check/:path*` },
