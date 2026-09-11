@@ -27,7 +27,7 @@ const EyeIcon = ({ size = 16 }) => (
   </svg>
 );
 
-export default function PicturesGrid({ userId, initialPhotos = [], canEdit = true }) {
+export default function PicturesGrid({ initialPhotos = [], canEdit = true }) {
   const [photos, setPhotos] = useState(initialPhotos);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [uploading, setUploading] = useState(false);

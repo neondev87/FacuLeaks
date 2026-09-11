@@ -84,5 +84,5 @@ export default function useAuth({ status, session }) {
     doLogin();
   }, [status, session, ready]);
 
-  return { white, ready, checking, tcD, tcF };
+  return { ready, checking, tcD, tcF };
 }

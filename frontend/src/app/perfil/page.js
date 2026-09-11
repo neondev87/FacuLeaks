@@ -243,7 +243,6 @@ export default function ProfilePage() {
             <div style={card}>
               <div className="sec-title">Pictures</div>
               <PicturesGrid
-                userId={user.id}
                 initialPhotos={photos}
                 canEdit={true}
               />
@@ -254,6 +253,19 @@ export default function ProfilePage() {
           {/* ── COLUMNA CENTRAL ── */}
           {/* ════════════════════════════════════════════════ */}
           <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
+
+            {/* ── Intereses — igual que en el perfil público
+                (app/perfil/[id]/page.js), acá faltaba pintarse. ── */}
+            {intereses.length > 0 && (
+              <div style={card}>
+                <div className="sec-title">Intereses</div>
+                {intereses.map((t, i) => (
+                  <div key={i} style={{ display:"flex", gap:10, marginBottom:5, fontSize:13, color:HOLO_THEME.textDim, fontFamily:"'Inter',sans-serif" }}>
+                    <span style={{ color:HOLO_THEME.hairline, flexShrink:0 }}>—</span><span>{t}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* ── Posts ── */}
             <div style={card}>

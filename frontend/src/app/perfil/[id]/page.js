@@ -210,7 +210,6 @@ export default function PerfilPublicoPage() {
               <div style={card}>
                 <div className="sec-title">Pictures</div>
                 <PicturesGrid
-                  userId={parseInt(userId)}
                   initialPhotos={photos}
                   canEdit={false}
                 />

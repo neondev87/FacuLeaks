@@ -31,7 +31,6 @@ export const foroStyles = `
       .canal:hover { color:${HOLO_THEME.text}; background:rgba(255,255,255,.02); }
       .canal.on { color:${HOLO_THEME.text}; border-left-color:${AC}; background:${AC_SOFT}; }
       .canal__t { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-      .canal .cnt { font-family:'Space Mono',monospace; font-size:10px; color:${HOLO_THEME.textDim}; }
       .canal__del { flex:none; background:none; border:0; padding:2px; cursor:pointer; color:rgba(242,240,248,.22); display:flex; opacity:0; transition:color .14s, opacity .14s; }
       .canal:hover .canal__del { opacity:1; }
       .canal__del:hover { color:rgba(255,90,90,.9); }
