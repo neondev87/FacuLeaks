@@ -31,7 +31,20 @@ import { API_INTERNAL, SITE_URL } from "@/lib/api";
 // GET /api/auth/sync-backend?callbackUrl=/perfil
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
-  const callbackUrl = searchParams.get("callbackUrl") || "/feed";
+  const rawCallbackUrl = searchParams.get("callbackUrl") || "/feed";
+  // Open redirect: esta ruta es pública (cualquiera puede pegar el link, no
+  // solo proxy.js) y antes armaba `new URL(callbackUrl, SITE_URL)` sin
+  // chequear el resultado — si callbackUrl era una URL absoluta
+  // ("https://evil.com"), new URL() la toma tal cual e IGNORA el base, así
+  // que terminaba redirigiendo (con la sesión recién sincronizada) al sitio
+  // del atacante. Solo se acepta una ruta relativa propia ("/algo").
+  // Normaliza backslashes primero: el parser de URL (WHATWG) trata "\" igual
+  // que "/" en esquemas http(s) — "/\evil.com" sin esto se cuela como si
+  // empezara con "/" pero se resuelve como "//evil.com" (protocol-relative).
+  const normalizado = rawCallbackUrl.replace(/\\/g, "/");
+  const callbackUrl = normalizado.startsWith("/") && !normalizado.startsWith("//")
+    ? rawCallbackUrl
+    : "/feed";
 
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 

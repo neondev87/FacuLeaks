@@ -163,6 +163,30 @@ const feedSiguiendo = async (req, res) => {
   }
 };
 
+// ¿`userId` puede VER este post? Público: cualquiera logueado. AMIGOS: el
+// autor o alguien con amistad ACEPTADA. SOLO_YO: solo el autor.
+// Los feeds (getFeed*) ya filtran esto en el WHERE de la consulta, pero los
+// endpoints que operan por :id (reaccionar/comentar/listar comentarios)
+// consultaban directo por postId sin repetir el chequeo — cualquier usuario
+// logueado podía leer/reaccionar/comentar posts SOLO_YO o AMIGOS ajenos con
+// solo adivinar el id (autoincremental, fácil de enumerar).
+const puedeVerPost = async (userId, post) => {
+  if (!post) return false;
+  if (post.privacidad === 'PUBLICA' || post.autorId === userId) return true;
+  if (post.privacidad !== 'AMIGOS') return false; // SOLO_YO y no sos el autor
+  const amistad = await prisma.amistades.findFirst({
+    where: {
+      estado: 'ACEPTADO',
+      OR: [
+        { solicitanteId: userId, receptorId: post.autorId },
+        { solicitanteId: post.autorId, receptorId: userId },
+      ],
+    },
+    select: { id: true },
+  });
+  return !!amistad;
+};
+
 const PRIVACIDADES = new Set(['PUBLICA', 'AMIGOS', 'SOLO_YO']);
 // `imagen` solo puede ser una ruta de subida propia — nunca una URL arbitraria
 // (evita que se inyecten pixeles de tracking / contenido externo en el feed).
@@ -227,9 +251,10 @@ const toggleReaction = async (req, res) => {
   try {
     const post = await prisma.posts.findUnique({
       where: { id: postId },
-      select: { id: true },
+      select: { id: true, autorId: true, privacidad: true },
     });
     if (!post) return res.status(404).json({ error: 'Post no encontrado' });
+    if (!(await puedeVerPost(userId, post))) return res.status(404).json({ error: 'Post no encontrado' });
 
     const existing = await prisma.post_likes.findFirst({ where: { postId, userId } });
 
@@ -262,11 +287,16 @@ const toggleReaction = async (req, res) => {
       select: { totalLikes: true, totalDislikes: true },
     });
 
-    req.io.emit('post:react', {
-      postId,
-      totalLikes: totals.totalLikes,
-      totalDislikes: totals.totalDislikes,
-    });
+    // Solo se difunde en vivo si el post es público — para AMIGOS/SOLO_YO
+    // esto llegaba a TODOS los clientes conectados (io.emit es broadcast
+    // global), revelando que ese post existe y sus contadores a cualquiera.
+    if (post.privacidad === 'PUBLICA') {
+      req.io.emit('post:react', {
+        postId,
+        totalLikes: totals.totalLikes,
+        totalDislikes: totals.totalDislikes,
+      });
+    }
 
     res.json({ myReaction, ...totals });
   } catch (err) {
@@ -326,6 +356,12 @@ const listComments = async (req, res) => {
   const postId = parseInt(req.params.id);
   if (!Number.isInteger(postId)) return res.status(400).json({ error: 'ID inválido' });
   try {
+    const post = await prisma.posts.findUnique({
+      where: { id: postId },
+      select: { id: true, autorId: true, privacidad: true },
+    });
+    if (!(await puedeVerPost(req.userId, post))) return res.status(404).json({ error: 'Post no encontrado' });
+
     const comments = await prisma.comments.findMany({
       where: { postId },
       include: { users: { select: { id: true, username: true, nombre: true, imagen: true } } },
@@ -349,8 +385,11 @@ const createComment = async (req, res) => {
   if (contenido.length > 500) return res.status(400).json({ error: 'Máximo 500 caracteres' });
 
   try {
-    const post = await prisma.posts.findUnique({ where: { id: postId }, select: { id: true } });
-    if (!post) return res.status(404).json({ error: 'Post no encontrado' });
+    const post = await prisma.posts.findUnique({
+      where: { id: postId },
+      select: { id: true, autorId: true, privacidad: true },
+    });
+    if (!(await puedeVerPost(autorId, post))) return res.status(404).json({ error: 'Post no encontrado' });
 
     let comment, total;
     await prisma.$transaction(async (tx) => {
@@ -365,7 +404,13 @@ const createComment = async (req, res) => {
     });
 
     const payload = { ...comment, autor: comment.users };
-    req.io.emit('post:comment', { postId, totalComentarios: total, comment: payload });
+    // Igual que post:react: solo se difunde a TODOS si el post es público.
+    // Antes esto mandaba el contenido del comentario (y quién lo escribió)
+    // de posts AMIGOS/SOLO_YO a cada cliente conectado, sin importar si
+    // tenía permiso para ver ese post.
+    if (post.privacidad === 'PUBLICA') {
+      req.io.emit('post:comment', { postId, totalComentarios: total, comment: payload });
+    }
     res.status(201).json({ comment: payload, totalComentarios: total });
   } catch (err) {
     console.error('createComment error:', err.message);

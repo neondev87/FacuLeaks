@@ -13,6 +13,7 @@
 const express  = require('express');
 const router   = express.Router();
 const multer   = require('multer');
+const crypto   = require('crypto');
 const {
   getPerfil,
   getPerfilPublico,
@@ -25,9 +26,15 @@ const {
 } = require('./perfil.controller');
 const { authMiddleware } = require('../../middleware/auth');
 
+// Nombre generado por el servidor — NUNCA file.originalname. multer arma la
+// ruta final con path.join(destino, filename) sin validar el resultado: un
+// originalname con "../" (el nombre del archivo lo elige el cliente en el
+// multipart, es 100% atacable) escapaba de uploads/tmp y permitía escribir
+// (o, si el magic-bytes check fallaba, BORRAR) un archivo arbitrario en
+// cualquier ruta alcanzable por el proceso de Node.
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/tmp'),
-  filename:    (req, file, cb) => cb(null, `tmp_${Date.now()}_${file.originalname}`),
+  filename:    (req, file, cb) => cb(null, `tmp_${Date.now()}_${crypto.randomBytes(16).toString('hex')}`),
 });
 
 const upload = multer({

@@ -22,7 +22,8 @@
 // CON QUÉ SE CONECTA: lo importan upload.controller.js, perfil.controller.js
 // y chat.controller.js — cualquier módulo que reciba un archivo del usuario.
 // ════════════════════════════════════════════════════════════════════════
-const fs = require('fs');
+const fs  = require('fs');
+const dns = require('dns');
 
 // Magic bytes de cada formato — defensa real contra extensiones falsas
 const MAGIC = {
@@ -120,4 +121,32 @@ const sanitizarUrl = (url) => {
 const sanitizarTexto = (str = '') =>
   str.replace(/[<>"'`]/g, '').slice(0, 255);
 
-module.exports = { verificarMagicBytes, sanitizarUrl, sanitizarTexto, esHostInterno };
+// ── Anti-SSRF real, para cuando el SERVIDOR va a hacer el fetch (no solo
+// mostrar la URL en el navegador de otro) ──────────────────────────────────
+// sanitizarUrl() solo mira el hostname como TEXTO ("localhost", "127.0.0.1",
+// etc). Eso no alcanza: un atacante puede registrar un dominio público
+// (facilísimo, ej. "attacker.com") cuyo registro DNS apunte directo a
+// 127.0.0.1 o a una IP de la red interna — el hostname pasa el filtro de
+// texto, pero cuando fetch() lo resuelve de verdad termina pegándole a la
+// red interna igual ("DNS rebinding"). Acá se resuelve el hostname A MANO
+// con dns.lookup y se valida CADA IP que devuelve antes de dejar avanzar
+// el fetch.
+const esUrlSeguraParaFetch = async (url) => {
+  const limpia = sanitizarUrl(url);
+  if (!limpia) return null;
+
+  const { hostname } = new URL(limpia);
+  // Si ya es una IP literal, esHostInterno (llamado dentro de sanitizarUrl)
+  // ya la validó — no hace falta resolver DNS de nuevo.
+  if (/^[\d.]+$/.test(hostname) || hostname.includes(':')) return limpia;
+
+  try {
+    const direcciones = await dns.promises.lookup(hostname, { all: true, verbatim: true });
+    if (direcciones.some(({ address }) => esHostInterno(address))) return null;
+    return limpia;
+  } catch {
+    return null; // no resuelve → no lo tocamos
+  }
+};
+
+module.exports = { verificarMagicBytes, sanitizarUrl, esUrlSeguraParaFetch, sanitizarTexto, esHostInterno };

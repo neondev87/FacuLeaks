@@ -28,7 +28,7 @@ const fs    = require('fs');
 const path  = require('path');
 const sharp = require('sharp');
 const crypto = require('crypto');
-const { verificarMagicBytes, sanitizarUrl, sanitizarTexto } = require('./upload.security');
+const { verificarMagicBytes, sanitizarUrl, esUrlSeguraParaFetch, sanitizarTexto } = require('./upload.security');
 
 const uploadImagen = async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No se recibió archivo' });
@@ -108,7 +108,7 @@ const fetchSeguro = async (urlInicial, { signal } = {}) => {
     if (resp.status >= 300 && resp.status < 400) {
       const location = resp.headers.get('location');
       if (!location) return resp;
-      const siguiente = sanitizarUrl(new URL(location, actual).href);
+      const siguiente = await esUrlSeguraParaFetch(new URL(location, actual).href);
       if (!siguiente) throw new Error('Redirección no permitida');
       actual = siguiente;
       continue;
@@ -122,7 +122,7 @@ const importarUrl = async (req, res) => {
   const { url } = req.body;
   if (!url) return res.status(400).json({ error: 'URL requerida' });
 
-  const urlLimpia = sanitizarUrl(url);
+  const urlLimpia = await esUrlSeguraParaFetch(url);
   if (!urlLimpia) return res.status(400).json({ error: 'URL no permitida' });
 
   // Obtener metadata básica (título, og:image) sin ejecutar JS

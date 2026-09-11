@@ -160,3 +160,14 @@ const PORT = process.env.PORT || 4000;
 // exportá HOST=0.0.0.0 explícitamente.
 const HOST = process.env.HOST || '127.0.0.1';
 server.listen(PORT, HOST, () => console.log(`Server corriendo en ${HOST}:${PORT}`));
+
+// Red de seguridad: sin esto, un error async que se escapa de algún
+// try/catch tira abajo TODO el proceso (y con él, a todos los usuarios
+// conectados). Lo logueamos para poder diagnosticarlo, pero NO tumbamos el
+// proceso — PM2 igual lo reiniciaría, pero es mejor no depender de eso.
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason);
+});
