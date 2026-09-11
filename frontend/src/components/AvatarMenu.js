@@ -39,7 +39,7 @@ const EyeIcon = () => (
   </svg>
 );
 
-export default function AvatarMenu({ currentAvatar, canEdit = true, onAvatarChange, onViewClick, size }) {
+export default function AvatarMenu({ currentAvatar, canEdit = true, onAvatarChange, onViewClick, size, className }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [lightbox, setLightbox] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -149,7 +149,7 @@ export default function AvatarMenu({ currentAvatar, canEdit = true, onAvatarChan
         }
         @keyframes avatarSheen { 0%,100%{background-position:120% 0} 50%{background-position:-20% 100%} }
       `}</style>
-      <div ref={menuRef} style={{ position: 'relative', width: size || '100%', aspectRatio: '1' }}>
+      <div ref={menuRef} className={className} style={{ position: 'relative', width: size || '100%', aspectRatio: '1' }}>
         {/* Avatar */}
         <div
           className="avatar-frame"

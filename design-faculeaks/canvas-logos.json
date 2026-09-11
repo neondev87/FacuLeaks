@@ -1,0 +1,14 @@
+{
+  "artboards": [
+    { "file": "Compare.dc.html", "x": 0, "y": 0, "w": 1180, "h": 800, "title": "Comparar — 4 escudos" },
+    { "file": "Main.dc.html", "x": 0, "y": 920, "w": 1200, "h": 1060, "title": "A · Sello clásico (detalle)" },
+    { "file": "OptionB.dc.html", "x": 1300, "y": 920, "w": 1000, "h": 920, "title": "B · Escudo atlético (detalle)" },
+    { "file": "OptionC.dc.html", "x": 0, "y": 2120, "w": 960, "h": 860, "title": "C · Escudo de línea (detalle)" },
+    { "file": "OptionD.dc.html", "x": 1060, "y": 2120, "w": 960, "h": 820, "title": "D · Medallón monograma (detalle)" }
+  ],
+  "annotations": [
+    { "id": "start-here", "x": 0, "y": -150, "w": 520, "text": "Empezá por «Comparar»: las 4 direcciones lado a lado, en pergamino, en oscuro y a 16 px. Abajo cada una tiene su tablero de detalle con reducciones, colorways y lockups." },
+    { "id": "genre-note", "x": 1300, "y": -150, "w": 460, "text": "Referencia de género (escudo Ivy League), no copia de ningún escudo real — heráldica original. Lema SUB ROSA = «en confidencia»; alternativa VOX STUDENTIUM." }
+  ],
+  "launch": { "view": "canvas" }
+}

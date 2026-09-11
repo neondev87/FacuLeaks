@@ -1,0 +1,11 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1360, "h": 920, "title": "Contorno (var. 2) — 8 adornos + cintas" },
+    { "file": "Pica.dc.html", "x": 1460, "y": 0, "w": 1200, "h": 960, "title": "Punta de pica (var. 3) — versión facultad" },
+    { "file": "Piezas.dc.html", "x": 0, "y": 1060, "w": 1200, "h": 780, "title": "Catálogo: adornos + cintas para combinar" }
+  ],
+  "annotations": [
+    { "id": "brief", "x": 0, "y": -150, "w": 620, "text": "Seguimos con las que marcaste: la 2 (Contorno) y la 3 (Punta de pica). La 2 con 8 remates distintos de adorno/cinta. La 3 reelaborada para que lea universidad y no fútbol americano (silueta menos filosa, libro en el centro, banda + cinta como la 1) — con un antes/ahora. El tercer tablero es el catálogo suelto de adornos y cintas para que pidas la combinación exacta." }
+  ],
+  "launch": { "view": "canvas" }
+}

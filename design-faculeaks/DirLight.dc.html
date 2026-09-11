@@ -1,0 +1,155 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap">
+  <style>
+    body { margin: 0; background: #F6F5F2; font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #12938A; text-decoration: none; }
+    a:hover { color: #0e7a72; }
+    .navi { display:flex; align-items:center; gap:12px; height:40px; padding:0 12px; border-radius:10px; color:#5B5A66; cursor:pointer; font-size:13.5px; }
+    .navi:hover { background:#EDEBE6; color:#1B1C22; }
+    .navi.on { background:#E4F4F2; color:#0E7A72; font-weight:500; }
+    .ibtn { width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#5B5A66; cursor:pointer; position:relative; }
+    .ibtn:hover { background:#EDEBE6; color:#1B1C22; }
+    .card { background:#FFFFFF; border:1px solid rgba(20,20,30,.08); border-radius:16px; box-shadow:0 1px 2px rgba(0,0,0,.04), 0 10px 26px rgba(0,0,0,.04); }
+  </style>
+</helmet>
+
+<div style="width:1440px; min-height:1080px; background:#F6F5F2; color:#1B1C22; position:relative; overflow:hidden;">
+
+  <!-- top bar -->
+  <div style="height:60px; display:flex; align-items:center; justify-content:space-between; padding:0 22px; border-bottom:1px solid rgba(20,20,30,.08); background:#FFFFFF;">
+    <div style="display:flex; align-items:center; gap:11px; width:232px;">
+      <div style="width:30px; height:30px; border-radius:9px; background:#12938A; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF"><path d="M12 3.2c3.7 4.4 6.2 7.6 6.2 10.6a6.2 6.2 0 0 1-12.4 0C5.8 10.8 8.3 7.6 12 3.2z"/></svg>
+      </div>
+      <div style="font-family:'Space Grotesk',sans-serif; font-size:18px; letter-spacing:-.02em;">
+        <span style="font-weight:700; color:#1B1C22;">Facu</span><span style="font-weight:500; color:#12938A;">leaks</span>
+      </div>
+    </div>
+
+    <div style="flex:1; max-width:460px; height:38px; display:flex; align-items:center; gap:9px; padding:0 14px; background:#F1F0EC; border:1px solid rgba(20,20,30,.08); border-radius:999px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8896" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <span style="font-size:13px; color:#8A8896;">Buscar personas, hilos, archivos…</span>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:6px; width:232px; justify-content:flex-end;">
+      <div class="ibtn" style="color:#1B1C22; background:#EDEBE6;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        <span style="position:absolute; top:4px; right:3px; min-width:16px; height:16px; padding:0 3px; border-radius:999px; background:#E5574B; color:#fff; font-family:'Space Mono',monospace; font-size:9.5px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid #FFFFFF;">3</span>
+      </div>
+      <div class="ibtn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 5 15.4a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.16.31.24.65.24 1s-.08.69-.24 1z"/></svg>
+      </div>
+      <div style="width:1px; height:24px; background:rgba(20,20,30,.12); margin:0 6px;"></div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:30px; height:30px; border-radius:50%; background:#DCEAE8; display:flex; align-items:center; justify-content:center; font-family:'Space Mono',monospace; font-size:11px; color:#0E7A72;">AE</div>
+        <span style="font-size:13px; color:#5B5A66;">Ale</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A8896" stroke-width="1.8" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; align-items:stretch;">
+    <!-- nav -->
+    <div style="width:232px; flex-shrink:0; border-right:1px solid rgba(20,20,30,.08); padding:18px 14px; display:flex; flex-direction:column; gap:3px; min-height:1020px; background:#FFFFFF;">
+      <div style="font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.18em; color:#9A98A4; padding:6px 12px 8px;">PRINCIPAL</div>
+      <div class="navi on"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Inicio</div>
+      <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h12v16H4z"/><path d="M16 8h4v10a2 2 0 0 1-2 2"/><path d="M7 8h6M7 12h6M7 16h4"/></svg>Muro</div>
+      <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Foro</div>
+      <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>Mensajes<span style="margin-left:auto; font-family:'Space Mono',monospace; font-size:10px; font-weight:700; color:#E5574B; background:#FBE3E0; border-radius:999px; padding:3px 9px;">1</span></div>
+      <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Amigos</div>
+      <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Perfil</div>
+    </div>
+
+    <!-- center -->
+    <div style="flex:1; min-width:0; max-width:740px; padding:30px 34px; display:flex; flex-direction:column; gap:20px;">
+      <div>
+        <div style="font-family:'Space Grotesk',sans-serif; font-size:27px; font-weight:600; letter-spacing:-.01em;">Buenas, Ale.</div>
+        <div style="font-family:'Space Mono',monospace; font-size:11px; color:#8A8896; margin-top:7px;">MIÉ 10 SEP · 3 novedades desde tu última visita</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px;">
+        <div class="card" style="padding:16px;"><div style="font-size:11.5px; color:#8A8896;">menciones</div><div style="font-family:'Space Grotesk',sans-serif; font-size:23px; font-weight:600; margin-top:8px; color:#12938A;">2</div><div style="font-size:11.5px; color:#8A8896; margin-top:2px;">nuevas hoy</div></div>
+        <div class="card" style="padding:16px;"><div style="font-size:11.5px; color:#8A8896;">Foro</div><div style="font-family:'Space Grotesk',sans-serif; font-size:23px; font-weight:600; margin-top:8px;">5</div><div style="font-size:11.5px; color:#8A8896; margin-top:2px;">hilos activos</div></div>
+        <div class="card" style="padding:16px;"><div style="font-size:11.5px; color:#8A8896;">Mensajes</div><div style="font-family:'Space Grotesk',sans-serif; font-size:23px; font-weight:600; margin-top:8px;">1</div><div style="font-size:11.5px; color:#8A8896; margin-top:2px;">sin leer</div></div>
+      </div>
+
+      <div class="card" style="padding:0;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 18px 12px;">
+          <div style="font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600;">Novedades</div>
+          <a style="font-size:12px;">Ver todas</a>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:12px; padding:13px 18px; border-top:1px solid rgba(20,20,30,.07);">
+          <div style="width:32px; height:32px; border-radius:50%; background:#E7DEF3; display:flex; align-items:center; justify-content:center; font-family:'Space Mono',monospace; font-size:11px; color:#6B4E9B; flex-shrink:0;">MD</div>
+          <div style="flex:1;"><div style="font-size:13px; line-height:1.5; color:#3A3945;"><b style="color:#1B1C22; font-weight:600;">Mara Díaz</b> reaccionó a tu post «Parcial de Cálculo II».</div><div style="font-family:'Space Mono',monospace; font-size:10.5px; color:#9A98A4; margin-top:4px;">hace 8 min</div></div>
+          <span style="width:8px; height:8px; border-radius:50%; background:#12938A; margin-top:6px;"></span>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:12px; padding:13px 18px; border-top:1px solid rgba(20,20,30,.07);">
+          <div style="width:32px; height:32px; border-radius:9px; background:#E4F4F2; display:flex; align-items:center; justify-content:center; color:#12938A; flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <div style="flex:1;"><div style="font-size:13px; line-height:1.5; color:#3A3945;">Nuevo hilo en <b style="color:#1B1C22; font-weight:600;">Foro › #ingeniería</b>.</div><div style="font-family:'Space Mono',monospace; font-size:10.5px; color:#9A98A4; margin-top:4px;">hace 22 min</div></div>
+          <span style="width:8px; height:8px; border-radius:50%; background:#12938A; margin-top:6px;"></span>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:12px; padding:13px 18px; border-top:1px solid rgba(20,20,30,.07);">
+          <div style="width:32px; height:32px; border-radius:50%; background:#DCEAE8; display:flex; align-items:center; justify-content:center; font-family:'Space Mono',monospace; font-size:11px; color:#0E7A72; flex-shrink:0;">BR</div>
+          <div style="flex:1;"><div style="font-size:13px; line-height:1.5; color:#3A3945;"><b style="color:#1B1C22; font-weight:600;">Bruno</b> te envió un mensaje directo.</div><div style="font-family:'Space Mono',monospace; font-size:10.5px; color:#9A98A4; margin-top:4px;">hace 1 h</div></div>
+          <span style="width:8px; height:8px; border-radius:50%; background:#12938A; margin-top:6px;"></span>
+        </div>
+      </div>
+
+      <div class="card" style="padding:18px;">
+        <div style="font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; margin-bottom:12px;">Del Muro</div>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+          <div style="width:34px; height:34px; border-radius:50%; background:#EDEBE6; display:flex; align-items:center; justify-content:center; font-family:'Space Mono',monospace; font-size:11px; color:#5B5A66;">LR</div>
+          <div><div style="font-size:13px; font-weight:600;">Lucía Ramos</div><div style="font-family:'Space Mono',monospace; font-size:10px; color:#9A98A4;">hace 40 min</div></div>
+        </div>
+        <div style="font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; margin-bottom:6px;">La cátedra movió el final para el 18</div>
+        <div style="font-size:13px; line-height:1.6; color:#5B5A66;">Confirmado en secretaría. Cambia también el aula: pabellón nuevo, primer piso.</div>
+      </div>
+    </div>
+
+    <!-- right rail -->
+    <div style="width:352px; flex-shrink:0; border-left:1px solid rgba(20,20,30,.08); padding:26px 22px; display:flex; flex-direction:column; gap:20px; background:#FFFFFF;">
+      <div class="card" style="padding:0;">
+        <div style="display:flex; align-items:center; gap:8px; padding:15px 18px 12px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8896" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 5 15.4a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.16.31.24.65.24 1s-.08.69-.24 1z"/></svg>
+          <div style="font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:600;">Ajustes rápidos</div>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:11px 18px; border-top:1px solid rgba(20,20,30,.07);">
+          <span style="font-size:12.5px; color:#3A3945;">Tema</span>
+          <div style="display:flex; padding:3px; gap:2px; background:#F1F0EC; border:1px solid rgba(20,20,30,.08); border-radius:999px;">
+            <span style="font-size:10.5px; padding:4px 10px; border-radius:999px; font-family:'Space Mono',monospace; color:#8A8896;">Oscuro</span>
+            <span style="font-size:10.5px; padding:4px 10px; border-radius:999px; font-family:'Space Mono',monospace; background:#12938A; color:#fff; font-weight:700;">Claro</span>
+            <span style="font-size:10.5px; padding:4px 10px; border-radius:999px; font-family:'Space Mono',monospace; color:#8A8896;">Auto</span>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:11px 18px; border-top:1px solid rgba(20,20,30,.07);">
+          <span style="font-size:12.5px; color:#3A3945;">Notificaciones push</span>
+          <div style="width:38px; height:22px; border-radius:999px; padding:2px; display:flex; justify-content:flex-end; background:#12938A;"><i style="width:18px; height:18px; border-radius:50%; background:#fff; display:block;"></i></div>
+        </div>
+        <div style="padding:12px 18px 15px; border-top:1px solid rgba(20,20,30,.07);">
+          <a style="font-size:12.5px;">Abrir todos los ajustes ›</a>
+        </div>
+      </div>
+
+      <div class="card" style="padding:18px;">
+        <div style="font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:600; margin-bottom:6px;">Base clara, misma estructura</div>
+        <div style="font-size:12px; color:#5B5A66; line-height:1.6;">Se siente como una app de campus abierta. Mismos bloques que la versión oscura: campana con contador, engranaje de ajustes, rieles a los lados.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":1080}}'>
+class Component extends DCLogic {}
+</script>
+</x-dc>
+</body>
+</html>

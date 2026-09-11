@@ -13,6 +13,7 @@ import useInjectedStyles from "@/hooks/useInjectedStyles";
 import useOwnProfile from "@/hooks/useOwnProfile";
 import TerminalCounter from "@/components/perfil/TerminalCounter";
 import EditModal from "@/components/perfil/EditModal";
+import FriendsModal from "@/components/perfil/FriendsModal";
 import Lightbox from "@/components/Lightbox";
 
 // ════════════════════════════════════════════════════════════════════════
@@ -55,6 +56,9 @@ export default function ProfilePage() {
   // diferencia del perfil público, el ícono siempre está aunque no haya
   // bio todavía: es también la puerta para agregarla (abre el modal).
   const [showBio, setShowBio] = useState(false);
+  // "Recopilación" de amigos — modal que abre el contador "amigos" de acá
+  // abajo (ver components/perfil/FriendsModal.js).
+  const [showFriends, setShowFriends] = useState(false);
 
   // ── Estilos ──
   const card = { border: `1px solid ${HOLO_THEME.hairlineSoft}`, borderRadius: 12, padding: 24, background: HOLO_THEME.panel };
@@ -92,6 +96,9 @@ export default function ProfilePage() {
       {/* Modal de editar perfil */}
       {showEdit && <EditModal profile={profile} user={user} onClose={() => setShowEdit(false)} onSave={handleSave} />}
 
+      {/* Modal de amigos — abre desde el contador "amigos" de Información */}
+      {showFriends && <FriendsModal onClose={() => setShowFriends(false)} />}
+
       {/* Lightbox para posts */}
       {lightboxSrc && <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} dim="rgba(0,0,0,.95)" />}
 
@@ -108,9 +115,9 @@ export default function ProfilePage() {
             (nombre completo o @usuario, ver más abajo). Spotify vive acá al
             lado del nombre, NO al lado de la foto — así el avatar no se
             tiene que achicar para hacerle lugar. ── */}
-        <div style={{ borderBottom:`1px solid ${HOLO_THEME.hairlineSoft}`, paddingBottom:20, marginBottom:26, display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:24 }}>
-          <div>
-            <div style={{ fontFamily:"'Cinzel',serif", fontSize:30, fontWeight:600, color:HOLO_THEME.text, letterSpacing:".06em", lineHeight:1.1 }}>
+        <div className="profile-header" style={{ borderBottom:`1px solid ${HOLO_THEME.hairlineSoft}`, paddingBottom:20, marginBottom:26, display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:24 }}>
+          <div style={{ minWidth:0 }}>
+            <div className="profile-name" style={{ fontFamily:"'Cinzel',serif", fontSize:30, fontWeight:600, color:HOLO_THEME.text, letterSpacing:".06em", lineHeight:1.1 }}>
               {displayName}
             </div>
             {profile.statusText && (
@@ -119,7 +126,7 @@ export default function ProfilePage() {
               </div>
             )}
           </div>
-          <div style={{ width:230, flexShrink:0 }}>
+          <div className="profile-spotify-box">
             <SpotifyWidget userId={user.id}
               onConnect={() => window.location.href = `${API}/api/spotify/auth`}
               onDisconnect={fetchPerfil} />

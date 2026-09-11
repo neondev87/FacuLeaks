@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap">
+  <style>
+    body { margin: 0; background: #0C0D11; font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #4FD1C5; text-decoration: none; }
+    a:hover { color: #7fe3da; }
+    .tab { font-family:'Space Mono',monospace; font-size:10.5px; letter-spacing:.06em; padding:6px 11px; border-radius:999px; color:#9A97AC; cursor:pointer; }
+    .tab.on { background:rgba(255,255,255,.06); color:#F3F2F7; }
+    .nrow { display:flex; align-items:flex-start; gap:12px; padding:14px 18px; border-top:1px solid rgba(255,255,255,.06); position:relative; }
+    .nrow:hover { background:rgba(255,255,255,.02); }
+    .unread { border-left:2px solid #4FD1C5; }
+  </style>
+</helmet>
+
+<div style="width:440px; min-height:660px; background:#0C0D11; padding:26px 30px; display:flex; align-items:flex-start; justify-content:center;">
+
+  <div style="width:380px; background:#181A21; border:1px solid rgba(255,255,255,.14); border-radius:16px; box-shadow:0 24px 60px rgba(0,0,0,.5); overflow:hidden;">
+
+    <!-- header -->
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 18px;">
+      <div style="font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; color:#F3F2F7;">Notificaciones</div>
+      <a style="font-size:11.5px;">Marcar todo como leído</a>
+    </div>
+
+    <!-- tabs -->
+    <div style="display:flex; gap:6px; padding:0 18px 12px;">
+      <span class="tab on">Todas</span>
+      <span class="tab">No leídas · 3</span>
+      <span class="tab">Menciones</span>
+    </div>
+
+    <!-- list -->
+    <div class="nrow unread">
+      <div style="width:34px; height:34px; border-radius:50%; background:#5A4A7A; display:flex; align-items:center; justify-content:center; font-family:'Space Mono',monospace; font-size:11px; color:#EDE9F7; flex-shrink:0;">MD</div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:12.5px; line-height:1.5; color:#D7D5E0;"><b style="color:#F3F2F7; font-weight:600;">Mara Díaz</b> reaccionó a tu post «Parcial filtrado de Cálculo II».</div>
+        <div style="font-family:'Space Mono',monospace; font-size:10px; color:#6C6B78; margin-top:5px;">hace 8 min</div>
+      </div>
+      <span style="width:7px; height:7px; border-radius:50%; background:#4FD1C5; margin-top:6px; flex-shrink:0;"></span>
+    </div>
+
+    <div class="nrow unread">
+      <div style="width:34px; height:34px; border-radius:10px; background:rgba(79,209,197,.14); display:flex; align-items:center; justify-content:center; color:#4FD1C5; flex-shrink:0;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:12.5px; line-height:1.5; color:#D7D5E0;">Nuevo hilo en <b style="color:#F3F2F7; font-weight:600;">Foro › #ingeniería</b>: «¿Alguien tiene el resumen de Redes?».</div>
+        <div style="font-family:'Space Mono',monospace; font-size:10px; color:#6C6B78; margin-top:5px;">hace 22 min</div>
+      </div>
+      <span style="width:7px; height:7px; border-radius:50%; background:#4FD1C5; margin-top:6px; flex-shrink:0;"></span>
+    </div>
+
+    <div class="nrow unread">
+      <div style="width:34px; height:34px; border-radius:50%; background:#2E5A54; display:flex; align-items:center; justify-content:center; font-family:'Space Mono',monospace; font-size:11px; color:#CFF2ED; flex-shrink:0;">BR</div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:12.5px; line-height:1.5; color:#D7D5E0;"><b style="color:#F3F2F7; font-weight:600;">Bruno</b> te envió un mensaje: «che, ¿subís vos las fotos?»</div>
+        <div style="font-family:'Space Mono',monospace; font-size:10px; color:#6C6B78; margin-top:5px;">hace 1 h</div>
+      </div>
+      <span style="width:7px; height:7px; border-radius:50%; background:#4FD1C5; margin-top:6px; flex-shrink:0;"></span>
+    </div>
+
+    <div class="nrow">
+      <div style="width:34px; height:34px; border-radius:10px; background:rgba(255,210,61,.14); display:flex; align-items:center; justify-content:center; color:#FFD23D; flex-shrink:0;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/></svg>
+      </div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:12.5px; line-height:1.5; color:#B7B4C6;">Se creó el canal <b style="color:#D7D5E0; font-weight:600;">#becas-2026</b> en Foro.</div>
+        <div style="font-family:'Space Mono',monospace; font-size:10px; color:#6C6B78; margin-top:5px;">hace 3 h</div>
+      </div>
+    </div>
+
+    <div class="nrow">
+      <div style="width:34px; height:34px; border-radius:50%; background:#3A3F4E; display:flex; align-items:center; justify-content:center; font-family:'Space Mono',monospace; font-size:11px; color:#D7D5E0; flex-shrink:0;">LR</div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:12.5px; line-height:1.5; color:#B7B4C6;"><b style="color:#D7D5E0; font-weight:600;">Lucía Ramos</b> comentó en tu post del Muro.</div>
+        <div style="font-family:'Space Mono',monospace; font-size:10px; color:#6C6B78; margin-top:5px;">ayer · 19:40</div>
+      </div>
+    </div>
+
+    <div class="nrow">
+      <div style="width:34px; height:34px; border-radius:50%; background:#4A3F5E; display:flex; align-items:center; justify-content:center; font-family:'Space Mono',monospace; font-size:11px; color:#EDE9F7; flex-shrink:0;">TP</div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:12.5px; line-height:1.5; color:#B7B4C6;"><b style="color:#D7D5E0; font-weight:600;">Tomás Pérez</b> empezó a seguirte.</div>
+        <div style="font-family:'Space Mono',monospace; font-size:10px; color:#6C6B78; margin-top:5px;">ayer · 12:03</div>
+      </div>
+    </div>
+
+    <!-- footer -->
+    <div style="padding:13px 18px; border-top:1px solid rgba(255,255,255,.06); text-align:center;">
+      <a style="font-size:12px;">Ver historial completo</a>
+    </div>
+  </div>
+</div>
+
+<script data-dc-script data-props='{"$preview":{"width":440,"height":660}}'>
+class Component extends DCLogic {}
+</script>
+</x-dc>
+</body>
+</html>

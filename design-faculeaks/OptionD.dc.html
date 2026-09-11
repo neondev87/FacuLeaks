@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=EB+Garamond:wght@400;500&family=Space+Mono:wght@400;700&display=swap">
+  <style>
+    body { margin:0; background:#F4EFE3; font-family:'EB Garamond', Georgia, serif; -webkit-font-smoothing:antialiased; }
+    * { box-sizing:border-box; }
+    .kick { font-family:'Space Mono', monospace; font-size:10px; letter-spacing:.26em; text-transform:uppercase; color:#9a8f78; }
+    .panel { background:#FBF8F0; border:1px solid #E4DAC5; border-radius:4px; padding:26px; }
+    .cap { font-size:13px; color:#6f665a; line-height:1.55; }
+  </style>
+</helmet>
+
+<div style="width:960px; min-height:800px; background:#F4EFE3; color:#2b2620; padding:46px 52px;">
+
+  <div class="kick">Faculeaks · dirección "escudo"</div>
+  <div style="font-family:'Cormorant Garamond',Georgia,serif; font-size:34px; font-weight:600; margin:8px 0 6px;">Opción D — Medallón monograma</div>
+  <div style="font-size:15px; color:#6f665a; max-width:620px; line-height:1.6;">Sin escudo: un sello redondo tipo lacre, con las iniciales <b>FL</b> entrelazadas y el anillo de texto. La rosa remata el juego con <b>SUB ROSA</b>.</div>
+  <div class="cap" style="margin-top:8px;"><b>Ventaja:</b> el mejor ícono de app / avatar — redondo, encaja en cualquier lado. &nbsp; <b>Costo:</b> sin escudo se pierde algo de la lectura “universidad”.</div>
+
+  <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:18px; margin-top:30px;">
+
+    <!-- crimson on parchment -->
+    <div class="panel" style="text-align:center; padding-top:32px;">
+      <div class="kick" style="margin-bottom:18px;">Carmesí</div>
+      <svg width="150" height="150" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <path id="d1-top" d="M20,60 A40,40 0 0 1 100,60"/>
+          <path id="d1-bot" d="M24,62 A36,36 0 0 0 96,62"/>
+        </defs>
+        <circle cx="60" cy="60" r="57" stroke="#8E1B2E" stroke-width="1.4" fill="#F4EFE3"/>
+        <circle cx="60" cy="60" r="52" stroke="#8E1B2E" stroke-width="0.8" fill="none" stroke-dasharray="0.6 4" stroke-linecap="round"/>
+        <circle cx="60" cy="60" r="41" stroke="#8E1B2E" stroke-width="1" fill="none"/>
+        <text fill="#8E1B2E" font-family="'Cormorant Garamond',serif" font-size="10" font-weight="700" letter-spacing="4" text-anchor="middle"><textPath href="#d1-top" startOffset="50%">FACULEAKS</textPath></text>
+        <text fill="#8E1B2E" font-family="'Cormorant Garamond',serif" font-size="8" font-weight="600" letter-spacing="4" text-anchor="middle"><textPath href="#d1-bot" startOffset="50%">SUB ROSA</textPath></text>
+        <text x="60" y="72" font-family="'Cormorant Garamond',serif" font-weight="700" font-size="42" fill="#8E1B2E" text-anchor="middle" letter-spacing="-4">FL</text>
+        <g fill="#8E1B2E"><circle cx="12.5" cy="60" r="1.7"/><circle cx="107.5" cy="60" r="1.7"/></g>
+      </svg>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif; font-weight:600; font-size:22px; letter-spacing:.28em; color:#8E1B2E; margin-top:14px;">FACULEAKS</div>
+    </div>
+
+    <!-- gold on navy -->
+    <div class="panel" style="text-align:center; padding-top:32px; background:#1E2A44; border-color:#2b3a5c;">
+      <div class="kick" style="margin-bottom:18px; color:#8ea1c8;">Dorado / azul noche</div>
+      <svg width="150" height="150" viewBox="0 0 120 120" fill="none">
+        <defs>
+          <path id="d2-top" d="M20,60 A40,40 0 0 1 100,60"/>
+          <path id="d2-bot" d="M24,62 A36,36 0 0 0 96,62"/>
+        </defs>
+        <circle cx="60" cy="60" r="57" stroke="#B99A5B" stroke-width="1.4" fill="none"/>
+        <circle cx="60" cy="60" r="52" stroke="#B99A5B" stroke-width="0.8" fill="none" stroke-dasharray="0.6 4" stroke-linecap="round"/>
+        <circle cx="60" cy="60" r="41" stroke="#B99A5B" stroke-width="1" fill="none"/>
+        <text fill="#B99A5B" font-family="'Cormorant Garamond',serif" font-size="10" font-weight="700" letter-spacing="4" text-anchor="middle"><textPath href="#d2-top" startOffset="50%">FACULEAKS</textPath></text>
+        <text fill="#B99A5B" font-family="'Cormorant Garamond',serif" font-size="8" font-weight="600" letter-spacing="4" text-anchor="middle"><textPath href="#d2-bot" startOffset="50%">SUB ROSA</textPath></text>
+        <text x="60" y="72" font-family="'Cormorant Garamond',serif" font-weight="700" font-size="42" fill="#B99A5B" text-anchor="middle" letter-spacing="-4">FL</text>
+      </svg>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif; font-weight:600; font-size:22px; letter-spacing:.28em; color:#B99A5B; margin-top:14px;">FACULEAKS</div>
+    </div>
+
+    <!-- emboss single line + rose -->
+    <div class="panel" style="text-align:center; padding-top:32px;">
+      <div class="kick" style="margin-bottom:18px;">Una línea + rosa</div>
+      <svg width="150" height="150" viewBox="0 0 120 120" fill="none">
+        <defs>
+          <path id="d3-top" d="M22,60 A38,38 0 0 1 98,60"/>
+        </defs>
+        <circle cx="60" cy="60" r="55" stroke="#2b2620" stroke-width="1.4" fill="none"/>
+        <circle cx="60" cy="60" r="49" stroke="#2b2620" stroke-width="0.8" fill="none"/>
+        <text fill="#2b2620" font-family="'Cormorant Garamond',serif" font-size="9" font-weight="600" letter-spacing="4" text-anchor="middle"><textPath href="#d3-top" startOffset="50%">FACULEAKS · MMXXVI</textPath></text>
+        <text x="60" y="66" font-family="'Cormorant Garamond',serif" font-weight="700" font-size="38" fill="#2b2620" text-anchor="middle" letter-spacing="-3">FL</text>
+        <!-- rose -->
+        <g transform="translate(60,86)" fill="none" stroke="#8E1B2E" stroke-width="1.3">
+          <circle cx="0" cy="0" r="2.4"/>
+          <path d="M0 -2.4 A5 5 0 0 1 4.5 1.5"/>
+          <path d="M4.5 1.5 A5 5 0 0 1 -1.7 4.7"/>
+          <path d="M-1.7 4.7 A5 5 0 0 1 -4.6 -1.4"/>
+          <path d="M-4.6 -1.4 A5 5 0 0 1 0 -2.4"/>
+        </g>
+      </svg>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif; font-weight:600; font-size:22px; letter-spacing:.28em; color:#2b2620; margin-top:14px;">FACULEAKS</div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:18px; display:flex; align-items:center; gap:24px;">
+    <div class="kick" style="flex-shrink:0;">Reducciones</div>
+    <svg width="48" height="48" viewBox="0 0 120 120" fill="none"><circle cx="60" cy="60" r="57" stroke="#8E1B2E" stroke-width="2" fill="#F4EFE3"/><circle cx="60" cy="60" r="49" stroke="#8E1B2E" stroke-width="1.2" fill="none"/><text x="60" y="74" font-family="'Cormorant Garamond',serif" font-weight="700" font-size="46" fill="#8E1B2E" text-anchor="middle" letter-spacing="-5">FL</text></svg>
+    <svg width="28" height="28" viewBox="0 0 120 120" fill="none"><circle cx="60" cy="60" r="57" fill="#8E1B2E"/><text x="60" y="76" font-family="'Cormorant Garamond',serif" font-weight="700" font-size="52" fill="#F4EFE3" text-anchor="middle" letter-spacing="-6">FL</text></svg>
+    <svg width="16" height="16" viewBox="0 0 120 120" fill="none"><circle cx="60" cy="60" r="58" fill="#8E1B2E"/><text x="60" y="80" font-family="'Cormorant Garamond',serif" font-weight="700" font-size="62" fill="#F4EFE3" text-anchor="middle" letter-spacing="-7">FL</text></svg>
+    <div style="display:flex; align-items:center; gap:7px; background:#EDE5D3; border:1px solid #D8CBAE; border-radius:7px 7px 0 0; padding:7px 10px; margin-left:auto;">
+      <svg width="13" height="13" viewBox="0 0 120 120" fill="none"><circle cx="60" cy="60" r="58" fill="#8E1B2E"/><text x="60" y="80" font-family="'Cormorant Garamond',serif" font-weight="700" font-size="62" fill="#F4EFE3" text-anchor="middle" letter-spacing="-7">FL</text></svg>
+      <span style="font-family:'EB Garamond',serif; font-size:11px; color:#5a5147; white-space:nowrap;">Faculeaks — Inicio</span>
+    </div>
+  </div>
+
+</div>
+
+<script data-dc-script data-props='{"$preview":{"width":960,"height":800}}'>
+class Component extends DCLogic {}
+</script>
+</x-dc>
+</body>
+</html>

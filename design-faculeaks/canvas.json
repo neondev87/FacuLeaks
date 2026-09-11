@@ -1,0 +1,20 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "Dashboard" },
+    { "id": "page-2", "name": "Marca / logo" },
+    { "id": "page-3", "name": "Alt · base clara" }
+  ],
+  "artboards": [
+    { "file": "Main.dc.html", "page": "page-1", "x": 0, "y": 0, "w": 1440, "h": 1080, "title": "Dashboard — grafito" },
+    { "file": "Notifs.dc.html", "page": "page-1", "x": 1520, "y": 0, "w": 440, "h": 660, "title": "Campana · panel de notificaciones" },
+    { "file": "Settings.dc.html", "page": "page-1", "x": 2060, "y": 0, "w": 400, "h": 640, "title": "Engranaje · menú de ajustes" },
+    { "file": "Logo.dc.html", "page": "page-2", "x": 0, "y": 0, "w": 1240, "h": 1160, "title": "Sistema de identidad" },
+    { "file": "DirLight.dc.html", "page": "page-3", "x": 0, "y": 0, "w": 1440, "h": 1080, "title": "Misma estructura, base clara" }
+  ],
+  "annotations": [
+    { "id": "n-brand", "page": "page-1", "x": 20, "y": -170, "w": 420, "text": "Fuera cruces, Cinzel y negro puro. Base grafito #101116 + un acento verde-agua (#4FD1C5). Muro / Perfil / Foro no cambian de estructura, solo de piel." },
+    { "id": "n-bell", "page": "page-1", "x": 980, "y": -170, "w": 320, "text": "Campana con contador de no leídos → abre el panel del artboard «Campana». La tarjeta Novedades del centro es el mismo feed, resumido." },
+    { "id": "n-gear", "page": "page-1", "x": 1340, "y": -170, "w": 300, "text": "Engranaje = ajustes / cambios. Atajos en el riel derecho; menú completo en el artboard «Engranaje»." }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}
