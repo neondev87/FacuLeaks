@@ -230,10 +230,23 @@ const linksValidos = (links) => {
     .filter(l => l.label && ESQUEMA_SEGURO.test(l.url) && l.url.length <= 300);
 };
 
+// `intereses` es el único campo tipo lista además de `links` — mismo criterio
+// (tope de cantidad + longitud de cada uno) para no dejarlo sin validar.
+const interesesValidos = (intereses) => {
+  if (intereses === undefined) return undefined;
+  if (!Array.isArray(intereses)) return [];
+  return intereses.map(t => String(t || '').trim().slice(0, 40)).filter(Boolean).slice(0, 30);
+};
+
 // PUT /api/perfil — actualizar datos
 const updatePerfil = async (req, res) => {
-  const { statusText, intereses, nombre, mostrarNombreCompleto, facultad } = req.body;
-  const bio    = req.body.bio != null ? String(req.body.bio).slice(0, 500) : req.body.bio;
+  const { nombre, mostrarNombreCompleto, facultad } = req.body;
+  const bio        = req.body.bio != null ? String(req.body.bio).slice(0, 500) : req.body.bio;
+  // Tope 80 alineado con el VarChar(80) de la columna — sin esto, un
+  // statusText más largo no se "recortaba", directamente tiraba un 500
+  // (Prisma/Postgres rechazando el insert) en vez de un 400 prolijo.
+  const statusText = req.body.statusText != null ? String(req.body.statusText).slice(0, 80) : req.body.statusText;
+  const intereses  = interesesValidos(req.body.intereses);
   const links  = linksValidos(req.body.links);
   // Solo tocar el campo si vino en el body (boolean explícito) — si no,
   // dejar Prisma usar lo que ya había (undefined = "no actualizar esta
