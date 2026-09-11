@@ -190,7 +190,10 @@ export default function PerfilPublicoPage() {
                     <div style={{ marginTop: profile.bio ? 10 : 0, display:"flex", flexDirection:"column" }}>
                       {links.map((l, i) => {
                         const lbl = typeof l === "string" ? l : l.label;
-                        const url = typeof l === "string" ? "#" : (l.url || "#");
+                        // Solo http(s) — un link guardado como "javascript:..."
+                        // no debe poder ejecutar nada con solo el click.
+                        const rawUrl = typeof l === "string" ? "" : (l.url || "");
+                        const url = /^https?:\/\//i.test(rawUrl) ? rawUrl : "#";
                         return (
                           <a key={i} href={url} target="_blank" rel="noopener noreferrer"
                             style={{ display:"flex", gap:8, padding:"5px 0", fontSize:12, color:"#555", cursor:"pointer", transition:"color .2s", textDecoration:"none", fontFamily:"'Inter',sans-serif" }}

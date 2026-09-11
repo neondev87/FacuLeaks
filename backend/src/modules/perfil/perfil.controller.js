@@ -214,9 +214,27 @@ const getPerfilPublico = async (req, res) => {
   }
 };
 
+// Esquema seguro para un link guardado por el usuario ("Redes y links" del
+// perfil) — sin esto, un `url` tipo "javascript:fetch(...)" se guardaba tal
+// cual y salía como `<a href>` crudo en SocialLinks.js / perfil público:
+// XSS con solo click en el ícono de red de OTRO usuario. Server-side es la
+// fuente de verdad; el frontend valida de nuevo al renderizar (defensa en
+// profundidad, por los links viejos guardados antes de este fix).
+const ESQUEMA_SEGURO = /^https?:\/\//i;
+const linksValidos = (links) => {
+  if (links === undefined) return undefined;
+  if (!Array.isArray(links)) return [];
+  return links
+    .slice(0, 20)
+    .map(l => ({ label: String(l?.label || '').slice(0, 40), url: String(l?.url || '').trim() }))
+    .filter(l => l.label && ESQUEMA_SEGURO.test(l.url) && l.url.length <= 300);
+};
+
 // PUT /api/perfil — actualizar datos
 const updatePerfil = async (req, res) => {
-  const { bio, statusText, intereses, links, nombre, mostrarNombreCompleto, facultad } = req.body;
+  const { statusText, intereses, nombre, mostrarNombreCompleto, facultad } = req.body;
+  const bio    = req.body.bio != null ? String(req.body.bio).slice(0, 500) : req.body.bio;
+  const links  = linksValidos(req.body.links);
   // Solo tocar el campo si vino en el body (boolean explícito) — si no,
   // dejar Prisma usar lo que ya había (undefined = "no actualizar esta
   // columna" en un upsert/update, no la pisa con null).
