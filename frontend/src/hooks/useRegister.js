@@ -83,8 +83,8 @@ export default function useRegister({ status, session }) {
 
   const introText = useTypewriter(
     session?.user?.name
-      ? `> SISTEMA: bienvenido, ${session.user.name}\n> nuevo usuario detectado\n> iniciando protocolo de registro...`
-      : `> SISTEMA: nuevo usuario detectado\n> iniciando protocolo de registro...`,
+      ? `Hola, ${session.user.name} — vamos a armar tu cuenta en FacuLeaks.`
+      : `Vamos a armar tu cuenta en FacuLeaks.`,
     14
   );
 
@@ -99,8 +99,12 @@ export default function useRegister({ status, session }) {
   useEffect(() => {
     // Paso 2 (facultad) es un grid de escudos, no un input de texto — no
     // hay nada que enfocar ahí.
+    // 260ms, no 80: le da tiempo a la transición de salida/entrada entre
+    // pasos (app/register/page.js, useStepTransition) a terminar de montar
+    // el input del paso NUEVO antes de intentar enfocarlo -- con 80ms el
+    // foco caía en el input del paso anterior, que ya no estaba en pantalla.
     if (step === 1 || step === 3 || step === 4) {
-      setTimeout(() => inputRef.current?.focus(), 80);
+      setTimeout(() => inputRef.current?.focus(), 260);
     }
   }, [step]);
 
@@ -158,7 +162,10 @@ export default function useRegister({ status, session }) {
         }
 
         setStep(6);
-        setTimeout(() => { window.location.href = '/feed'; }, 2000);
+        // 3200, no 2000: le da lugar a la animación de "entrando a
+        // FacuLeaks" de app/register/page.js (tarjeta se apaga, la marca
+        // se enciende de oscura a color) antes de navegar de verdad.
+        setTimeout(() => { window.location.href = '/feed'; }, 3200);
 
       } catch {
         setStep(4);

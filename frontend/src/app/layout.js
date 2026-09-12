@@ -27,8 +27,18 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="es" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>
+    // suppressHydrationWarning en html/body: el navegador in-app de
+    // WhatsApp (y otros — Instagram, Facebook) mete sus propios atributos
+    // en <html>/<body> (ej. `__gcrremoteframetoken`) ANTES de que React
+    // hidrate, apenas se abre el link. React compara contra eso y tira
+    // "A tree hydrated but some attributes... didn't match" — pantalla roja
+    // entera en dev (reportado 2026-09-11 al mandar el link del túnel por
+    // WhatsApp). No es un bug nuestro: es la recomendación oficial de React
+    // para atributos que mete un tercero (extensiones, traductores,
+    // in-app browsers) fuera de nuestro control — solo ignora attrs/texto
+    // de ESTE elemento, no tapa mismatches reales más abajo en el árbol.
+    <html lang="es" className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>
