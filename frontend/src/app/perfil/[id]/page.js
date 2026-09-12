@@ -13,6 +13,8 @@ import TerminalCounter from "@/components/perfil/TerminalCounter";
 import Lightbox from "@/components/Lightbox";
 import { publicStyles } from "./publicStyles";
 import { escudoUrl } from "@/lib/facultades";
+import SocialLinks from "@/components/perfil/SocialLinks";
+import FacultadTag from "@/components/perfil/FacultadTag";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: app/perfil/[id]/page.js — perfil de OTRO usuario (público)
@@ -80,8 +82,6 @@ export default function PerfilPublicoPage() {
 
   const { user, profile, stats, posts, isOwnProfile } = perfil;
 
-  const intereses = Array.isArray(profile.intereses) ? profile.intereses
-    : profile.intereses ? Object.values(profile.intereses) : [];
   const links = Array.isArray(profile.links) ? profile.links
     : profile.links ? Object.values(profile.links) : [];
 
@@ -90,6 +90,13 @@ export default function PerfilPublicoPage() {
   // (quedaría duplicado), así que se esconde.
   const mostrarCompleto = profile.mostrarNombreCompleto !== false;
   const displayName = mostrarCompleto ? (user.nombre || user.username) : user.username;
+
+  // Situación sentimental: por default NO se ve directo en el perfil — solo
+  // adentro de "Información" cuando se pincha el ícono de ver información,
+  // a menos que esa persona haya prendido el switch de "mostrar directamente
+  // en mi perfil" (EditModal.js, 2026-09-11).
+  const situacionEnHeader = profile.mostrarSituacion === true && !!profile.statusText;
+  const situacionOculta   = !situacionEnHeader && !!profile.statusText;
 
   return (
     <>
@@ -110,9 +117,16 @@ export default function PerfilPublicoPage() {
                   @{user.username}
                 </div>
               )}
+              <div className="profile-social-icons"><SocialLinks links={links} /></div>
             </div>
-            {profile.statusText && (
-              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:12, color:"#555", marginTop:5, fontStyle:"italic" }}>
+            {/* Facultad — SOLO PC. En celular se muestra al lado de la foto
+                de perfil (profile-avatar-side, más abajo) en vez de acá
+                (pedido explícito de Erick, 2026-09-11, con mockup). */}
+            <div className="profile-header-facultad" style={{ marginTop:7 }}>
+              <FacultadTag facultad={user.facultad} />
+            </div>
+            {situacionEnHeader && (
+              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:12, color:"#555", marginTop:7, fontStyle:"italic" }}>
                 {profile.statusText}
               </div>
             )}
@@ -143,14 +157,23 @@ export default function PerfilPublicoPage() {
                 perfil propio. Antes no llevaba `size`, y AvatarMenu sin
                 `size` se estira a 100% del contenedor con aspectRatio:1 —
                 en celular (donde esta columna pasa a ocupar toda la
-                pantalla) eso lo hacía gigante y deforme. ESTE era el bug. */}
-            <AvatarMenu
-              currentAvatar={user.imagen}
-              escudoUrl={escudoUrl(user.facultad)}
-              canEdit={false}
-              size={165}
-              onViewClick={() => user.imagen && setLightboxSrc(user.imagen)}
-            />
+                pantalla) eso lo hacía gigante y deforme. ESTE era el bug.
+                En celular, al lado (profile-avatar-side) van la facultad y
+                el ícono de Instagram — en PC ese bloque queda en
+                display:none, ahí viven arriba en el header. */}
+            <div className="profile-avatar-row">
+              <AvatarMenu
+                currentAvatar={user.imagen}
+                escudoUrl={escudoUrl(user.facultad)}
+                canEdit={false}
+                size={165}
+                onViewClick={() => user.imagen && setLightboxSrc(user.imagen)}
+              />
+              <div className="profile-avatar-side">
+                <FacultadTag facultad={user.facultad} size="lg" />
+                <div className="profile-social-icons-side"><SocialLinks links={links} variant="expanded" /></div>
+              </div>
+            </div>
 
             {/* Información (antes "Stats") — el "Sobre mí" Y los links de
                 la persona quedan plegados atrás del ícono de info, solo si
@@ -158,7 +181,7 @@ export default function PerfilPublicoPage() {
             <div style={card}>
               <div className="sec-title" style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
                 Información
-                {(profile.bio || links.length > 0) && (
+                {(profile.bio || links.length > 0 || situacionOculta) && (
                   <button onClick={() => setShowBio(v => !v)} title={showBio ? "ocultar sobre mí" : "ver sobre mí"}
                     style={{ background:"none", border:"none", padding:2, cursor:"pointer", color: showBio ? "#e8e4d9" : "#555", transition:"color .15s", display:"flex" }}
                     onMouseEnter={e => e.currentTarget.style.color = "#e8e4d9"}
@@ -178,8 +201,18 @@ export default function PerfilPublicoPage() {
               <TerminalCounter label="desde"   value={null} text={
                 user.creadoEn ? new Date(user.creadoEn).toLocaleDateString("es-MX", { month:"short", year:"numeric" }) : "—"
               } />
-              {showBio && (profile.bio || links.length > 0) && (
+              {showBio && (profile.bio || links.length > 0 || situacionOculta) && (
                 <div style={{ marginTop:10, paddingTop:10, borderTop:"1px solid rgba(255,255,255,.06)" }}>
+                  {/* Situación sentimental, plegada acá — es la "información
+                      que la gente puede ver del perfil cuando pincha el
+                      ícono de ver información de alguien" (pedido explícito
+                      2026-09-11), a menos que esa persona haya elegido
+                      mostrarla directo arriba (ver situacionEnHeader). */}
+                  {situacionOculta && (
+                    <div style={{ fontSize:13, color:"rgba(232,228,217,.55)", fontStyle:"italic", fontFamily:"'Inter',sans-serif", marginBottom: (profile.bio || links.length>0) ? 10 : 0 }}>
+                      {profile.statusText}
+                    </div>
+                  )}
                   {profile.bio && (
                     <div style={{ fontSize:13, color:"rgba(232,228,217,.65)", lineHeight:1.75, fontFamily:"'Inter',sans-serif" }}>
                       {profile.bio}
@@ -225,17 +258,6 @@ export default function PerfilPublicoPage() {
           {/* CENTRAL */}
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
 
-            {intereses.length > 0 && (
-              <div style={card}>
-                <div className="sec-title">Intereses</div>
-                {intereses.map((t, i) => (
-                  <div key={i} style={{ display:"flex", gap:10, marginBottom:5, fontSize:13, color:"rgba(232,228,217,.6)", fontFamily:"'Inter',sans-serif" }}>
-                    <span style={{ color:"rgba(255,255,255,.18)", flexShrink:0 }}>—</span><span>{t}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
             {posts.length > 0 && (
               <div style={card}>
                 <div className="sec-title">Posts</div>
@@ -243,7 +265,7 @@ export default function PerfilPublicoPage() {
                   <PostCard
                     key={p.id}
                     post={p}
-                    currentUser={perfil.user}
+                    currentUser={{ ...perfil.user, mostrarNombreCompleto: profile.mostrarNombreCompleto }}
                     viewerId={session?.user?.dbId}
                     canDelete={false}
                     onImageClick={(src) => setLightboxSrc(src)}

@@ -6,11 +6,11 @@ import PField from "./edit/PField";
 import PInput from "./edit/PInput";
 import PTextarea from "./edit/PTextarea";
 import PPills from "./edit/PPills";
-import TagInput from "./edit/TagInput";
+import PToggle from "./edit/PToggle";
+import PFacultadPicker from "./edit/PFacultadPicker";
 import LinkRow from "./edit/LinkRow";
 import PDivider from "./edit/PDivider";
 import PTab from "./edit/PTab";
-import { FACULTADES } from "@/lib/facultades";
 
 // Opciones de "Situación sentimental" — reemplaza al viejo campo de texto
 // libre "Estado" (2026-09-10, a pedido explícito).
@@ -20,7 +20,7 @@ const SITUACIONES = ["Soltero", "En una relación", "Casado"];
 // MÓDULO: components/perfil/EditModal.js — modal de editar TU perfil
 // ════════════════════════════════════════════════════════════════════════
 // QUÉ HACE: junta todos los campitos de components/perfil/edit/ (nombre,
-// bio, intereses, links de redes) en un modal con pestañas. Arma su propio
+// bio, links de redes) en un modal con pestañas. Arma su propio
 // estado de formulario a partir del `profile`/`user` que recibe, y al
 // guardar llama a `onSave(...)` con TODO junto — no le habla al backend
 // directamente, delega en quien lo usa.
@@ -45,11 +45,12 @@ export default function EditModal({ profile, user, onClose, onSave }) {
   );
   const [facultad,   setFacultad]   = useState(user.facultad || "");
   const [situacion,  setSituacion]  = useState(profile.statusText || "");
+  // Por default la situación sentimental NO se ve directo en el perfil —
+  // solo adentro de "Información" cuando alguien pincha el ícono de ver
+  // información de esa persona (2026-09-11, a pedido de Erick). Este switch
+  // es la excepción explícita: mostrarla también arriba, junto al nombre.
+  const [mostrarSituacion, setMostrarSituacion] = useState(profile.mostrarSituacion === true);
   const [bio,        setBio]        = useState(profile.bio || "");
-  const [tags,       setTags]       = useState(
-    Array.isArray(profile.intereses) ? profile.intereses
-    : profile.intereses ? Object.values(profile.intereses) : []
-  );
   const [links, setLinks] = useState(
     Array.isArray(profile.links)
       ? profile.links.map((l,i) => ({ id:i+1, plat: l.label||"Discord", url: l.url||"" }))
@@ -77,8 +78,9 @@ export default function EditModal({ profile, user, onClose, onSave }) {
     setSaving(true);
     const linksArr = links.filter(l=>l.url).map(l=>({ label:l.plat, url:l.url }));
     await onSave({
-      bio, statusText:situacion, intereses:tags, links:linksArr, facultad: facultad || undefined,
+      bio, statusText:situacion, links:linksArr, facultad: facultad || undefined,
       mostrarNombreCompleto: nombreDisplay === "Nombre completo",
+      mostrarSituacion,
     });
     setSaved(true);
     setTimeout(() => { setSaved(false); setSaving(false); onClose(); }, 1200);
@@ -116,43 +118,32 @@ export default function EditModal({ profile, user, onClose, onSave }) {
           {tab==="perfil" && (
             <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
               <PDivider/>
+              {/* 1) Nombre o usuario — orden pedido por Erick (2026-09-11):
+                  nombre/usuario primero, facultad al final. */}
               <PField label="Usuario" hint="@">
                 <PInput value={username} onChange={e=>setUsername(e.target.value)} placeholder="usuario"/>
               </PField>
               <PField label="Nombre a mostrar">
                 <PPills options={["Nombre completo","Usuario"]} value={nombreDisplay} onChange={setNombreDisplay}/>
               </PField>
-              <PField label="Facultad" hint={facultad ? "" : "obligatorio"}>
-                <div style={{ display:"flex", flexWrap:"wrap", gap:6, maxHeight:180, overflowY:"auto", padding:2 }}>
-                  {FACULTADES.map(f => {
-                    const active = facultad === f.value;
-                    return (
-                      <button key={f.value} type="button" onClick={()=>setFacultad(f.value)} title={f.nombre}
-                        style={{
-                          display:"flex", alignItems:"center", gap:6, background: active ? "rgba(255,255,255,.12)" : "rgba(255,255,255,.03)",
-                          border:`1px solid ${active ? "rgba(255,255,255,.35)" : "rgba(255,255,255,.08)"}`, borderRadius:20,
-                          padding:"5px 10px 5px 5px", cursor:"pointer", transition:"all .15s",
-                        }}
-                        onMouseEnter={e=>{ if(!active) e.currentTarget.style.borderColor="rgba(255,255,255,.2)"; }}
-                        onMouseLeave={e=>{ if(!active) e.currentTarget.style.borderColor="rgba(255,255,255,.08)"; }}>
-                        <img src={`/facultades/${f.archivo}`} alt="" width={18} height={18} style={{ objectFit:"contain", borderRadius:"50%" }} />
-                        <span style={{ fontFamily:INTER, fontSize:11, color: active ? "rgba(255,255,255,.9)" : "rgba(255,255,255,.5)" }}>{f.nombre}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </PField>
-              <PField label="Situación sentimental">
-                <PPills options={SITUACIONES} value={situacion} onChange={setSituacion}/>
-              </PField>
+
+              {/* 2) Bio */}
               <PField label="Bio" hint={`${bio.length}/200`}>
                 <PTextarea value={bio} onChange={e=>setBio(e.target.value.slice(0,200))} placeholder="Cuéntale a la gente quién eres..." rows={4}/>
               </PField>
-              <PDivider label="intereses"/>
-              <PField label="Intereses" hint="Enter para agregar">
-                <TagInput tags={tags} setTags={setTags}/>
-                <div style={{ fontSize:10, color:"rgba(255,255,255,.2)", fontFamily:INTER, marginTop:4 }}>Presiona Enter o coma para agregar · máximo 10</div>
+
+              {/* 3) Situación sentimental — oculta del perfil por default; solo
+                  se ve en "Información" cuando alguien pincha el ícono de ver
+                  información de esa persona, A MENOS que se prenda este
+                  switch (2026-09-11, a pedido de Erick). */}
+              <PField label="Situación sentimental">
+                <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                  <PPills options={SITUACIONES} value={situacion} onChange={setSituacion}/>
+                  <PToggle checked={mostrarSituacion} onChange={setMostrarSituacion} label="Mostrar directamente en mi perfil" />
+                </div>
               </PField>
+
+              {/* 4) Redes y links */}
               <PDivider label="links"/>
               <PField label="Redes y links">
                 <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
@@ -167,6 +158,13 @@ export default function EditModal({ profile, user, onClose, onSave }) {
                     </button>
                   )}
                 </div>
+              </PField>
+
+              {/* 5) Facultad — al final. Caja cerrada ("Elegir") en vez de la
+                  grilla de 17 pills siempre abierta (PFacultadPicker.js). */}
+              <PDivider/>
+              <PField label="¿A qué facultad vas?" hint={facultad ? "" : "obligatorio"}>
+                <PFacultadPicker value={facultad} onChange={setFacultad} />
               </PField>
             </div>
           )}

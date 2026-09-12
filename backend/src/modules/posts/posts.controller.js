@@ -28,6 +28,7 @@
 //     llaman a estos endpoints y escuchan esos eventos de socket.
 // ════════════════════════════════════════════════════════════════════════
 const prisma = require('../../config/db');
+const { AUTHOR_SELECT, flattenAuthor } = require('../../lib/author');
 
 // Normaliza un post del feed: expone `autor` y `myReaction` ("LIKE" | "DISLIKE" | null),
 // y usa el conteo real de comentarios (_count) como fuente de verdad —
@@ -39,16 +40,16 @@ const mapPost = (p) => {
   const { post_likes, post_shares, comments, users, _count, ...rest } = p;
   return {
     ...rest,
-    autor: users,
+    autor: flattenAuthor(users),
     myReaction: post_likes?.[0]?.tipo || null,
     myShared: !!post_shares?.length,
     totalComentarios: _count?.comments ?? rest.totalComentarios ?? 0,
-    previewComments: (comments || []).map(c => ({ ...c, autor: c.users })),
+    previewComments: (comments || []).map(c => ({ ...c, autor: flattenAuthor(c.users) })),
   };
 };
 
 const feedInclude = (userId) => ({
-  users: { select: { id: true, username: true, nombre: true, imagen: true, facultad: true } },
+  users: { select: AUTHOR_SELECT },
   _count: { select: { comments: true } },
   post_likes: userId
     ? { where: { userId }, select: { tipo: true } }
@@ -62,7 +63,7 @@ const feedInclude = (userId) => ({
     orderBy: { creadoEn: 'asc' },
     select: {
       id: true, contenido: true, creadoEn: true,
-      users: { select: { id: true, username: true, imagen: true, facultad: true } },
+      users: { select: AUTHOR_SELECT },
     },
   },
 });
@@ -71,10 +72,10 @@ const createPost = async (autorId, { titulo, contenido = "", privacidad = 'PUBLI
   const post = await prisma.posts.create({
     data: { autorId, titulo, contenido, privacidad, imagen },
     include: {
-      users: { select: { id: true, username: true, nombre: true, imagen: true, facultad: true } }
+      users: { select: AUTHOR_SELECT }
     }
   });
-  return { ...post, autor: post.users };
+  return { ...post, autor: flattenAuthor(post.users) };
 };
 
 const getFeedRecientes = async (userId, page = 1, limit = 20) => {
@@ -364,10 +365,10 @@ const listComments = async (req, res) => {
 
     const comments = await prisma.comments.findMany({
       where: { postId },
-      include: { users: { select: { id: true, username: true, nombre: true, imagen: true, facultad: true } } },
+      include: { users: { select: AUTHOR_SELECT } },
       orderBy: { creadoEn: 'asc' },
     });
-    res.json({ comments: comments.map(c => ({ ...c, autor: c.users })) });
+    res.json({ comments: comments.map(c => ({ ...c, autor: flattenAuthor(c.users) })) });
   } catch (err) {
     console.error('listComments error:', err.message);
     res.status(500).json({ error: 'Error al obtener comentarios' });
@@ -395,7 +396,7 @@ const createComment = async (req, res) => {
     await prisma.$transaction(async (tx) => {
       comment = await tx.comments.create({
         data: { postId, autorId, contenido },
-        include: { users: { select: { id: true, username: true, nombre: true, imagen: true, facultad: true } } },
+        include: { users: { select: AUTHOR_SELECT } },
       });
       // Recuento exacto (no increment): evita drift y contadores negativos si
       // hay comentarios previos a B3 que nunca tocaron totalComentarios.
@@ -403,7 +404,7 @@ const createComment = async (req, res) => {
       await tx.posts.update({ where: { id: postId }, data: { totalComentarios: total } });
     });
 
-    const payload = { ...comment, autor: comment.users };
+    const payload = { ...comment, autor: flattenAuthor(comment.users) };
     // Igual que post:react: solo se difunde a TODOS si el post es público.
     // Antes esto mandaba el contenido del comentario (y quién lo escribió)
     // de posts AMIGOS/SOLO_YO a cada cliente conectado, sin importar si

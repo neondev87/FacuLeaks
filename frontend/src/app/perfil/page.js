@@ -16,6 +16,8 @@ import EditModal from "@/components/perfil/EditModal";
 import FriendsModal from "@/components/perfil/FriendsModal";
 import Lightbox from "@/components/Lightbox";
 import { escudoUrl } from "@/lib/facultades";
+import SocialLinks from "@/components/perfil/SocialLinks";
+import FacultadTag from "@/components/perfil/FacultadTag";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: app/perfil/page.js — TU perfil (propio, editable)
@@ -72,10 +74,6 @@ export default function ProfilePage() {
 
   const { user, profile, stats } = perfil;
 
-  // ── Parsear intereses (pueden venir como JSON o array) ──
-  const intereses = Array.isArray(profile.intereses) ? profile.intereses
-    : profile.intereses ? Object.values(profile.intereses) : [];
-
   // Nombre a mostrar arriba de todo — respeta la elección de "Información"
   // (mostrarNombreCompleto, default true). Si eligió @usuario, se muestra
   // ESO tal cual lo va a ver cualquiera que entre a tu perfil público.
@@ -111,11 +109,28 @@ export default function ProfilePage() {
             tiene que achicar para hacerle lugar. ── */}
         <div className="profile-header" style={{ borderBottom:`1px solid ${HOLO_THEME.hairlineSoft}`, paddingBottom:20, marginBottom:26, display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:24 }}>
           <div style={{ minWidth:0 }}>
-            <div className="profile-name" style={{ fontFamily:"'Cinzel',serif", fontSize:30, fontWeight:600, color:HOLO_THEME.text, letterSpacing:".06em", lineHeight:1.1 }}>
-              {displayName}
+            <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+              <div className="profile-name" style={{ fontFamily:"'Cinzel',serif", fontSize:30, fontWeight:600, color:HOLO_THEME.text, letterSpacing:".06em", lineHeight:1.1 }}>
+                {displayName}
+              </div>
+              <div className="profile-social-icons"><SocialLinks links={profile.links} /></div>
             </div>
-            {profile.statusText && (
-              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:12, color:HOLO_THEME.textDim, marginTop:6, fontStyle:"italic" }}>
+            {/* Facultad bajo el nombre — SOLO PC. En celular se muestra al
+                lado de la foto de perfil en vez de acá (ver profile-avatar-side
+                más abajo) — pedido explícito de Erick (2026-09-11, con
+                mockup). Misma etiqueta (FacultadTag), dos lugares, uno de
+                los dos siempre está en display:none según el ancho. */}
+            <div className="profile-header-facultad" style={{ marginTop:8 }}>
+              <FacultadTag facultad={user.facultad} />
+            </div>
+            {/* Situación sentimental: oculta acá por default — solo se ve
+                si prendiste el switch de "Editar perfil" (2026-09-11). Si
+                está apagado, no se muestra en NINGÚN lado del perfil propio
+                (ya la elegiste vos, no hace falta un panel de "ver info"
+                para vos mismo — ese existe en el perfil público). Se
+                mantiene igual en PC y celular. */}
+            {profile.mostrarSituacion === true && profile.statusText && (
+              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:12, color:HOLO_THEME.textDim, marginTop:8, fontStyle:"italic" }}>
                 {profile.statusText}
               </div>
             )}
@@ -136,23 +151,32 @@ export default function ProfilePage() {
 
             {/* ── Avatar — mismo tamaño (165) que el recuadro de perfil del
                 muro; ya no comparte fila con Spotify (ver header, arriba),
-                así no se achica para hacerle lugar. ── */}
-            <AvatarMenu
-              className="profile-avatar-box"
-              currentAvatar={user.imagen}
-              escudoUrl={escudoUrl(user.facultad)}
-              canEdit={true}
-              size={165}
-              onAvatarChange={(url) => {
-                setPerfil(p => ({
-                  ...p,
-                  user: { ...p.user, imagen: url },
-                  posts: (p.posts || []).map(post =>
-                    post.autor ? { ...post, autor: { ...post.autor, imagen: url } } : post
-                  ),
-                }));
-              }}
-            />
+                así no se achica para hacerle lugar. En celular, al lado
+                (profile-avatar-side) van la facultad y el ícono de
+                Instagram — en PC ese bloque queda en display:none, ahí
+                viven arriba en el header en vez de acá. ── */}
+            <div className="profile-avatar-row">
+              <AvatarMenu
+                className="profile-avatar-box"
+                currentAvatar={user.imagen}
+                escudoUrl={escudoUrl(user.facultad)}
+                canEdit={true}
+                size={165}
+                onAvatarChange={(url) => {
+                  setPerfil(p => ({
+                    ...p,
+                    user: { ...p.user, imagen: url },
+                    posts: (p.posts || []).map(post =>
+                      post.autor ? { ...post, autor: { ...post.autor, imagen: url } } : post
+                    ),
+                  }));
+                }}
+              />
+              <div className="profile-avatar-side">
+                <FacultadTag facultad={user.facultad} size="lg" />
+                <div className="profile-social-icons-side"><SocialLinks links={profile.links} variant="expanded" /></div>
+              </div>
+            </div>
 
             {/* ── Información (antes "Stats") — el "Sobre mí" vive plegado
                 atrás del ícono de info, para ver o (si está vacío) agregarlo. ──
@@ -198,19 +222,6 @@ export default function ProfilePage() {
           {/* ════════════════════════════════════════════════ */}
           <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
 
-            {/* ── Intereses — igual que en el perfil público
-                (app/perfil/[id]/page.js), acá faltaba pintarse. ── */}
-            {intereses.length > 0 && (
-              <div style={card}>
-                <div className="sec-title">Intereses</div>
-                {intereses.map((t, i) => (
-                  <div key={i} style={{ display:"flex", gap:10, marginBottom:5, fontSize:13, color:HOLO_THEME.textDim, fontFamily:"'Inter',sans-serif" }}>
-                    <span style={{ color:HOLO_THEME.hairline, flexShrink:0 }}>—</span><span>{t}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
             {/* ── Posts ── */}
             <div style={card}>
               <div className="sec-title">Posts</div>
@@ -219,7 +230,7 @@ export default function ProfilePage() {
                     <PostCard
                       key={p.id}
                       post={p}
-                      currentUser={user}
+                      currentUser={{ ...user, mostrarNombreCompleto: profile.mostrarNombreCompleto }}
                       viewerId={session?.user?.dbId}
                       canDelete={true}
                       onDelete={() => p.isShared ? handleUnshare(p.id) : handleDeletePost(p.id)}

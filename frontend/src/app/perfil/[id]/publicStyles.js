@@ -18,11 +18,27 @@ export const publicStyles = `
       .pub-grid { display:grid; grid-template-columns:210px 1fr 230px; }
       .sec-title { font-family:'Cinzel',serif; font-size:12px; letter-spacing:.18em; margin-bottom:12px; color:rgba(255,255,255,.7); }
 
+      /* Íconos de redes al lado del nombre — solo formato PC (ver @media
+         abajo). El div wrapper (antes el className iba directo en
+         <SocialLinks>) es a propósito: SocialLinks.js trae su propio
+         display:flex inline, que como estilo inline le gana a esta clase —
+         sin el wrapper, display:none de acá abajo nunca se aplicaba. */
+      .profile-social-icons { display:flex; }
+
+      /* Fila avatar + (en celular) facultad/Instagram al lado. */
+      .profile-avatar-row { display:flex; align-items:flex-start; gap:14px; }
+      .profile-avatar-side { display:none; }
+
       /* ── Celular: mismo apilado que el perfil propio ── */
       @media (max-width:880px) {
         .pub-grid { grid-template-columns:1fr; }
       }
       @media (max-width:760px) {
         .pub-wrap { padding:60px 16px 32px; }
+        .profile-social-icons { display:none; }
+        /* Facultad e Instagram se mudan de la cabecera a al lado de la foto
+           de perfil — pedido explícito de Erick (2026-09-11, con mockup). */
+        .profile-header-facultad { display:none; }
+        .profile-avatar-side { display:flex; flex-direction:column; align-items:flex-start; gap:10px; padding-top:8px; }
       }
     `;

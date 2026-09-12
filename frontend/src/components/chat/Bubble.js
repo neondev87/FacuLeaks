@@ -77,7 +77,7 @@ export default function Bubble({ msg, esPropio, replyMsg, onReply, onDelete }) {
               <div style={{ fontSize:11, fontFamily:"'Space Mono',monospace", color: esPropio ? "rgba(21,19,24,.55)" : "rgba(255,255,255,.5)", marginBottom:2, letterSpacing:".04em" }}>
                 {replyMsg.emisor?.username || "Tú"}
               </div>
-              <div style={{ fontSize:13, fontFamily:"'EB Garamond',Georgia,serif", fontStyle:"italic", color: esPropio ? "rgba(21,19,24,.5)" : "rgba(255,255,255,.42)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:280 }}>
+              <div className="reply-preview-text" style={{ fontSize:13, fontFamily:"'EB Garamond',Georgia,serif", fontStyle:"italic", color: esPropio ? "rgba(21,19,24,.5)" : "rgba(255,255,255,.42)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                 {replyMsg.tipo === "audio" && replyMsg.audioUrl
                   ? <AudioReplyPreview src={replyMsg.audioUrl} />
                   : replyMsg.contenido}
@@ -87,7 +87,7 @@ export default function Bubble({ msg, esPropio, replyMsg, onReply, onDelete }) {
         )}
 
         {isAudioMsg ? (
-          <div style={{ padding:"11px 15px", display:"flex", flexDirection:"column", gap:6, width:320 }}>
+          <div className="bubble-audio" style={{ padding:"11px 15px", display:"flex", flexDirection:"column", gap:6 }}>
             <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:1 }}>
               <MicIcon size={13} recording={false} />
               <span style={{ fontFamily:"'EB Garamond',Georgia,serif", fontStyle:"italic", fontSize:13, color: esPropio ? "rgba(21,19,24,.5)" : "rgba(255,255,255,.42)" }}>
@@ -102,17 +102,18 @@ export default function Bubble({ msg, esPropio, replyMsg, onReply, onDelete }) {
         ) : isImageMsg ? (
           <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
             <img
+              className="bubble-img"
               src={`${API}${msg.imageUrl}`}
               alt="imagen"
               onClick={() => setLightbox(true)}
-              style={{ display:"block", maxWidth:340, maxHeight:380, width:"auto", objectFit:"cover", border:"1px solid rgba(255,255,255,.1)", borderRadius:16, cursor:"pointer" }}
+              style={{ display:"block", width:"auto", objectFit:"cover", border:"1px solid rgba(255,255,255,.1)", borderRadius:16, cursor:"pointer" }}
             />
             <div className={esPropio ? "bubble-time-me" : "bubble-time-other"} style={{ alignSelf:"flex-end" }}>
               {formatTime(msg.creadoEn)}
             </div>
           </div>
         ) : (
-          <div style={{ padding:"11px 16px", display:"flex", alignItems:"flex-end", gap:12 }}>
+          <div className="bubble-content" style={{ display:"flex", alignItems:"flex-end", gap:12 }}>
             <div className={esPropio ? "bubble-text-me" : "bubble-text-other"}>{msg.contenido}</div>
             <div className={esPropio ? "bubble-time-me" : "bubble-time-other"}>{formatTime(msg.creadoEn)}</div>
           </div>

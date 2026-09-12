@@ -7,7 +7,10 @@
 //   - getPerfilPublico(): el perfil de OTRO usuario (solo lo público) y,
 //     de paso, registra la visita (tabla profile_visits) y le avisa por
 //     socket en vivo al dueño ("alguien visitó tu perfil").
-//   - updatePerfil(): editar bio, intereses, links, etc.
+//   - updatePerfil(): editar bio, intereses, links, etc. Si cambia `nombre` o
+//     `mostrarNombreCompleto`, avisa en vivo por socket (`user:nombre`,
+//     broadcast) para que el Muro y los perfiles públicos ya abiertos
+//     reflejen el nombre/username correcto sin recargar.
 //   - getAvatar(): solo tu propio avatar (sin el resto del perfil) — para
 //     pantallas que solo necesitan mostrar "tu ícono" (composer del muro,
 //     chat), sin pedir stats/posts/fotos de más.
@@ -42,6 +45,7 @@ const crypto = require('crypto');
 const prisma = require('../../config/db');
 const { verificarMagicBytes } = require('../upload/upload.security');
 const { users_facultad } = require('@prisma/client');
+const { AUTHOR_SELECT, flattenAuthor } = require('../../lib/author');
 
 const FACULTADES_VALIDAS = new Set(Object.values(users_facultad));
 
@@ -82,10 +86,10 @@ const getPostsConAutor = (userId, privacidadFiltro, viewerId) =>
     select: {
       id: true, titulo: true, contenido: true, imagen: true, creadoEn: true, totalVistas: true,
       totalLikes: true, totalDislikes: true,
-      users: { select: { id: true, username: true, nombre: true, imagen: true, facultad: true } },
+      users: { select: AUTHOR_SELECT },
       post_likes: viewerId ? { where: { userId: viewerId }, select: { tipo: true } } : false,
     },
-  }).then(rows => rows.map(({ users, ...p }) => conReacciones({ ...p, autor: users }, viewerId)));
+  }).then(rows => rows.map(({ users, ...p }) => conReacciones({ ...p, autor: flattenAuthor(users) }, viewerId)));
 
 // Posts que `userId` compartió (no los que escribió) — para que aparezcan
 // SOLO en su perfil, nunca en el muro (feedRecientes/Trending/Siguiendo no
@@ -102,7 +106,7 @@ const getSharedPosts = (userId, onlyPublicOriginal, viewerId) =>
         select: {
           id: true, titulo: true, contenido: true, imagen: true, creadoEn: true, totalVistas: true, privacidad: true,
           totalLikes: true, totalDislikes: true,
-          users: { select: { id: true, username: true, nombre: true, imagen: true, facultad: true } },
+          users: { select: AUTHOR_SELECT },
           post_likes: viewerId ? { where: { userId: viewerId }, select: { tipo: true } } : false,
         },
       },
@@ -111,7 +115,7 @@ const getSharedPosts = (userId, onlyPublicOriginal, viewerId) =>
     .filter(s => s.posts && (!onlyPublicOriginal || s.posts.privacidad === 'PUBLICA'))
     .map(s => {
       const { users, privacidad, ...p } = s.posts;
-      return conReacciones({ ...p, autor: users, isShared: true, shareId: s.id, sharedEn: s.creadoEn }, viewerId);
+      return conReacciones({ ...p, autor: flattenAuthor(users), isShared: true, shareId: s.id, sharedEn: s.creadoEn }, viewerId);
     }));
 
 // Junta posts propios + compartidos, ordenados por fecha (creadoEn del post
@@ -240,7 +244,7 @@ const interesesValidos = (intereses) => {
 
 // PUT /api/perfil — actualizar datos
 const updatePerfil = async (req, res) => {
-  const { nombre, mostrarNombreCompleto, facultad } = req.body;
+  const { nombre, mostrarNombreCompleto, mostrarSituacion, facultad } = req.body;
   const bio        = req.body.bio != null ? String(req.body.bio).slice(0, 500) : req.body.bio;
   // Tope 80 alineado con el VarChar(80) de la columna — sin esto, un
   // statusText más largo no se "recortaba", directamente tiraba un 500
@@ -251,17 +255,28 @@ const updatePerfil = async (req, res) => {
   // Solo tocar el campo si vino en el body (boolean explícito) — si no,
   // dejar Prisma usar lo que ya había (undefined = "no actualizar esta
   // columna" en un upsert/update, no la pisa con null).
-  const nombreField = typeof mostrarNombreCompleto === 'boolean' ? { mostrarNombreCompleto } : {};
+  const nombreField    = typeof mostrarNombreCompleto === 'boolean' ? { mostrarNombreCompleto } : {};
+  const situacionField = typeof mostrarSituacion       === 'boolean' ? { mostrarSituacion }       : {};
   if (facultad !== undefined && !FACULTADES_VALIDAS.has(facultad))
     return res.status(400).json({ error: 'Facultad inválida' });
   try {
     const profile = await prisma.user_profiles.upsert({
       where:  { userId:req.userId },
-      update: { bio, statusText, intereses, links, ...nombreField },
-      create: { userId:req.userId, bio, statusText, intereses, links, ...nombreField }
+      update: { bio, statusText, intereses, links, ...nombreField, ...situacionField },
+      create: { userId:req.userId, bio, statusText, intereses, links, ...nombreField, ...situacionField }
     });
     if (nombre) await prisma.users.update({ where:{ id:req.userId }, data:{ nombre } });
     if (facultad) await prisma.users.update({ where:{ id:req.userId }, data:{ facultad } });
+
+    // Aviso en vivo (mismo patrón que `user:avatar`) — el nombre a mostrar o
+    // el nombre completo pueden haber cambiado, y hay que reflejarlo sin
+    // recargar en cualquier Muro/perfil público que ya esté abierto con
+    // posts de esta persona.
+    if (nombre || typeof mostrarNombreCompleto === 'boolean') {
+      const u = await prisma.users.findUnique({ where:{ id:req.userId }, select:{ nombre:true } });
+      req.io?.emit('user:nombre', { userId: req.userId, nombre: u?.nombre, mostrarNombreCompleto: profile.mostrarNombreCompleto });
+    }
+
     res.json({ ok:true, profile });
   } catch (err) {
     console.error('updatePerfil error:', err.message);

@@ -37,8 +37,21 @@ export const chatStyles = `
       @keyframes flicker  { 0%,100%{opacity:1;transform:scaleY(1)} 33%{opacity:.92;transform:scaleY(.97) scaleX(1.02)} 66%{opacity:.96;transform:scaleY(1.02) scaleX(.98)} }
       ${KF.pulse}
       ${KF.wave}
-      body { background:${HOLO_THEME.bg}; color:${HOLO_THEME.text}; font-family:'Inter',sans-serif; font-size:16px; overflow:hidden; }
+      html { overflow-x:hidden; }
+      body { background:${HOLO_THEME.bg}; color:${HOLO_THEME.text}; font-family:'Inter',sans-serif; font-size:16px; overflow:hidden; overscroll-behavior:none; touch-action:pan-y; }
       ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:999px} ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.28)}
+      /* .chat-shell: antes vivía como inline style en page.js (height/margin-top
+         fijos en 58px, calcados con la navbar). Se movió acá para poder darle
+         más aire en celular sin pelear con la especificidad del inline style
+         — la navbar fija tapaba el nombre de la cabecera y el borde superior
+         de la tarjeta de "Mensajes" (bug reportado 2026-09-11). 100dvh como
+         mejora sobre 100vh: en mobile Safari/Chrome 100vh no baja cuando la
+         barra de direcciones está visible, así que calc(100vh - 58px) podía
+         quedar más alto que el viewport real y "empujar" contenido detrás de
+         la navbar fija. Se declara vh primero (fallback universal) y dvh
+         después — los navegadores que no entienden la unidad ignoran esa
+         línea entera y se quedan con el vh de arriba. */
+      .chat-shell { height:calc(100vh - 58px); height:calc(100dvh - 58px); margin-top:58px; overflow-x:hidden; touch-action:pan-y; overscroll-behavior-x:none; }
       /* ── Barra lateral: dirección "Vitral editorial · Tinta" ──────────────
          Paleta sin color (gris tinta ${TINTA}), avatares cuadrados con inicial
          en Cinzel, un resplandor suave desde arriba y la fila activa marcada
@@ -64,7 +77,11 @@ export const chatStyles = `
       .status-dot { position:absolute; bottom:1px; right:1px; width:11px; height:11px; border-radius:50%; border:2px solid #0c0c0e; }
       .status-dot-hdr { position:absolute; bottom:1px; right:1px; width:12px; height:12px; border-radius:50%; border:2px solid ${HOLO_THEME.bg}; }
       /* Cabecera del chat: avatar + nombre son un botón que lleva a
-         /perfil/<id> de la persona con la que estás hablando. */
+         /perfil/<id> de la persona con la que estás hablando. Padding-top
+         propio (antes fijo en 14px) para poder darle más aire en celular. */
+      .chat-conv-hdr { padding:14px 24px; gap:16px; }
+      .avatar--hdr { width:46px; height:46px; }
+      .chat-hdr-name { font-size:20px; }
       .chat-hdr-id { display:flex; align-items:center; gap:16px; flex:1; min-width:0; background:none; border:0; padding:6px 8px; margin:-6px -8px; border-radius:10px; cursor:pointer; text-align:left; font:inherit; color:inherit; transition:background .16s; }
       .chat-hdr-id:hover { background:rgba(184,179,194,.06); }
       .chat-hdr-name { transition:color .16s; }
@@ -72,14 +89,34 @@ export const chatStyles = `
       .chat-hdr-id:focus-visible { outline:1px solid rgba(184,179,194,.5); outline-offset:2px; }
       .chat-back { display:none; flex-shrink:0; width:32px; height:32px; align-items:center; justify-content:center; background:none; border:0; border-radius:50%; color:${HOLO_THEME.textDim}; cursor:pointer; transition:background .14s, color .14s; }
       .chat-back:hover { background:rgba(184,179,194,.08); color:#fff; }
+      /* Lista de mensajes: scroll SOLO vertical, a propósito (bug reportado
+         2026-09-11 — en celular se "deslizaba" para los costados en vez de
+         scrollear derecho como en Instagram/Facebook). overflow-x:hidden es
+         el cinturón de seguridad; touch-action + overscroll-behavior-x
+         evitan que un gesto diagonal del dedo se interprete como scroll
+         horizontal o como el swipe-back del navegador. La causa real era
+         .msg-col/.bubble-audio/.bubble-img con anchos fijos en px que no
+         entraban en pantallas angostas — ver abajo, ahora escalan con vw. */
+      .chat-messages { flex:1; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; touch-action:pan-y; -webkit-overflow-scrolling:touch; padding:22px 26px; display:flex; flex-direction:column; }
+      /* Ancho máximo de la columna de una burbuja (dentro reside .bubble-me
+         u otra) — separado de .bubble-audio/.bubble-img porque el contenido
+         de esos dos ya trae su propio tope responsive. */
+      .msg-col { max-width:65%; }
+      .msg-col--audio { max-width:360px; }
       /* Burbujas — rediseño de la conversación activa (paleta Tinta): propia en
          marfil frío, ajena en panel; esquina "doblada" del lado del emisor;
          entrada con un rise corto y tranquilo. */
       .bubble-me { background:#ecebef; border-radius:16px 16px 5px 16px; box-shadow:0 1px 10px rgba(0,0,0,.4); overflow:hidden; animation:msgRise .24s cubic-bezier(.2,.7,.3,1); position:relative; z-index:1; }
       .bubble-other { background:#16161b; border:1px solid ${HOLO_THEME.hairlineSoft}; border-radius:16px 16px 16px 5px; box-shadow:0 1px 10px rgba(0,0,0,.4); overflow:hidden; animation:msgRise .24s cubic-bezier(.2,.7,.3,1); position:relative; z-index:1; }
       @keyframes msgRise { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
-      .bubble-text-me    { font-family:'Inter',sans-serif; font-size:16px; color:#151318; line-height:1.6; letter-spacing:.01em; }
-      .bubble-text-other { font-family:'Inter',sans-serif; font-size:16px; color:${HOLO_THEME.text}; line-height:1.6; letter-spacing:.01em; }
+      .bubble-content { padding:11px 16px; }
+      .bubble-text-me    { font-family:'Inter',sans-serif; font-size:16px; color:#151318; line-height:1.6; letter-spacing:.01em; overflow-wrap:anywhere; }
+      .bubble-text-other { font-family:'Inter',sans-serif; font-size:16px; color:${HOLO_THEME.text}; line-height:1.6; letter-spacing:.01em; overflow-wrap:anywhere; }
+      /* Audio e imagen: ancho fijo en desktop, pero con tope en vw para que
+         en un celular angosto (320-375px) no fuercen scroll horizontal. */
+      .bubble-audio { width:320px; max-width:72vw; }
+      .bubble-img   { max-width:min(340px, 72vw); max-height:380px; }
+      .reply-preview-text { max-width:min(280px, 55vw); }
       .bubble-time-me    { font-size:11px; color:rgba(10,10,13,.4); white-space:nowrap; flex-shrink:0; font-family:'Space Mono',monospace; letter-spacing:.05em; margin-top:auto; }
       .bubble-time-other { font-size:11px; color:rgba(242,240,248,.3); white-space:nowrap; flex-shrink:0; font-family:'Space Mono',monospace; letter-spacing:.05em; margin-top:auto; }
       .reply-bar-me    { padding:8px 14px 7px; background:rgba(10,10,13,.07); border-bottom:1px solid rgba(10,10,13,.07); display:flex; gap:8px; }
@@ -177,8 +214,13 @@ export const chatStyles = `
         .empty-fig-ascii { width:76%; }
       }
       @media (max-width:600px) {
-        .chat-landing { padding:14px; background-image:url(${bgCelular.src}); background-size:cover; background-position:center; }
-        .chat-landing-card { height:min(660px, 90vh); }
+        /* Más padding arriba que a los costados: la tarjeta flota centrada
+           dentro de .chat-shell (ver arriba) y en celular quedaba con la
+           esquina redondeada y la campanita de solicitudes (RequestsIcon,
+           "top:-2px") pegadas al borde de la navbar fija — se recortaban
+           (bug reportado 2026-09-11). */
+        .chat-landing { padding:34px 14px 14px; background-image:url(${bgCelular.src}); background-size:cover; background-position:center; }
+        .chat-landing-card { height:min(660px, 90dvh); }
         /* En celular el fondo ya es una imagen completa (arriba) — las 2
            figuras recortadas quedan de más y se esconden. */
         .empty-fig-girl, .empty-fig-ascii { display:none; }
@@ -192,5 +234,23 @@ export const chatStyles = `
       @media (max-width:760px) {
         .chat-shell--open .chat-side { display:none; }
         .chat-back { display:flex; }
+        /* Más aire entre la navbar fija y la cabecera de la conversación —
+           el nombre (chat-hdr-name) quedaba tapado por la navbar (bug
+           reportado 2026-09-11, ver también .chat-shell arriba). */
+        .chat-conv-hdr { padding:22px 14px 12px; gap:10px; }
+        .avatar--hdr { width:38px; height:38px; }
+        .chat-hdr-name { font-size:16px; }
+        /* Todo lo de acá abajo es el rediseño "pensado para celular" pedido
+           2026-09-11: paddings más chicos y fuentes menos grandes que en
+           desktop — antes se reusaban los valores de escritorio tal cual. */
+        .chat-messages { padding:14px 10px; }
+        .msg-col { max-width:80%; }
+        .msg-col--audio { max-width:min(78vw, 280px); }
+        .bubble-content { padding:8px 12px; }
+        .bubble-text-me, .bubble-text-other { font-size:14.5px; line-height:1.5; }
+        .bubble-audio { max-width:78vw; }
+        .bubble-img { max-width:78vw; max-height:320px; }
+        .composer-bar { padding:8px 10px 10px; gap:3px; }
+        .date-pill { margin:12px 0 12px; }
       }
     `;

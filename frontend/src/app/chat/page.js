@@ -273,7 +273,7 @@ export default function ChatPage() {
       <Navbar />
       {/* "chat-shell--open" (con conversación activa) es lo que la media query
           de celular usa para decidir qué panel mostrar — ver chatStyles.js. */}
-      <div className={`chat-shell${activeChat ? " chat-shell--open" : ""}`} style={{ display:"flex", height:"calc(100vh - 58px)", marginTop:58 }}>
+      <div className={`chat-shell${activeChat ? " chat-shell--open" : ""}`} style={{ display:"flex" }}>
 
         {/* La barra angosta de siempre — solo mientras hay un chat abierto,
             para poder cambiar de conversación sin volver a la pantalla de
@@ -300,19 +300,19 @@ export default function ChatPage() {
         {activeChat ? (
           <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, background:HOLO_THEME.bg }}>
 
-            <div style={{ padding:"14px 24px", background:HOLO_THEME.bg, borderBottom:`1px solid ${HOLO_THEME.hairlineSoft}`, display:"flex", alignItems:"center", gap:16 }}>
+            <div className="chat-conv-hdr" style={{ background:HOLO_THEME.bg, borderBottom:`1px solid ${HOLO_THEME.hairlineSoft}`, display:"flex", alignItems:"center" }}>
               {/* Solo visible en celular (chatStyles.js) — la lista y la
                   conversación no entran juntas, esto vuelve a la lista. */}
               <button className="chat-back" onClick={chat.closeChat} aria-label="Volver a la lista">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
               </button>
               <button className="chat-hdr-id" onClick={goToProfile} title={`Ver perfil de @${activeChat.username}`}>
-                <div className="avatar" style={{ width:46, height:46, ...(avatarSrc(activeChat.imagen) ? { backgroundImage:`url(${avatarSrc(activeChat.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : {}) }}>
+                <div className="avatar avatar--hdr" style={avatarSrc(activeChat.imagen) ? { backgroundImage:`url(${avatarSrc(activeChat.imagen)})`, backgroundSize:"100% 100%", backgroundPosition:"center" } : undefined}>
                   {!avatarSrc(activeChat.imagen) && initial(activeChat.username)}<div className="status-dot-hdr" style={{ background: chat.isOnline(activeChat.userId) ? "#3ddc84" : "#2a2a2a" }} />
                   {escudoUrl(activeChat.facultad) && <div className="fac-badge" style={{ backgroundImage:`url(${escudoUrl(activeChat.facultad)})` }} />}
                 </div>
                 <div style={{ flex:1, minWidth:0 }}>
-                  <div className="chat-hdr-name" style={{ fontFamily:"'Cinzel',serif", fontSize:20, color:HOLO_THEME.text, lineHeight:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{activeChat.username}</div>
+                  <div className="chat-hdr-name" style={{ fontFamily:"'Cinzel',serif", color:HOLO_THEME.text, lineHeight:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{activeChat.username}</div>
                   <div style={{ fontFamily:"'Space Mono',monospace", fontSize:12, color: chat.isOnline(activeChat.userId) ? "rgba(255,255,255,.35)" : "rgba(255,255,255,.2)", letterSpacing:".08em", marginTop:4 }}>
                     {chat.isOnline(activeChat.userId) ? "en línea ahora" : "desconectado"}
                   </div>
@@ -321,7 +321,7 @@ export default function ChatPage() {
               {streak.loaded && <StreakC count={streak.count} dying={streak.dying} progress={streak.progress} />}
             </div>
 
-            <div style={{ flex:1, overflowY:"auto", padding:"22px 26px", display:"flex", flexDirection:"column" }}>
+            <div className="chat-messages">
               {chat.loading ? (
                 <div style={{ textAlign:"center", paddingTop:60 }}><span className="spinner" /></div>
               ) : chat.mensajes.length === 0 ? (
@@ -348,7 +348,7 @@ export default function ChatPage() {
                             </div>
                           ) : <div style={{ width:36 }} />}
                         </div>
-                        <div style={{ display:"flex", flexDirection:"column", alignItems: esPropio ? "flex-end" : "flex-start", maxWidth: msg.tipo === "audio" ? "360px" : "65%" }}>
+                        <div className={`msg-col${msg.tipo === "audio" ? " msg-col--audio" : ""}`} style={{ display:"flex", flexDirection:"column", alignItems: esPropio ? "flex-end" : "flex-start" }}>
                           {!prevSame && (
                             <div style={{ fontSize:14, fontFamily:"'Cinzel',serif", color:"rgba(255,255,255,.48)", marginBottom:5, paddingLeft: esPropio ? 0 : 2, paddingRight: esPropio ? 2 : 0 }}>
                               {esPropio ? "Tú" : msg.emisor?.username}

@@ -30,22 +30,51 @@ export const profileStyles = `
          se achica en celular (ver @media abajo) para dejarle aire al nombre. */
       .profile-spotify-box { width:230px; flex-shrink:0; }
 
+      /* Íconos de redes (Instagram/Discord/YouTube/Kick/Twitch/Facebook/
+         Spotify) al lado del nombre — solo formato PC, no entran en celular
+         junto con el nombre + Spotify (ver @media abajo). El div wrapper
+         (antes el className iba directo en <SocialLinks>) es a propósito:
+         SocialLinks.js trae su propio display:flex inline, que como estilo
+         inline le gana a esta clase — sin el wrapper, el display:none de
+         acá abajo nunca se aplicaba y el ícono quedaba visible en celular
+         igual (bug reportado 2026-09-11, se ve en el mockup de Erick). */
+      .profile-social-icons { display:flex; }
+
+      /* Fila avatar + (en celular) facultad/Instagram al lado — ver
+         profile-avatar-side abajo. En PC es solo un contenedor normal. */
+      .profile-avatar-row { display:flex; align-items:flex-start; gap:14px; }
+      /* Facultad/Instagram al lado de la foto: por default (PC) no existen
+         acá, viven arriba en el header (.profile-header-facultad /
+         .profile-social-icons) — este bloque se activa recién en celular. */
+      .profile-avatar-side { display:none; }
+
       /* ── Celular: las tres columnas se apilan (avatar/stats, cuerpo, extras) ── */
       @media (max-width:880px) {
         .profile-grid { grid-template-columns:1fr; }
       }
       @media (max-width:760px) {
-        .profile-wrap { padding:60px 16px 32px; }
+        /* padding-top en 90px (antes 60px): mismo motivo que .feed-page en
+           feedStyles.js — la navbar fija (58px) + el escudo de facultad que
+           sobresale del avatar (-16.5px, ver AvatarMenu.js) dejaban el
+           escudo recortado por la navbar con solo 60px de aire. */
+        .profile-wrap { padding:90px 16px 32px; }
         /* El nombre + Spotify ya no entran cómodos en una sola fila angosta:
            Spotify se acorta (230 → 132) y el nombre baja un poco de tamaño
            para no chocar con él. */
         .profile-header { gap:12px; }
         .profile-name { font-size:24px; }
         .profile-spotify-box { width:132px; }
+        .profile-social-icons { display:none; }
         /* El avatar gana un poco de tamaño (165 → 196): en celular la
            columna es de ancho completo, hay lugar de sobra y se ve chico
            al lado del resto. !important porque AvatarMenu ya trae su propio
            width inline (prop size, pensado para PC). */
         .profile-avatar-box { width:196px !important; }
+        /* Facultad e Instagram se mudan de la cabecera a al lado de la foto
+           de perfil — pedido explícito de Erick (2026-09-11, con mockup):
+           "la etiqueta de facpya al lado de la foto y el ícono de
+           Instagram abajo, solo para la versión en teléfono". */
+        .profile-header-facultad { display:none; }
+        .profile-avatar-side { display:flex; flex-direction:column; align-items:flex-start; gap:10px; padding-top:8px; }
       }
     `;

@@ -6,7 +6,7 @@ import useRegister from "@/hooks/useRegister";
 import TermLine from "@/components/register/TermLine";
 import ProgressBar from "@/components/register/ProgressBar";
 import { registerStyles } from "./registerStyles";
-import { FACULTADES, nombreFacultad } from "@/lib/facultades";
+import { FACULTADES, siglasFacultad } from "@/lib/facultades";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: app/register/page.js — completar el registro (por pasos)
@@ -121,7 +121,7 @@ export default function RegisterPage() {
                           onMouseLeave={e => { e.currentTarget.style.borderColor = CB; e.currentTarget.style.background = "none"; }}
                         >
                           <img src={`/facultades/${f.archivo}`} alt="" width={30} height={30} style={{ objectFit:"contain" }} />
-                          <span style={{ fontSize:8, color:CF, textAlign:"center", lineHeight:1.3 }}>{f.nombre}</span>
+                          <span style={{ fontSize:8, color:CF, textAlign:"center", lineHeight:1.3 }}>{f.siglas}</span>
                         </button>
                       ))}
                     </div>
@@ -131,7 +131,7 @@ export default function RegisterPage() {
             ) : (
               <div style={{ marginTop:8, display:"flex", alignItems:"center", gap:8, fontSize:13, color:"rgba(100,220,120,.9)", letterSpacing:".06em" }}>
                 <img src={`/facultades/${FACULTADES.find(f => f.value === facultad)?.archivo}`} alt="" width={18} height={18} style={{ objectFit:"contain" }} />
-                {nombreFacultad(facultad)} <span style={{ color:"rgba(100,220,120,.5)", fontSize:10 }}>✓ confirmado</span>
+                {siglasFacultad(facultad)} <span style={{ color:"rgba(100,220,120,.5)", fontSize:10 }}>✓ confirmado</span>
               </div>
             )}
           </div>

@@ -27,7 +27,8 @@ import { API } from '@/lib/api';
 import { HOLO_THEME } from '@/lib/theme';
 import { REACTIONS } from '@/components/feed/reactions';
 import TrashGlyph from '@/components/TrashGlyph';
-import { escudoUrl } from '@/lib/facultades';
+import { escudoUrl, siglasFacultad } from '@/lib/facultades';
+import { displayName } from '@/lib/displayName';
 
 // Mini escudo superpuesto — mismo patrón que components/feed/AvatarBadge.js,
 // para los 3 avatares que este archivo dibuja a mano (no usa AvatarBadge
@@ -136,7 +137,7 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
                   <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "8px 12px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                       <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,.8)" }}>
-                        {autor.username || "unknown"}
+                        {displayName(autor) || "unknown"}
                       </span>
                       {mine && (
                         <button
@@ -222,7 +223,7 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
       {/* Compartido: post ajeno que quedó fijado en ESTE perfil (nunca en el muro) */}
       {post.isShared && (
         <div style={{ fontSize: 11, color: HOLO_THEME.textDim, fontFamily: "'Space Mono',monospace", letterSpacing: ".05em", marginBottom: 10 }}>
-          ↻ {currentUser?.username || currentUser?.nombre} compartió esto
+          ↻ {displayName(currentUser) || currentUser?.username} compartió esto
         </div>
       )}
 
@@ -247,8 +248,15 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
           </div>
 
           <div>
-            <div style={{ fontSize: 14, fontWeight: 500, color: HOLO_THEME.text, fontFamily: "'Cinzel',serif" }}>
-              {post.autor?.nombre || post.autor?.username || currentUser.username}
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+              <div style={{ fontSize: 14, fontWeight: 500, color: HOLO_THEME.text, fontFamily: "'Cinzel',serif" }}>
+                {displayName(post.autor) || currentUser.username}
+              </div>
+              {siglasFacultad(post.autor?.facultad) && (
+                <span style={{ fontSize: 10, color: HOLO_THEME.textDim, fontFamily: "'Space Mono',monospace", letterSpacing: ".04em", border: `1px solid ${HOLO_THEME.hairline}`, borderRadius: 4, padding: "1px 5px", flexShrink: 0 }}>
+                  {siglasFacultad(post.autor?.facultad)}
+                </span>
+              )}
             </div>
             <div style={{ fontSize: 11, color: HOLO_THEME.textDim, fontFamily: "'Space Mono',monospace" }}>
               {formatDate(post.creadoEn)}

@@ -5,7 +5,7 @@
 export default function EmptyState({ tab }) {
   const msgs = {
     RECIENTES: { title:"tu feed está vacío",  sub:"sé el primero en publicar algo" },
-    TRENDING:  { title:"nada trending aún",   sub:"sé el primero en publicar algo" },
+    TRENDING:  { title:"nada trending aún",   sub:"todavía no hay publicaciones populares hoy" },
     SIGUIENDO: { title:"sin conexiones",       sub:"agrega amigos para ver su contenido" },
   };
   const m = msgs[tab] || msgs.RECIENTES;

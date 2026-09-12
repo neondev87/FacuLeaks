@@ -3,9 +3,11 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import usePostComments from "@/hooks/usePostComments";
-import { API } from "@/lib/api";
 import { HOLO_THEME } from "@/lib/theme";
 import TrashGlyph from "@/components/TrashGlyph";
+import { displayName } from "@/lib/displayName";
+import AvatarBadge from "./AvatarBadge";
+import { escudoUrl } from "@/lib/facultades";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: components/feed/PostComments.js — hilo de comentarios (diseño feed)
@@ -61,13 +63,12 @@ export default function PostComments({ postId, currentUserId }) {
             const mine  = currentUserId != null && Number(autor.id) === Number(currentUserId);
             return (
               <div key={c.id} style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
-                <div
-                  onClick={() => autor.id && router.push(`/perfil/${autor.id}`)}
-                  style={{ width:26, height:26, borderRadius:"50%", flexShrink:0, backgroundColor:"#1c1c24", backgroundImage: autor.imagen ? `url(${autor.imagen.startsWith("http") ? autor.imagen : `${API}${autor.imagen}`})` : "none", backgroundSize:"100% 100%", backgroundPosition:"center", border:`1px solid ${HOLO_THEME.hairline}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:8, color:HOLO_THEME.textDim, cursor: autor.id ? "pointer" : "default" }}>{!autor.imagen && "◈"}</div>
+                <AvatarBadge imagen={autor.imagen} size={26} escudoUrl={escudoUrl(autor.facultad)}
+                  onClick={autor.id ? () => router.push(`/perfil/${autor.id}`) : undefined} />
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ background:HOLO_THEME.panel, border:`1px solid ${HOLO_THEME.hairlineSoft}`, borderRadius:10, padding:"8px 12px" }}>
                     <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom:3 }}>
-                      <span style={{ fontSize:12, color:HOLO_THEME.text, fontFamily:"'Inter',sans-serif", fontWeight:500 }}>{autor.username || "unknown"}</span>
+                      <span style={{ fontSize:12, color:HOLO_THEME.text, fontFamily:"'Inter',sans-serif", fontWeight:500 }}>{displayName(autor) || "unknown"}</span>
                       <span style={{ fontSize:10, color:HOLO_THEME.textDim, fontFamily:"'Space Mono',monospace" }}>{fmt(c.creadoEn)}</span>
                       {mine && (
                         <button onClick={() => remove(c.id)} title="Eliminar comentario"

@@ -87,35 +87,51 @@ export default function FeedPage() {
           </div>
         </div>
 
-        <div style={{ padding:16, marginBottom:28, background:HOLO_THEME.panel, borderRadius:10, border:`1px solid ${HOLO_THEME.hairlineSoft}` }}>
-          <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
-            {/* Se agranda y se empuja a la esquina superior-izquierda del
-                recuadro (margen negativo = padding del recuadro, 16px). */}
-            <AvatarBadge imagen={ownImagen} size={56} escudoUrl={escudoUrl(ownFacultad)} style={{ marginTop:-16, marginLeft:-16 }} />
-            <div style={{ flex:1 }}>
-              <input className="post-title-input" placeholder="Título (opcional)" value={postTitle} onChange={e => setPostTitle(e.target.value)} />
-              <textarea className="post-body-input" placeholder="¿Qué está pasando en tu realidad?" value={postContent} onChange={handleContentChange} rows={2} />
-              <LinkPreview data={linkPreview} onRemove={() => setLinkPreview(null)} />
-              {postImagen && (
-                <div className="imagen-preview">
-                  <img src={`${API}${postImagen}`} alt="adjunto" />
-                  <div className="imagen-preview-remove" onClick={clearImagen}>✕</div>
+        {activeTab === "TRENDING" ? (
+          /* TRENDING es solo lectura — nada de escribir un post acá (no
+             aplica: es un ranking del día, no un lugar de publicar). El
+             composer se reemplaza por esta etiqueta informativa. */
+          <div style={{ display:"flex", alignItems:"center", gap:10, padding:"13px 16px", marginBottom:28, background:HOLO_THEME.panel, borderRadius:10, border:`1px solid ${HOLO_THEME.hairlineSoft}` }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={HOLO_THEME.textDim} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0 }}>
+              <path d="M3 17l6-6 4 4 8-8" /><path d="M15 6h6v6" />
+            </svg>
+            <span style={{ fontSize:12, color:HOLO_THEME.textDim, fontFamily:"'Inter',sans-serif", letterSpacing:".02em" }}>
+              Las publicaciones más populares del día
+            </span>
+          </div>
+        ) : (
+          <div style={{ padding:16, marginBottom:28, background:HOLO_THEME.panel, borderRadius:10, border:`1px solid ${HOLO_THEME.hairlineSoft}` }}>
+            <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
+              {/* Se agranda y se empuja hacia la esquina superior-izquierda del
+                  recuadro (padding 16px), con un colchón de 10px para que el
+                  escudo que sobresale del avatar (ver AvatarBadge.js) no se
+                  pase del borde del recuadro. */}
+              <AvatarBadge imagen={ownImagen} size={53} escudoUrl={escudoUrl(ownFacultad)} style={{ marginTop:-6, marginLeft:-6 }} />
+              <div style={{ flex:1 }}>
+                <input className="post-title-input" placeholder="Título (opcional)" value={postTitle} onChange={e => setPostTitle(e.target.value)} />
+                <textarea className="post-body-input" placeholder="¿Qué está pasando en tu realidad?" value={postContent} onChange={handleContentChange} rows={2} />
+                <LinkPreview data={linkPreview} onRemove={() => setLinkPreview(null)} />
+                {postImagen && (
+                  <div className="imagen-preview">
+                    <img src={`${API}${postImagen}`} alt="adjunto" />
+                    <div className="imagen-preview-remove" onClick={clearImagen}>✕</div>
+                  </div>
+                )}
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  {!postImagen ? (
+                    <Uploader resetKey={uploaderKey} tipo="imagen" compact label="imagen"
+                      onSuccess={({ url }) => { setPostImagen(url); setDlFilename(url.split('/').pop()); setDlTrigger(t => t+1); }}
+                      onError={msg => console.error(msg)}
+                    />
+                  ) : <div />}
+                  <button className="publish-btn" onClick={handlePublish} disabled={publishing || (!postContent.trim() && !postImagen)}>
+                    {publishing ? <span className="spinner" /> : "PUBLICAR"}
+                  </button>
                 </div>
-              )}
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                {!postImagen ? (
-                  <Uploader resetKey={uploaderKey} tipo="imagen" compact label="imagen"
-                    onSuccess={({ url }) => { setPostImagen(url); setDlFilename(url.split('/').pop()); setDlTrigger(t => t+1); }}
-                    onError={msg => console.error(msg)}
-                  />
-                ) : <div />}
-                <button className="publish-btn" onClick={handlePublish} disabled={publishing || (!postContent.trim() && !postImagen)}>
-                  {publishing ? <span className="spinner" /> : "PUBLICAR"}
-                </button>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {newCount > 0 && activeTab === "RECIENTES" && (
           <button className="new-badge" onClick={() => { resetNewCount(); window.scrollTo({ top:0, behavior:"smooth" }); }}>
@@ -136,6 +152,7 @@ export default function FeedPage() {
               onDelete={removePost}
               onReact={toggleReaction}
               onShare={toggleShare}
+              hideComments={activeTab === "TRENDING"}
             />
           ))
         )}

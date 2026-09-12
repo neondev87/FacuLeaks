@@ -30,10 +30,10 @@ export default function AvatarBadge({ imagen, size = 48, escudoUrl = null, onCli
       {!bg && glyph}
       {escudoUrl && (
         <div style={{
-          position: "absolute", top: -size * 0.06, left: -size * 0.06,
+          position: "absolute", top: -size * 0.14, left: -size * 0.14,
           width: size * 0.32, height: size * 0.32,
           backgroundImage: `url(${escudoUrl})`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat",
-          filter: "drop-shadow(0 1px 2px rgba(0,0,0,.7))",
+          filter: "drop-shadow(0 2px 4px rgba(0,0,0,.75))", zIndex: 2,
         }} />
       )}
     </div>

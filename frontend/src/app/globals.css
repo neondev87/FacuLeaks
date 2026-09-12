@@ -15,3 +15,18 @@ body {
 * {
   box-sizing: border-box;
 }
+
+/* En celular, tocar algo mientras la página está scrolleando (con inercia)
+   a veces necesitaba DOS toques — el primero solo frena el scroll, recién
+   el segundo "hacía click" (bug reportado 2026-09-11, en todas las
+   pestañas). touch-action:manipulation le saca al navegador la ambigüedad
+   de "esto puede ser el primer toque de un doble-tap para zoom" — sin esa
+   duda de por medio, el mismo toque que frena el scroll cuenta también
+   como el click. En html/body (no solo botones/links) porque en esta app
+   un montón de lo clickeable son <div onClick> (tarjetas de post, filas de
+   conversación, avatares...), no siempre elementos semánticos — sigue
+   permitiendo scrollear normal, la propiedad no bloquea pan, solo saca la
+   espera del doble-tap. */
+html, body {
+  touch-action: manipulation;
+}

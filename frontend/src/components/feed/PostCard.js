@@ -11,7 +11,8 @@ import PostComments from "./PostComments";
 import TrashIcon from "./TrashIcon";
 import ShareIcon from "./ShareIcon";
 import AvatarBadge from "./AvatarBadge";
-import { escudoUrl } from "@/lib/facultades";
+import { escudoUrl, siglasFacultad } from "@/lib/facultades";
+import { displayName } from "@/lib/displayName";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: components/feed/PostCard.js — la tarjeta de un post en el MURO
@@ -35,13 +36,14 @@ import { escudoUrl } from "@/lib/facultades";
 //     backend para reaccionar ni conoce el estado global, eso lo maneja
 //     hooks/useFeedPosts.js en app/feed/page.js.
 // ════════════════════════════════════════════════════════════════════════
-export default function PostCard({ post, currentUserId, onDelete, onReact, onShare }) {
+export default function PostCard({ post, currentUserId, onDelete, onReact, onShare, hideComments = false }) {
   const [lightbox, setLightbox] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const router = useRouter();
 
-  const username = post.autor?.username || post.user || "unknown";
+  const username = displayName(post.autor) || post.user || "unknown";
+  const siglas   = siglasFacultad(post.autor?.facultad);
   const tiempo   = post.creadoEn
     ? new Date(post.creadoEn).toLocaleString("es-MX", { hour:"2-digit", minute:"2-digit", month:"short", day:"numeric" })
     : "";
@@ -98,15 +100,23 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, onSha
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 18px 8px" }}>
           <div style={{ display:"flex", gap:10, alignItems:"flex-start", cursor: post.autor?.id ? "pointer" : "default" }}
             onClick={() => post.autor?.id && router.push(`/perfil/${post.autor.id}`)}>
-            {/* Se agranda y se empuja a la esquina superior-izquierda de la
-                tarjeta (margen negativo = padding del header, 14/18px) —
-                ahí queda listo el slot para el escudo de facultad cuando
-                exista esa configuración; por ahora siempre vacío. */}
-            <AvatarBadge imagen={post.autor?.imagen} size={48} escudoUrl={escudoUrl(post.autor?.facultad)} style={{ marginTop:-14, marginLeft:-18 }} />
+            {/* Se agranda y se empuja hacia la esquina superior-izquierda de
+                la tarjeta (padding del header 14/18px), pero NO a fondo —
+                deja un colchón de 10px así el escudo (que sobresale del
+                propio avatar, ver AvatarBadge.js) no se pasa del borde de
+                la tarjeta. */}
+            <AvatarBadge imagen={post.autor?.imagen} size={45} escudoUrl={escudoUrl(post.autor?.facultad)} style={{ marginTop:-4, marginLeft:-8 }} />
             <div style={{ marginTop:4 }}>
-              <div style={{ fontSize:13, color:HOLO_THEME.text, fontFamily:"'Cinzel',serif", fontWeight:600, transition:"color .15s" }}
-                onMouseEnter={e => e.currentTarget.style.color = "#fff"}
-                onMouseLeave={e => e.currentTarget.style.color = HOLO_THEME.text}>{username}</div>
+              <div style={{ display:"flex", alignItems:"baseline", gap:6 }}>
+                <div style={{ fontSize:13, color:HOLO_THEME.text, fontFamily:"'Cinzel',serif", fontWeight:600, transition:"color .15s" }}
+                  onMouseEnter={e => e.currentTarget.style.color = "#fff"}
+                  onMouseLeave={e => e.currentTarget.style.color = HOLO_THEME.text}>{username}</div>
+                {siglas && (
+                  <span style={{ fontSize:10, color:HOLO_THEME.textDim, fontFamily:"'Space Mono',monospace", letterSpacing:".04em", border:`1px solid ${HOLO_THEME.hairline}`, borderRadius:4, padding:"1px 5px", flexShrink:0 }}>
+                    {siglas}
+                  </span>
+                )}
+              </div>
               <div style={{ fontSize:11, color:HOLO_THEME.textDim, fontFamily:"'Space Mono',monospace" }}>{tiempo}</div>
             </div>
           </div>
@@ -164,15 +174,18 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, onSha
             desplegar el hilo). Se oculta si el hilo completo ya está abierto,
             para no mostrar los mismos dos comentarios dos veces. Burbujas
             iguales a las del hilo completo (PostComments.js) — misma
-            identidad visual, no un diseño aparte improvisado. */}
-        {!showComments && post.previewComments?.length > 0 && (
+            identidad visual, no un diseño aparte improvisado.
+            `hideComments` (TRENDING del Muro, ver app/feed/page.js): es un
+            ranking de solo lectura, sin comentar — se saca esto y todo lo
+            de abajo (barrita + hilo). */}
+        {!hideComments && !showComments && post.previewComments?.length > 0 && (
           <div style={{ padding:"4px 18px 14px", borderTop:`1px solid ${HOLO_THEME.hairlineSoft}`, display:"flex", flexDirection:"column", gap:14 }}>
             {post.previewComments.map((c, i) => (
               <div key={c.id} style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
-                <div style={{ width:26, height:26, borderRadius:"50%", flexShrink:0, backgroundColor:"#1c1c24", backgroundImage: c.autor?.imagen ? `url(${c.autor.imagen.startsWith("http") ? c.autor.imagen : `${API}${c.autor.imagen}`})` : "none", backgroundSize:"100% 100%", backgroundPosition:"center", border:`1px solid ${HOLO_THEME.hairline}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:8, color:HOLO_THEME.textDim, marginTop:2 }}>{!c.autor?.imagen && "◈"}</div>
+                <AvatarBadge imagen={c.autor?.imagen} size={26} escudoUrl={escudoUrl(c.autor?.facultad)} style={{ marginTop:2 }} />
                 <div style={{ flex:1, minWidth:0, background:HOLO_THEME.panel, border:`1px solid ${HOLO_THEME.hairlineSoft}`, borderRadius:10, padding:"8px 12px" }}>
                   <div style={{ fontSize:12, color:HOLO_THEME.text, fontWeight:500, fontFamily:"'Inter',sans-serif", marginBottom:3 }}>
-                    {c.autor?.username || "unknown"}
+                    {displayName(c.autor) || "unknown"}
                   </div>
                   <div style={{
                     fontSize:13, lineHeight:1.6, fontFamily:"'Inter',sans-serif", color:"rgba(242,240,248,.68)",
@@ -189,46 +202,50 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, onSha
           </div>
         )}
 
-        {/* Barrita de comentarios. Con más comentarios que el preview → cuenta +
-            chevron + hilo animado. Si el preview ya es todo → trigger quieto
-            para comentar, sin animación de altura. */}
-        <div
-          onClick={() => setShowComments(v => !v)}
-          style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, padding:"6px 14px", borderTop:`1px solid ${HOLO_THEME.hairlineSoft}`, cursor:"pointer", transition:"background .15s" }}
-          onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.03)"}
-          onMouseLeave={e => e.currentTarget.style.background = "none"}
-        >
-          <span style={{ fontSize:11, letterSpacing:".1em", color: showComments ? HOLO_THEME.text : HOLO_THEME.textDim, fontFamily:"'Space Mono',monospace" }}>
-            {commentsHasMore
-              ? `${comments} comentario${comments === 1 ? "" : "s"}`
-              : (showComments ? "ocultar" : "comentar")}
-          </span>
-          {commentsHasMore && (
-            <motion.span
-              animate={{ rotate: showComments ? 180 : 0 }}
-              transition={{ duration: .25, ease: "easeOut" }}
-              style={{ fontSize:10, color: showComments ? HOLO_THEME.text : HOLO_THEME.textDim, display:"inline-block" }}
-            >▾</motion.span>
-          )}
-        </div>
+        {!hideComments && (
+          <>
+            {/* Barrita de comentarios. Con más comentarios que el preview → cuenta +
+                chevron + hilo animado. Si el preview ya es todo → trigger quieto
+                para comentar, sin animación de altura. */}
+            <div
+              onClick={() => setShowComments(v => !v)}
+              style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, padding:"6px 14px", borderTop:`1px solid ${HOLO_THEME.hairlineSoft}`, cursor:"pointer", transition:"background .15s" }}
+              onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.03)"}
+              onMouseLeave={e => e.currentTarget.style.background = "none"}
+            >
+              <span style={{ fontSize:11, letterSpacing:".1em", color: showComments ? HOLO_THEME.text : HOLO_THEME.textDim, fontFamily:"'Space Mono',monospace" }}>
+                {commentsHasMore
+                  ? `${comments} comentario${comments === 1 ? "" : "s"}`
+                  : (showComments ? "ocultar" : "comentar")}
+              </span>
+              {commentsHasMore && (
+                <motion.span
+                  animate={{ rotate: showComments ? 180 : 0 }}
+                  transition={{ duration: .25, ease: "easeOut" }}
+                  style={{ fontSize:10, color: showComments ? HOLO_THEME.text : HOLO_THEME.textDim, display:"inline-block" }}
+                >▾</motion.span>
+              )}
+            </div>
 
-        {commentsHasMore ? (
-          <AnimatePresence initial={false}>
-            {showComments && (
-              <motion.div
-                key="comments"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: .3, ease: "easeInOut" }}
-                style={{ overflow: "hidden" }}
-              >
-                <PostComments postId={post.id} currentUserId={currentUserId} />
-              </motion.div>
+            {commentsHasMore ? (
+              <AnimatePresence initial={false}>
+                {showComments && (
+                  <motion.div
+                    key="comments"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: .3, ease: "easeInOut" }}
+                    style={{ overflow: "hidden" }}
+                  >
+                    <PostComments postId={post.id} currentUserId={currentUserId} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            ) : (
+              showComments && <PostComments postId={post.id} currentUserId={currentUserId} />
             )}
-          </AnimatePresence>
-        ) : (
-          showComments && <PostComments postId={post.id} currentUserId={currentUserId} />
+          </>
         )}
       </div>
     </>

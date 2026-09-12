@@ -188,6 +188,11 @@ model user_profiles {
   // completo, false = solo @usuario. Pedido de varios usuarios que no
   // querían que se viera su nombre completo. 2026-09-11.
   mostrarNombreCompleto Boolean  @default(true)
+  // Situación sentimental (statusText): por default NO se ve directo en el
+  // perfil — solo adentro de "Información" cuando alguien pincha el ícono
+  // de ver información. true = mostrarla también arriba, junto al nombre
+  // (pedido explícito de Erick, 2026-09-11).
+  mostrarSituacion      Boolean  @default(false)
   perfilPublico         Boolean  @default(true)
   mostrarSpotify        Boolean  @default(true)
   mostrarUltimaConexion Boolean  @default(true)

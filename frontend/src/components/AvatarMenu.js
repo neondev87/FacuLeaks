@@ -195,18 +195,6 @@ export default function AvatarMenu({ currentAvatar, canEdit = true, onAvatarChan
             </div>
           )}
 
-          {/* Escudo de facultad — misma idea que components/feed/AvatarBadge.js,
-              adaptado al marco cuadrado: esquina superior-izquierda, en % del
-              contenedor para escalar igual con size fijo o con 100%. */}
-          {escudoUrl && (
-            <div style={{
-              position: 'absolute', top: '-4%', left: '-4%',
-              width: '22%', aspectRatio: '1',
-              backgroundImage: `url(${escudoUrl})`, backgroundSize: 'contain', backgroundPosition: 'center', backgroundRepeat: 'no-repeat',
-              filter: 'drop-shadow(0 1px 2px rgba(0,0,0,.7))', zIndex: 2,
-            }} />
-          )}
-
           {/* Overlay de uploading */}
           {uploading && (
             <div style={{
@@ -224,6 +212,20 @@ export default function AvatarMenu({ currentAvatar, canEdit = true, onAvatarChan
             </div>
           )}
         </div>
+
+        {/* Escudo de facultad — a propósito FUERA del marco de arriba (que
+            tiene overflow:hidden para recortar la foto): así el offset
+            negativo lo saca de verdad del cuadro en vez de quedar recortado
+            por su padding. Esquina superior-izquierda, en % del contenedor
+            para escalar igual con size fijo o con 100%. */}
+        {escudoUrl && (
+          <div style={{
+            position: 'absolute', top: '-10%', left: '-10%',
+            width: '26%', aspectRatio: '1',
+            backgroundImage: `url(${escudoUrl})`, backgroundSize: 'contain', backgroundPosition: 'center', backgroundRepeat: 'no-repeat',
+            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,.75))', zIndex: 3, pointerEvents: 'none',
+          }} />
+        )}
 
         {/* Menú contextual */}
         {menuOpen && canEdit && (

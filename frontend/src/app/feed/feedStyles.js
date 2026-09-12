@@ -30,9 +30,14 @@ export const feedStyles = `
       .feed-wrap { flex:1; min-width:0; max-width:860px; animation:fadeIn .5s ease; }
       .feed-sidebar { width:165px; flex-shrink:0; position:sticky; top:84px; }
 
-      /* ── Celular: la columna del avatar pasa arriba del muro, ya no al costado ── */
+      /* ── Celular: la columna del avatar pasa arriba del muro, ya no al costado ──
+         padding-top en 90px (antes 60px): la navbar fija mide 58px y el
+         escudo de facultad (AvatarMenu, top:-10% del tamaño 165 = -16.5px)
+         sobresale del avatar hacia arriba — con solo 60px de aire quedaba
+         casi pegado a la navbar y el escudo se recortaba por debajo de ella
+         (bug reportado 2026-09-11). 90px deja margen real. */
       @media (max-width:760px) {
-        .feed-page { flex-direction:column; align-items:stretch; gap:18px; padding:60px 16px 32px; }
+        .feed-page { flex-direction:column; align-items:stretch; gap:18px; padding:90px 16px 32px; }
         .feed-sidebar { width:100%; position:static; top:auto; display:flex; justify-content:center; }
         .feed-wrap { max-width:100%; }
       }

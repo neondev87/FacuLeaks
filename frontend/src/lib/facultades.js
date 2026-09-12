@@ -13,29 +13,33 @@
 // (app/register/page.js), el de Editar perfil (components/perfil/EditModal.js)
 // y `escudoUrl()` — cualquier componente que dibuje un avatar y necesite
 // resolver `facultad` → la URL del mini escudo (components/feed/AvatarBadge.js
-// y los demás lugares que replican su mismo patrón visual).
+// y los demás lugares que replican su mismo patrón visual). `siglas` son las
+// abreviaturas oficiales de la UANL — se muestran en vez de `nombre` en los
+// selectores (registro, editar perfil), a pedido de Erick (2026-09-11): el
+// nombre completo ocupaba demasiado espacio. `nombre` se conserva para el
+// tooltip (`title=`) de esos mismos botones.
 // ════════════════════════════════════════════════════════════════════════
 
 export const FACULTADES = [
   // ── Ciudad Universitaria / San Nicolás (11) ──
-  { value: "FIME",                         nombre: "Ingeniería Mecánica y Eléctrica",              campus: "San Nicolás", archivo: "fime.png" },
-  { value: "DERECHO_Y_CRIMINOLOGIA",       nombre: "Derecho y Criminología",                       campus: "San Nicolás", archivo: "derecho-y-criminologia.png" },
-  { value: "FACPYA",                       nombre: "Contaduría Pública y Administración",          campus: "San Nicolás", archivo: "facpya.png" },
-  { value: "ARQUITECTURA",                 nombre: "Arquitectura",                                 campus: "San Nicolás", archivo: "arquitectura.png" },
-  { value: "INGENIERIA_CIVIL",             nombre: "Ingeniería Civil",                             campus: "San Nicolás", archivo: "ingenieria-civil.png" },
-  { value: "CIENCIAS_BIOLOGICAS",          nombre: "Ciencias Biológicas",                          campus: "San Nicolás", archivo: "ciencias-biologicas.png" },
-  { value: "CIENCIAS_FISICO_MATEMATICAS",  nombre: "Ciencias Físico Matemáticas",                  campus: "San Nicolás", archivo: "ciencias-fisico-matematicas.png" },
-  { value: "ORGANIZACION_DEPORTIVA",       nombre: "Organización Deportiva",                       campus: "San Nicolás", archivo: "organizacion-deportiva.png" },
-  { value: "CIENCIAS_QUIMICAS",            nombre: "Ciencias Químicas",                            campus: "San Nicolás", archivo: "ciencias-quimicas.png" },
-  { value: "FILOSOFIA_Y_LETRAS",           nombre: "Filosofía y Letras",                           campus: "San Nicolás", archivo: "filosofia-y-letras.png" },
-  { value: "TRABAJO_SOCIAL",               nombre: "Trabajo Social y Desarrollo Humano",           campus: "San Nicolás", archivo: "trabajo-social.png" },
+  { value: "FIME",                         nombre: "Ingeniería Mecánica y Eléctrica",              siglas: "FIME",    campus: "San Nicolás", archivo: "fime.png" },
+  { value: "DERECHO_Y_CRIMINOLOGIA",       nombre: "Derecho y Criminología",                       siglas: "FACDYC",  campus: "San Nicolás", archivo: "derecho-y-criminologia.png" },
+  { value: "FACPYA",                       nombre: "Contaduría Pública y Administración",          siglas: "FACPYA",  campus: "San Nicolás", archivo: "facpya.png" },
+  { value: "ARQUITECTURA",                 nombre: "Arquitectura",                                 siglas: "FARQ",    campus: "San Nicolás", archivo: "arquitectura.png" },
+  { value: "INGENIERIA_CIVIL",             nombre: "Ingeniería Civil",                             siglas: "FIC",     campus: "San Nicolás", archivo: "ingenieria-civil.png" },
+  { value: "CIENCIAS_BIOLOGICAS",          nombre: "Ciencias Biológicas",                          siglas: "FCB",     campus: "San Nicolás", archivo: "ciencias-biologicas.png" },
+  { value: "CIENCIAS_FISICO_MATEMATICAS",  nombre: "Ciencias Físico Matemáticas",                  siglas: "FCFM",    campus: "San Nicolás", archivo: "ciencias-fisico-matematicas.png" },
+  { value: "ORGANIZACION_DEPORTIVA",       nombre: "Organización Deportiva",                       siglas: "FOD",     campus: "San Nicolás", archivo: "organizacion-deportiva.png" },
+  { value: "CIENCIAS_QUIMICAS",            nombre: "Ciencias Químicas",                            siglas: "FCQ",     campus: "San Nicolás", archivo: "ciencias-quimicas.png" },
+  { value: "FILOSOFIA_Y_LETRAS",           nombre: "Filosofía y Letras",                           siglas: "FFYL",    campus: "San Nicolás", archivo: "filosofia-y-letras.png" },
+  { value: "TRABAJO_SOCIAL",               nombre: "Trabajo Social y Desarrollo Humano",           siglas: "FTSYDH",  campus: "San Nicolás", archivo: "trabajo-social.png" },
   // ── Unidad Mederos (6) ──
-  { value: "CIENCIAS_DE_LA_COMUNICACION",  nombre: "Ciencias de la Comunicación",                  campus: "Mederos",     archivo: "ciencias-de-la-comunicacion.png" },
-  { value: "MUSICA",                       nombre: "Música",                                       campus: "Mederos",     archivo: "musica.png" },
-  { value: "ARTES_ESCENICAS",              nombre: "Artes Escénicas",                              campus: "Mederos",     archivo: "artes-escenicas.png" },
-  { value: "ARTES_VISUALES",               nombre: "Artes Visuales",                               campus: "Mederos",     archivo: "artes-visuales.png" },
-  { value: "CIENCIAS_POLITICAS_Y_RRI",     nombre: "Ciencias Políticas y Relaciones Internacionales", campus: "Mederos",  archivo: "ciencias-politicas-y-rri.png" },
-  { value: "ECONOMIA",                     nombre: "Economía",                                     campus: "Mederos",     archivo: "economia.png" },
+  { value: "CIENCIAS_DE_LA_COMUNICACION",  nombre: "Ciencias de la Comunicación",                  siglas: "FCC",     campus: "Mederos",     archivo: "ciencias-de-la-comunicacion.png" },
+  { value: "MUSICA",                       nombre: "Música",                                       siglas: "FAMUS",   campus: "Mederos",     archivo: "musica.png" },
+  { value: "ARTES_ESCENICAS",              nombre: "Artes Escénicas",                              siglas: "FACAE",   campus: "Mederos",     archivo: "artes-escenicas.png" },
+  { value: "ARTES_VISUALES",               nombre: "Artes Visuales",                               siglas: "FAV",     campus: "Mederos",     archivo: "artes-visuales.png" },
+  { value: "CIENCIAS_POLITICAS_Y_RRI",     nombre: "Ciencias Políticas y Relaciones Internacionales", siglas: "FCPYRI", campus: "Mederos",  archivo: "ciencias-politicas-y-rri.png" },
+  { value: "ECONOMIA",                     nombre: "Economía",                                     siglas: "FE",      campus: "Mederos",     archivo: "economia.png" },
 ];
 
 const BY_VALUE = new Map(FACULTADES.map(f => [f.value, f]));
@@ -48,3 +52,4 @@ export const escudoUrl = (facultad) => {
 };
 
 export const nombreFacultad = (facultad) => BY_VALUE.get(facultad)?.nombre || null;
+export const siglasFacultad = (facultad) => BY_VALUE.get(facultad)?.siglas || null;
