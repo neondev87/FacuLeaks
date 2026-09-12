@@ -118,8 +118,13 @@ export default function EditModal({ profile, user, onClose, onSave }) {
           {tab==="perfil" && (
             <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
               <PDivider/>
-              {/* 1) Nombre o usuario — orden pedido por Erick (2026-09-11):
-                  nombre/usuario primero, facultad al final. */}
+              {/* 1) Facultad — primero de todo, a pedido de Erick (2026-09-11). */}
+              <PField label="¿A qué facultad vas?" hint={facultad ? "" : "obligatorio"}>
+                <PFacultadPicker value={facultad} onChange={setFacultad} />
+              </PField>
+
+              {/* 2) Nombre o usuario */}
+              <PDivider/>
               <PField label="Usuario" hint="@">
                 <PInput value={username} onChange={e=>setUsername(e.target.value)} placeholder="usuario"/>
               </PField>
@@ -127,12 +132,12 @@ export default function EditModal({ profile, user, onClose, onSave }) {
                 <PPills options={["Nombre completo","Usuario"]} value={nombreDisplay} onChange={setNombreDisplay}/>
               </PField>
 
-              {/* 2) Bio */}
+              {/* 3) Bio */}
               <PField label="Bio" hint={`${bio.length}/200`}>
                 <PTextarea value={bio} onChange={e=>setBio(e.target.value.slice(0,200))} placeholder="Cuéntale a la gente quién eres..." rows={4}/>
               </PField>
 
-              {/* 3) Situación sentimental — oculta del perfil por default; solo
+              {/* 4) Situación sentimental — oculta del perfil por default; solo
                   se ve en "Información" cuando alguien pincha el ícono de ver
                   información de esa persona, A MENOS que se prenda este
                   switch (2026-09-11, a pedido de Erick). */}
@@ -143,7 +148,7 @@ export default function EditModal({ profile, user, onClose, onSave }) {
                 </div>
               </PField>
 
-              {/* 4) Redes y links */}
+              {/* 5) Redes y links */}
               <PDivider label="links"/>
               <PField label="Redes y links">
                 <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
@@ -158,13 +163,6 @@ export default function EditModal({ profile, user, onClose, onSave }) {
                     </button>
                   )}
                 </div>
-              </PField>
-
-              {/* 5) Facultad — al final. Caja cerrada ("Elegir") en vez de la
-                  grilla de 17 pills siempre abierta (PFacultadPicker.js). */}
-              <PDivider/>
-              <PField label="¿A qué facultad vas?" hint={facultad ? "" : "obligatorio"}>
-                <PFacultadPicker value={facultad} onChange={setFacultad} />
               </PField>
             </div>
           )}
