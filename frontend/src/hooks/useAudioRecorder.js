@@ -20,18 +20,40 @@
 // ════════════════════════════════════════════════════════════════════════
 import { useState, useRef } from "react";
 import { API } from "@/lib/api";
+
+// Safari/iOS no sabe grabar ni reproducir WebM: su MediaRecorder solo soporta
+// MP4/AAC. Si asumimos "audio/webm" a ciegas (como antes), en iPhone el
+// archivo queda con bytes MP4 pero extensión/Content-Type "webm" — el
+// `<audio>` lo rechaza con NotSupportedError al querer reproducirlo. Por eso
+// preguntamos primero qué formato soporta este navegador para grabar.
+const pickMimeType = () => {
+  if (typeof MediaRecorder === "undefined" || !MediaRecorder.isTypeSupported) return "";
+  const candidatos = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
+  return candidatos.find(t => MediaRecorder.isTypeSupported(t)) || "";
+};
+const extFromMimeType = (type) => {
+  if (type.includes("mp4")) return "m4a";
+  if (type.includes("ogg")) return "ogg";
+  return "webm";
+};
+
 export default function useAudioRecorder({ activeChat, socketRef, onAudioSent }) {
   const [recording, setRecording] = useState(false);
   const audioTimer       = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef   = useRef([]);
+  const mimeTypeRef      = useRef("");
 
   const handleMicClick = async () => {
     if (!activeChat || !socketRef.current) return;
     if (!recording) {
       try {
-        const stream   = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const recorder = new MediaRecorder(stream);
+        const stream    = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mimeType  = pickMimeType();
+        const recorder  = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+        // El navegador puede terminar usando otro mimeType que el pedido —
+        // nos quedamos con el que realmente reporta el recorder.
+        mimeTypeRef.current = recorder.mimeType || mimeType || "audio/webm";
         audioChunksRef.current = [];
         recorder.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
         recorder.start();
@@ -53,9 +75,10 @@ export default function useAudioRecorder({ activeChat, socketRef, onAudioSent })
     recorder.onstop = async () => {
       recorder.stream?.getTracks().forEach(t => t.stop());
       if (send && audioChunksRef.current.length > 0) {
-        const blob = new Blob(audioChunksRef.current, { type:"audio/webm" });
+        const type = mimeTypeRef.current || "audio/webm";
+        const blob = new Blob(audioChunksRef.current, { type });
         const fd   = new FormData();
-        fd.append("audio", blob, "audio.webm");
+        fd.append("audio", blob, `audio.${extFromMimeType(type)}`);
         try {
           const res  = await fetch(`${API}/api/chat/audio/${activeChat.userId}`, { method:"POST", credentials:"include", body:fd });
           const text = await res.text();
