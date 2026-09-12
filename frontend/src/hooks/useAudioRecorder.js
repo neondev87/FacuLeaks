@@ -18,7 +18,7 @@
 //   - Socket.io: audio:start/stop.
 //   - Lo consume: app/chat/page.js, pasándole el socket de useChat.js.
 // ════════════════════════════════════════════════════════════════════════
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { API } from "@/lib/api";
 
 // Safari/iOS no sabe grabar ni reproducir WebM: su MediaRecorder solo soporta
@@ -43,6 +43,19 @@ export default function useAudioRecorder({ activeChat, socketRef, onAudioSent })
   const mediaRecorderRef = useRef(null);
   const audioChunksRef   = useRef([]);
   const mimeTypeRef      = useRef("");
+
+  // Si el componente se desmonta (se navega a otra página) mientras se está
+  // grabando, nadie más va a llamar stopRecording() — sin esto el stream del
+  // micrófono queda vivo y Chrome deja la bolita roja de "grabando" prendida
+  // en la pestaña indefinidamente.
+  useEffect(() => {
+    return () => {
+      clearTimeout(audioTimer.current);
+      const recorder = mediaRecorderRef.current;
+      if (recorder && recorder.state !== "inactive") recorder.stop();
+      recorder?.stream?.getTracks().forEach(t => t.stop());
+    };
+  }, []);
 
   const handleMicClick = async () => {
     if (!activeChat || !socketRef.current) return;
