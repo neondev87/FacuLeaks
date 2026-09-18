@@ -3,20 +3,31 @@
 // ════════════════════════════════════════════════════════════════════════
 // QUÉ HACE:
 //   - register(): crea una cuenta nueva en MySQL y le entrega la cookie
-//     de sesión de una.
+//     de sesión de una. NO la llama el navegador directamente (ver nota de
+//     seguridad abajo) — la llama frontend/src/app/api/auth/register/route.js,
+//     que ya leyó la sesión de NextAuth en el servidor y saca de ahí
+//     googleId/email/nombre, igual que login() con /login.
 //   - checkUser(): responde "¿este googleId ya tiene cuenta acá?" — lo usa
 //     NextAuth (en el frontend) para decidir si mandar al registro o al feed.
 //     Ojo: responde SOLO {exists, user:{id, imagen}} — nunca email/nombre,
 //     porque esta ruta no pide sesión (cualquiera podría llamarla).
-//   - login(): la ÚNICA forma de conseguir la cookie de sesión del backend.
-//     No la llama el navegador directamente — la llama el propio servidor
-//     de Next (frontend/src/app/api/auth/sync-backend/route.js) después de
+//   - login(): la ÚNICA otra forma de conseguir la cookie de sesión del
+//     backend. La llama el propio servidor de Next
+//     (frontend/src/app/api/auth/sync-backend/route.js) después de
 //     confirmar el login de Google. Por eso exige un header secreto
 //     (x-internal-secret) en vez de pedir contraseña: el browser nunca ve
 //     ese secreto, así que no puede forjar un login de otro usuario.
 //   - setAuthCookie(): firma un JWT con los datos mínimos (id, username) y
 //     lo manda como cookie httpOnly (el JS del navegador no puede leerla,
 //     protección contra robo de sesión por XSS).
+//
+// SEGURIDAD (pentest 2026-09-17): register() usaba a confiar en el
+// googleId/email/nombre que mandara el BODY de la petición, sin verificar
+// nunca que quien llamaba hubiera pasado de verdad por el login de Google
+// — cualquiera con curl podía crear una cuenta con identidad inventada y
+// sacarse una cookie de sesión válida. Ahora exige el mismo
+// x-internal-secret que /login: solo la ruta de Next que ya validó la
+// sesión de NextAuth puede llamarlo.
 //
 // PARA QUÉ SIRVE:
 //   Es el único lugar del backend donde se genera la cookie que después
@@ -26,9 +37,10 @@
 //   - auth.service.js → hace el trabajo pesado contra la base de datos
 //     (crear usuario, buscar por googleId).
 //   - process.env.JWT_SECRET → firma el token (nunca un valor fijo en código).
-//   - process.env.INTERNAL_API_SECRET → el secreto que protege /login.
-//   - frontend/src/app/api/auth/sync-backend/route.js → es quien llama a
-//     POST /login desde el servidor de Next, nunca el browser.
+//   - process.env.INTERNAL_API_SECRET → el secreto que protege /register y /login.
+//   - frontend/src/app/api/auth/register/route.js → llama a POST /register.
+//   - frontend/src/app/api/auth/sync-backend/route.js → llama a POST /login.
+//   Ninguno de los dos lo llama el browser directo, nunca.
 // ════════════════════════════════════════════════════════════════════════
 const { registerUser, findUserByGoogleId } = require('./auth.service');
 const { users_facultad } = require('@prisma/client');
@@ -61,8 +73,23 @@ const setAuthCookie = (res, user) => {
   return token;
 };
 
-// POST /api/auth/register
+// POST /api/auth/register — llamado SOLO server-to-server desde
+// frontend/src/app/api/auth/register/route.js, que ya validó la sesión de
+// NextAuth y saca googleId/email/nombre DE AHÍ (no del body que mandaría el
+// cliente). Mismo secreto interno y misma comparación timing-safe que
+// /login — antes este endpoint confiaba en el googleId/email/nombre que
+// mandara quien sea, sin haber pasado nunca por Google (bypass total de
+// autenticación, encontrado en pentest del 2026-09-17).
 const register = async (req, res) => {
+  const expected = process.env.INTERNAL_API_SECRET;
+  if (!expected) {
+    console.error('[auth] INTERNAL_API_SECRET no configurado — /api/auth/register deshabilitado');
+    return res.status(500).json({ error: 'Configuración del servidor incompleta' });
+  }
+  if (!timingSafeEq(req.get('x-internal-secret'), expected)) {
+    return res.status(403).json({ error: 'Prohibido' });
+  }
+
   try {
     const { googleId, email, nombre, username, password, facultad } = req.body;
     if (!googleId || !email || !nombre || !username || !password)

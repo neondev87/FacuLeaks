@@ -12,14 +12,27 @@
 //   - El texto de bienvenida con efecto de máquina de escribir
 //     (hooks/useTypewriter.js).
 //   - El foco automático del input al cambiar de paso.
-//   - El envío final a POST /api/auth/register.
+//   - El envío final a POST /api/auth/register — la ruta PROPIA de Next
+//     (app/api/auth/register/route.js), NO el backend directo (ver nota de
+//     seguridad abajo).
 //
 // PARA QUÉ SIRVE: extraído de app/register/page.js — antes tenía TODO esto
 // (más las validaciones y los componentes visuales) en un solo archivo de
 // 400+ líneas. Parejado con el patrón de Fase 2 el 2026-09-04.
 //
+// SEGURIDAD (pentest 2026-09-17): este hook mandaba antes googleId/email/
+// nombre en el body directo al backend (${API}/api/auth/register) — el
+// backend confiaba en esos valores tal cual, así que cualquiera con curl
+// podía registrarse con una identidad de Google inventada. Ahora se llama
+// a /api/auth/register SIN el prefijo `API` (same-origin, la ruta propia de
+// Next) y sin mandar googleId/email/nombre: esa ruta lee la sesión de
+// NextAuth ya verificada en el servidor y saca esos 3 campos de ahí. Solo
+// se manda lo que realmente elige el usuario en el formulario
+// (username/password/facultad).
+//
 // CON QUÉ SE CONECTA: backend GET /api/auth/check/:googleId (por si el
-// token de sesión no se actualizó todavía), POST /api/auth/register.
+// token de sesión no se actualizó todavía, vía ${API}), y la ruta propia
+// de Next POST /api/auth/register (app/api/auth/register/route.js).
 // Lo consume app/register/page.js.
 // ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useRef } from "react";
@@ -138,18 +151,14 @@ export default function useRegister({ status, session }) {
 
     setTimeout(async () => {
       try {
-        const res = await fetch(`${API}/api/auth/register`, {
+        // Same-origin, a propósito: es la ruta de Next (no ${API}, que
+        // apuntaría directo al backend) — ella sola sabe la sesión real de
+        // NextAuth, así que googleId/email/nombre ya no viajan en este body.
+        const res = await fetch(`/api/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({
-            googleId: session?.user?.googleId || session?.user?.id,
-            email:    session?.user?.email,
-            nombre:   session?.user?.name,
-            username,
-            password,
-            facultad,
-          }),
+          body: JSON.stringify({ username, password, facultad }),
         });
 
         const data = await res.json();
