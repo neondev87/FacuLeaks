@@ -17,10 +17,25 @@ export const foroStyles = `
       @keyframes fadeIn { from{opacity:0} to{opacity:1} }
       @keyframes rise   { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
       @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-      body { background:${HOLO_THEME.bg}; color:${HOLO_THEME.text}; font-family:'Inter',sans-serif; font-size:13px; overflow:hidden; }
+      /* overscroll-behavior:none + touch-action:pan-y: mismo refuerzo que ya
+         usa chat/chatStyles.js — overflow:hidden solo no le alcanza a iOS
+         Safari para frenar el rebote de scroll al tocar afuera de un área
+         scrolleable (ver nota grande en .foro más abajo). */
+      body { background:${HOLO_THEME.bg}; color:${HOLO_THEME.text}; font-family:'Inter',sans-serif; font-size:13px; overflow:hidden; overscroll-behavior:none; touch-action:pan-y; }
       ::-webkit-scrollbar { width:5px } ::-webkit-scrollbar-track { background:transparent } ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.14); border-radius:99px }
 
-      .foro { display:flex; height:calc(100vh - 58px); margin-top:58px; }
+      /* position:fixed (no margin-top + height:calc(100vh-58px) como antes):
+         en celular, un gesto de scroll/rebote en Safari/iOS podía correr
+         TODO ".foro" hacia arriba por detrás de la navbar (que es fixed y
+         se queda quieta) — quedaba la tira de canales tapada a medias y el
+         título del tema con un hueco raro arriba, reportado con captura
+         2026-09-17 ("el título del foro no se ve"). body{overflow:hidden}
+         debería evitar el scroll de la página, pero iOS Safari no siempre
+         lo respeta al 100% con gestos táctiles. Con position:fixed acá no
+         hay scroll de página que ".foro" pueda seguir — queda clavado bajo
+         la navbar pase lo que pase, sin depender de que overflow:hidden
+         se cumpla. */
+      .foro { display:flex; position:fixed; top:58px; left:0; right:0; bottom:0; }
 
       /* ── canales ── */
       .foro-side { width:200px; flex-shrink:0; border-right:1px solid ${HOLO_THEME.hairlineSoft}; background:${HOLO_THEME.panel}; display:flex; flex-direction:column; }
@@ -70,13 +85,14 @@ export const foroStyles = `
       .foro-prev .chip__del:hover { color:rgba(255,90,90,.9); }
 
       /* ── comentarios (sin título) ── */
-      .foro-cmts { flex:1; overflow-y:auto; padding:6px 22px 20px; }
+      .foro-cmts { flex:1; overflow-y:auto; overscroll-behavior:contain; touch-action:pan-y; -webkit-overflow-scrolling:touch; padding:6px 22px 20px; }
       .foro-empty { text-align:center; color:${HOLO_THEME.textDim}; font-family:'Space Mono',monospace; font-size:12px; letter-spacing:.06em; padding:32px 0; }
       .fcm { display:flex; gap:11px; padding:13px 4px; border-bottom:1px solid ${HOLO_THEME.hairlineSoft}; animation:fadeIn .18s ease; }
       .fcm__av { width:32px; height:32px; border-radius:50%; flex-shrink:0; background:#1c1c24; background-size:100% 100%; background-position:center; border:1px solid ${HOLO_THEME.hairline}; display:flex; align-items:center; justify-content:center; font-size:9px; color:${HOLO_THEME.textDim}; }
       .fcm__bd { flex:1; min-width:0; }
       .fcm__hd { display:flex; gap:9px; align-items:baseline; }
-      .fcm__u { font-size:12.5px; color:${HOLO_THEME.text}; font-weight:500; }
+      .fcm__u { font-size:12.5px; color:${HOLO_THEME.text}; font-weight:500; cursor:pointer; }
+      .fcm__u:hover { text-decoration:underline; }
       .fcm__ti { font-family:'Space Mono',monospace; font-size:10px; color:${HOLO_THEME.textDim}; }
       .fcm__del { margin-left:auto; background:none; border:0; padding:2px; cursor:pointer; color:rgba(242,240,248,.25); display:flex; transition:color .14s; }
       .fcm__del:hover { color:rgba(255,90,90,.85); }
@@ -110,13 +126,54 @@ export const foroStyles = `
 
       .spinner { width:12px; height:12px; border:1px solid rgba(255,255,255,.15); border-top-color:rgba(255,255,255,.55); border-radius:50%; animation:spin .7s linear infinite; display:inline-block; }
 
-      /* ── Celular: canales arriba (franja angosta con scroll propio) y el
-         tema/comentarios abajo, en vez de dos columnas apretadas. El body
-         sigue con overflow:hidden así que cada panel scrollea por su lado,
-         igual que en escritorio — solo cambia la dirección del flex. ── */
+      /* ── Celular (rediseño 2026-09-17, corregido el mismo día tras
+         probarlo en un iPhone real): antes los canales ocupaban una franja
+         vertical fija de 32vh y el composer de "pantalla completa" en
+         realidad solo tapaba el tablero (no la franja de canales ni la
+         navbar) — con el teclado abierto quedaba una tira mínima visible y
+         el textarea donde estabas escribiendo terminaba tapado. Canales
+         pasan a ser una tira HORIZONTAL angosta con scroll propio (le
+         devuelve casi toda la pantalla al tema/comentarios), y el composer
+         es un overlay fixed que tapa TODO (navbar incluida).
+         OJO con el alto del composer: 100dvh NO sirve acá — en Safari/iOS
+         esa unidad solo reacciona a la barra de direcciones, no al teclado,
+         así que un elemento fixed de 100dvh se queda con su alto de
+         siempre y el teclado lo tapa por abajo. Por eso el alto real sale
+         de --foro-vvh, una custom property que fija page.js leyendo
+         window.visualViewport.height (esa sí refleja el teclado en todo
+         navegador móvil moderno) mientras el composer está abierto; dvh
+         queda solo de fallback para cuando JS no llegó a correr todavía. ── */
       @media (max-width:760px) {
         .foro { flex-direction:column; }
-        .foro-side { width:100%; height:32vh; flex:0 0 32vh; border-right:none; border-bottom:1px solid ${HOLO_THEME.hairlineSoft}; }
+
+        /* canales: tira horizontal en vez de columna */
+        .foro-side { width:100%; height:auto; flex:0 0 auto; flex-direction:row; align-items:center; border-right:none; border-bottom:1px solid ${HOLO_THEME.hairlineSoft}; }
+        .foro-side__h { display:none; }
+        .foro-side__list { flex:1; min-width:0; display:flex; flex-direction:row; overflow-x:auto; overflow-y:hidden; overscroll-behavior-x:contain; touch-action:pan-x; -webkit-overflow-scrolling:touch; padding:10px 10px; gap:6px; }
+        .foro-side__empty { white-space:nowrap; padding:8px 4px; }
+        .canal { flex:none; border-left:none; border-bottom:2px solid transparent; border-radius:99px; padding:7px 14px; }
+        .canal.on { border-left-color:transparent; border-bottom-color:${AC}; }
+        .canal__t { max-width:32vw; }
+        .canal-add { flex:none; width:auto; margin:0; white-space:nowrap; }
+        .foro-newcanal { flex-direction:row; align-items:center; margin:0; }
+        .foro-newcanal input { width:130px; font-size:16px; }
+        .foro-newcanal__row { flex:none; }
+        .foro-side__me { display:none; }
+
         .foro-board { min-height:0; }
+        .foro-theme { margin:14px 14px 10px; padding:20px 16px 18px; }
+        .foro-theme__t { font-size:18px; }
+        .foro-prev { padding:0 14px 8px; }
+        .foro-cmts { padding:4px 14px 16px; }
+        .foro-admin { padding:10px 14px 0; }
+        .foro-newtema { margin:10px 14px; flex-wrap:wrap; }
+        .foro-newtema input { flex:1 1 100%; font-size:16px; }
+
+        /* composer: overlay real de pantalla completa (tapa navbar y
+           canales), alineado arriba en vez de centrado */
+        .foro-c02 { position:fixed; inset:0; height:100vh; height:100dvh; height:var(--foro-vvh, 100dvh); justify-content:flex-start; padding:18px 18px calc(18px + env(safe-area-inset-bottom)); z-index:210; }
+        .foro-c02__ta { flex:1; min-height:90px; max-height:none; font-size:16px; }
+        .foro-c02__row { margin-top:12px; }
+        .foro-c02__hint-esc { display:none; }
       }
     `;

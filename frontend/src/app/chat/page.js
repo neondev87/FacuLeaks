@@ -167,7 +167,7 @@ export default function ChatPage() {
         // (.empty-search, zIndex 20 en chatStyles.js) — si no, el panel de
         // solicitudes se abre TAPADO por la caja de búsqueda que está
         // justo debajo en "chat-landing" (bug reportado 2026-09-11).
-        <div style={{ position:"absolute", top:"100%", right:0, marginTop:6, width:260, border:`1px solid ${HOLO_THEME.hairline}`, borderRadius:10, background:HOLO_THEME.panel, boxShadow:"0 8px 24px rgba(0,0,0,.5)", zIndex:30, maxHeight:280, overflowY:"auto" }}>
+        <div style={{ position:"absolute", top:"100%", right:0, marginTop:6, width:260, maxWidth:"calc(100vw - 32px)", border:`1px solid ${HOLO_THEME.hairline}`, borderRadius:10, background:HOLO_THEME.panel, boxShadow:"0 8px 24px rgba(0,0,0,.5)", zIndex:30, maxHeight:280, overflowY:"auto" }}>
           <div className="conv-sec conv-sec--sm">SOLICITUDES</div>
           {chat.solicitudes.length === 0 ? (
             <div style={{ padding:"6px 14px 14px", fontSize:12, color:"rgba(255,255,255,.2)", fontFamily:"'Space Mono',monospace" }}>sin solicitudes pendientes</div>

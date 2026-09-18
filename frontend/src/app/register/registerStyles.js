@@ -14,7 +14,17 @@ export const registerStyles = `
       ${FONT_IMPORT_MAIN}
       @import url('https://fonts.googleapis.com/css2?family=Marcellus+SC&display=swap');
       ${KF.fadeIn}
-      body { background:${HOLO_THEME.bg}; color:${HOLO_THEME.text}; font-family:'Inter',sans-serif; overflow:hidden; }
+      /* overflow-y:auto (no "hidden"): el paso de elegir facultad
+         (.reg-campus-group más abajo, hasta 52vh de alto) sumado al resto
+         del paso (kicker + progreso + "ya confirmaste" + título + texto)
+         puede superar los ~700px en un celular chico (ej. iPhone SE, 667px
+         de alto) — con overflow:hidden acá no había NINGUNA forma de
+         scrollear para ver el botón "Continuar" ni el resto de la grilla
+         de facultades (bug reportado 2026-09-17, sin verificar antes en un
+         dispositivo real por falta de acceso — confirmado ahora sumando el
+         alto real de cada bloque). overflow-x quieto en hidden: nada acá
+         debería desbordar de costado, solo de alto. */
+      body { background:${HOLO_THEME.bg}; color:${HOLO_THEME.text}; font-family:'Inter',sans-serif; overflow-x:hidden; overflow-y:auto; }
 
       .reg-page { min-height:100vh; display:flex; align-items:center; justify-content:center; padding-block:40px; padding-inline:16px; box-sizing:border-box; }
       .reg-shell { width:100%; max-width:420px; display:flex; flex-direction:column; align-items:center; gap:24px; transition:opacity .45s ease, transform .45s ease; }
@@ -120,5 +130,9 @@ export const registerStyles = `
       @media (max-width:480px) {
         .reg-card { padding:26px 20px 22px; border-radius:16px; }
         .reg-head h1 { font-size:20px; }
+        /* font-size menor a 16px en un input dispara el zoom automático de
+           Safari/iOS al enfocarlo — .reg-input-row input estaba en 14px
+           (mismo bug reportado en foro/muro/chat, 2026-09-17). */
+        .reg-input-row input { font-size:16px; }
       }
     `;

@@ -18,8 +18,12 @@ export default function LinkRow({ link, onChange, onRemove }) {
         onFocus={()=>setF1(true)} onBlur={()=>setF1(false)}>
         {PLATFORMS.map(p=><option key={p} value={p} style={{ background:"#1e1e1e" }}>{p}</option>)}
       </select>
+      {/* fontSize:16 (no 12): es un <input> de texto, así que sí dispara el
+          zoom de Safari/iOS si queda por debajo de 16px — el <select> de al
+          lado no (abre un picker nativo, no teclado), por eso ese se queda
+          en 12px. */}
       <input value={link.url} onChange={e=>onChange("url",e.target.value)} placeholder="https://..."
-        style={{ flex:1, background:f2?"rgba(255,255,255,.07)":"rgba(255,255,255,.05)", border:`1px solid ${f2?"rgba(255,255,255,.25)":"rgba(255,255,255,.08)"}`, borderRadius:6, color:"rgba(255,255,255,.75)", fontFamily:MONO, fontSize:12, padding:"8px 12px", outline:"none", transition:"all .15s", boxSizing:"border-box" }}
+        style={{ flex:1, background:f2?"rgba(255,255,255,.07)":"rgba(255,255,255,.05)", border:`1px solid ${f2?"rgba(255,255,255,.25)":"rgba(255,255,255,.08)"}`, borderRadius:6, color:"rgba(255,255,255,.75)", fontFamily:MONO, fontSize:16, padding:"8px 12px", outline:"none", transition:"all .15s", boxSizing:"border-box" }}
         onFocus={()=>setF2(true)} onBlur={()=>setF2(false)}/>
       <button onClick={onRemove} style={{ width:34, height:34, background:"transparent", border:"1px solid rgba(255,255,255,.07)", borderRadius:6, color:"rgba(255,255,255,.25)", cursor:"pointer", fontSize:14, transition:"all .15s", flexShrink:0 }}
         onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,50,50,.08)";e.currentTarget.style.color="rgba(255,100,100,.7)";e.currentTarget.style.borderColor="rgba(255,50,50,.15)";}}

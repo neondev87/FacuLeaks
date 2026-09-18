@@ -65,6 +65,30 @@ export default function ForoPage() {
     return () => document.removeEventListener("keydown", onEsc);
   }, [writing]);
 
+  // celular: `100dvh` NO se achica con el teclado en Safari/iOS (esa unidad
+  // solo reacciona a la barra de direcciones) — por eso el composer se
+  // quedaba con su alto de siempre y el teclado tapaba el textarea/botones.
+  // `window.visualViewport.height` sí refleja el teclado en todo navegador
+  // móvil moderno, así que lo usamos para fijar el alto real del composer
+  // vía una custom property. El scrollTo(0,0) evita que Safari desplace la
+  // página al enfocar el textarea (el "salto" que corre todo fuera de vista).
+  useEffect(() => {
+    const vv = typeof window !== "undefined" ? window.visualViewport : null;
+    if (!writing || !vv) return undefined;
+    const sync = () => {
+      document.documentElement.style.setProperty("--foro-vvh", `${vv.height}px`);
+      window.scrollTo(0, 0);
+    };
+    sync();
+    vv.addEventListener("resize", sync);
+    vv.addEventListener("scroll", sync);
+    return () => {
+      vv.removeEventListener("resize", sync);
+      vv.removeEventListener("scroll", sync);
+      document.documentElement.style.removeProperty("--foro-vvh");
+    };
+  }, [writing]);
+
   if (status === "loading") return null;
 
   const uid = session?.user?.dbId != null ? Number(session.user.dbId) : null;
@@ -257,7 +281,9 @@ export default function ForoPage() {
                   {sending ? <span className="spinner" /> : "PUBLICAR"}
                 </button>
               </div>
-              <div className="foro-c02__hint">ESC PARA CERRAR · EL COMENTARIO NO LLEVA TÍTULO</div>
+              <div className="foro-c02__hint">
+                <span className="foro-c02__hint-esc">ESC PARA CERRAR · </span>EL COMENTARIO NO LLEVA TÍTULO
+              </div>
             </div>
           )}
         </div>

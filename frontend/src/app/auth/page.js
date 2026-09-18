@@ -31,18 +31,10 @@ export default function AuthPage() {
   useInjectedStyles("auth-styles", authStyles);
 
   return (
-    <div style={{
-      width: "100vw", height: "100vh",
-      display: "grid", gridTemplateColumns: "1fr 1fr",
-      overflow: "hidden",
-      animation: "bgW2B 1.44s ease forwards",
-    }}>
+    <div className="auth-page">
 
       {/* ══ LEFT ══ */}
-      <div style={{
-        display: "flex", flexDirection: "column", justifyContent: "center",
-        padding: "0 8% 0 10%", position: "relative",
-      }}>
+      <div className="auth-left">
 
         {/* SYS meta */}
         <div style={{
@@ -101,18 +93,13 @@ export default function AuthPage() {
         )}
 
         {/* Version */}
-        <div style={{
-          position: "absolute", bottom: 28,
-          fontFamily: "'Space Mono', monospace",
-          fontSize: 8, letterSpacing: ".15em",
-          color: tcF, transition: "color .6s",
-        }}>
+        <div className="auth-version" style={{ color: tcF, transition: "color .6s" }}>
           FACULEAKS · ALPHA · NEONDEV
         </div>
       </div>
 
       {/* ══ RIGHT ══ */}
-      <div style={{ position: "relative", overflow: "hidden" }}>
+      <div className="auth-right">
 
         <div style={{
           position: "absolute", top: "10%", bottom: "10%", left: 0, width: 1,
@@ -120,24 +107,17 @@ export default function AuthPage() {
           zIndex: 3,
         }} />
 
-        <div style={{ position: "absolute", top: 160, right: 14, zIndex: 3 }}>
+        <div className="auth-cross-wrap">
           <GothicCross size={54} opacity={0.38} />
         </div>
 
-        <div style={{ position: "absolute", top: 68, right: 20, zIndex: 5 }}>
+        <div className="auth-neon-wrap">
           <NeonDevMark />
         </div>
 
-        <div style={{
-          position: "absolute", top: 24, left: 18, zIndex: 4,
-          fontFamily: "'Space Mono', monospace",
-          fontSize: 8, color: "rgba(255,255,255,.2)",
-          letterSpacing: ".2em", lineHeight: 2.2,
-        }}>
+        <div className="auth-status">
           STATUS: ONLINE<br />SYS: OK<br />
-          <span style={{ color: "rgba(255,255,255,.1)" }}>
-            {new Date().toLocaleDateString("es-MX")}
-          </span>
+          <span>{new Date().toLocaleDateString("es-MX")}</span>
         </div>
 
         <img src={girlImg.src} alt="" className="girl-img" />

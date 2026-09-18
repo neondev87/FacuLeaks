@@ -139,5 +139,11 @@ export const amigosStyles = `
       @media (max-width: 640px) {
         .page-wrap { padding: 60px 16px 32px; }
         .amigos-grid-2 { grid-template-columns: 1fr; }
+
+        /* Safari/iOS hace zoom automático de toda la página al enfocar un
+           input con font-size menor a 16px (mismo bug que en el muro/chat/
+           foro, 2026-09-17) — .search-input se había quedado afuera de esa
+           ronda de fixes. */
+        .search-input { font-size: 16px; }
       }
     `;

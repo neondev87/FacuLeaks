@@ -39,6 +39,35 @@ export const authStyles = `
 
       ${SCROLLBAR_THIN}
 
+      .auth-page {
+        width:100vw; height:100vh;
+        display:grid; grid-template-columns:1fr 1fr;
+        overflow:hidden;
+        animation: bgW2B 1.44s ease forwards;
+      }
+
+      .auth-left {
+        display:flex; flex-direction:column; justify-content:center;
+        padding:0 8% 0 10%; position:relative;
+      }
+
+      .auth-right { position:relative; overflow:hidden; }
+
+      .auth-status {
+        position:absolute; top:24px; left:18px; z-index:4;
+        font-family:'Space Mono',monospace; font-size:8px;
+        color:rgba(255,255,255,.2); letter-spacing:.2em; line-height:2.2;
+      }
+      .auth-status span { color:rgba(255,255,255,.1); }
+
+      .auth-cross-wrap { position:absolute; top:160px; right:14px; z-index:3; }
+      .auth-neon-wrap  { position:absolute; top:68px; right:20px; z-index:5; }
+
+      .auth-version {
+        position:absolute; bottom:28px;
+        font-family:'Space Mono',monospace; font-size:8px; letter-spacing:.15em;
+      }
+
       .logo-title {
         font-family:'DM Serif Display',serif;
         font-weight:400;
@@ -95,5 +124,42 @@ export const authStyles = `
         border-top-color:rgba(232,228,217,.6);
         border-radius:50%;
         animation:spin .8s linear infinite;
+      }
+
+      /* ── Celular: la pantalla dividida 1fr/1fr no entra — el panel del
+         arte pasa a ser una franja arriba (mismo criterio que .foro-side
+         en foroStyles.js) y el panel de login queda abajo con su propio
+         padding, en vez de dos columnas de ~180px cada una. Ningún valor
+         de escritorio cambia.
+         2026-09-17: altura fija a 100dvh (antes "height:auto;
+         min-height:100vh" — el 100vh de más contaba la barra de
+         direcciones del navegador móvil, así que la página quedaba más
+         alta que la pantalla visible y obligaba a scrollear). Todo el
+         bloque de auth-left ahora se centra verticalmente en vez de ir
+         pegado arriba, para que el logo y el botón de Google queden un
+         poco más abajo.
+         OJO — este bloque tiene que ir DESPUÉS de .logo-title y .girl-img
+         (arriba): con la misma especificidad, CSS le da la razón a la regla
+         que aparece última en el archivo sin importar el @media — puesto
+         antes (como estaba, reportado 2026-09-17) este fix quedaba pisado
+         en silencio por las reglas de escritorio y nunca se aplicaba en
+         celular. Mismo bug ya visto en feedStyles.js. ── */
+      @media (max-width:760px) {
+        .auth-page {
+          grid-template-columns:1fr; grid-template-rows:34vh 1fr;
+          height:100vh; height:100dvh; overflow:hidden;
+        }
+        .auth-left { grid-row:2; padding:28px 24px 28px; justify-content:center; }
+        .auth-right { grid-row:1; height:34vh; }
+
+        .auth-status { display:none; }
+        .auth-neon-wrap { top:10px; right:14px; }
+        .auth-cross-wrap { top:auto; bottom:10px; right:14px; }
+
+        .girl-img { width:60%; right:50%; transform:translateX(50%); max-height:100%; }
+
+        .logo-title { font-size:clamp(38px,13vw,58px); }
+
+        .auth-version { position:static; margin-top:20px; text-align:center; }
       }
     `;

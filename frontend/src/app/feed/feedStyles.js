@@ -30,18 +30,6 @@ export const feedStyles = `
       .feed-wrap { flex:1; min-width:0; max-width:860px; animation:fadeIn .5s ease; }
       .feed-sidebar { width:165px; flex-shrink:0; position:sticky; top:84px; }
 
-      /* ── Celular: la columna del avatar pasa arriba del muro, ya no al costado ──
-         padding-top en 90px (antes 60px): la navbar fija mide 58px y el
-         escudo de facultad (AvatarMenu, top:-10% del tamaño 165 = -16.5px)
-         sobresale del avatar hacia arriba — con solo 60px de aire quedaba
-         casi pegado a la navbar y el escudo se recortaba por debajo de ella
-         (bug reportado 2026-09-11). 90px deja margen real. */
-      @media (max-width:760px) {
-        .feed-page { flex-direction:column; align-items:stretch; gap:18px; padding:90px 16px 32px; }
-        .feed-sidebar { width:100%; position:static; top:auto; display:flex; justify-content:center; }
-        .feed-wrap { max-width:100%; }
-      }
-
       /* ── Tabs (RECIENTES/TRENDING/SIGUIENDO) ── */
       .feed-tab { cursor:pointer; transition:color .2s; color:${HOLO_THEME.textDim}; font-weight:400; }
       .feed-tab.active { color:${HOLO_THEME.text}; font-weight:500; }
@@ -62,4 +50,26 @@ export const feedStyles = `
       .imagen-preview { position:relative; margin-bottom:10px; }
       .imagen-preview img { width:100%; max-height:200px; object-fit:contain; background:#0a0a0d; border:1px solid ${HOLO_THEME.hairlineSoft}; }
       .imagen-preview-remove { position:absolute; top:6px; right:6px; background:#0a0a0d; border:1px solid ${HOLO_THEME.hairline}; color:${HOLO_THEME.textDim}; width:22px; height:22px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; }
+
+      /* ── Celular ── a propósito AL FINAL del archivo, después de TODAS las
+         reglas de arriba: en CSS, con la misma especificidad (acá, una sola
+         clase contra otra sola clase), gana la que esté DESPUÉS en el
+         archivo — sin importar el @media. Un mobile-override puesto ANTES
+         de su regla base pierde en silencio (2026-09-17: así había quedado
+         el font-size de abajo, reportado con captura — "se zoomea solo al
+         escribir, hay que reacomodar la pantalla a mano" — el fix ya estaba
+         escrito pero el orden lo anulaba, nunca llegó a aplicarse). */
+      @media (max-width:760px) {
+        .feed-page { flex-direction:column; align-items:stretch; gap:18px; padding:90px 16px 32px; }
+        .feed-sidebar { width:100%; position:static; top:auto; display:flex; justify-content:center; }
+        .feed-wrap { max-width:100%; }
+
+        /* Safari/iOS hace zoom automático de TODA la página al enfocar un
+           input/textarea con font-size menor a 16px — y ahí no se puede
+           volver atrás con un botón, hay que pellizcar la pantalla a mano
+           para volver a acomodarla. Los de abajo estaban en 14px/13px en
+           desktop; en celular van a 16px para que el teclado no dispare el
+           zoom. */
+        .post-title-input, .post-body-input { font-size:16px; }
+      }
     `;
