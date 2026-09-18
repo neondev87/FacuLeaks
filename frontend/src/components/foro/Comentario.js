@@ -34,7 +34,7 @@ export default function Comentario({ c, canDelete, onDelete }) {
       </div>
       <div className="fcm__bd">
         <div className="fcm__hd">
-          <span className="fcm__u">{autor.username || "unknown"}</span>
+          <span className="fcm__u" onClick={() => autor.id && router.push(`/perfil/${autor.id}`)}>{autor.username || "unknown"}</span>
           <span className="fcm__ti">{hora}</span>
           {canDelete && (
             <button className="fcm__del" title="Eliminar comentario" onClick={() => onDelete(c.id)}>

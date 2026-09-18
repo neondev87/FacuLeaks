@@ -135,12 +135,20 @@ export default function useFeedPosts({ activeTab, status, session }) {
     // ahí pero la vista previa (al cerrar y reabrir) seguía mostrando la
     // versión vieja con el comentario ya borrado adentro. Ahora se parcha
     // `previewComments` en el mismo evento que ya actualiza el contador.
-    const applyCommentCount = ({ postId, totalComentarios, comment, commentId }) => {
+    const applyCommentCount = ({ postId, totalComentarios, comment, commentId, commentIds }) => {
       setPosts(prev => prev.map(p => {
         if (p.id !== postId) return p;
         let previewComments = p.previewComments || [];
-        if (commentId != null) previewComments = previewComments.filter(c => c.id !== commentId);
-        if (comment && previewComments.length < 2 && !previewComments.some(c => c.id === comment.id)) {
+        // Al borrar, `commentIds` trae también las respuestas que cayeron en
+        // cascada (2026-09-17) — sin eso, una respuesta que hubiera quedado
+        // en la preview (no debería, ver abajo, pero por las dudas) no se
+        // sacaba si se borraba solo el padre.
+        const idsToRemove = commentIds || (commentId != null ? [commentId] : []);
+        if (idsToRemove.length) previewComments = previewComments.filter(c => !idsToRemove.includes(c.id));
+        // Las respuestas a un comentario específico (parentId) no entran a
+        // la preview — sin su comentario padre al lado no se entienden, y la
+        // preview solo muestra los primeros 2 de primer nivel.
+        if (comment && !comment.parentId && previewComments.length < 2 && !previewComments.some(c => c.id === comment.id)) {
           previewComments = [...previewComments, comment];
         }
         return { ...p, totalComentarios, _count: { ...p._count, comments: totalComentarios }, previewComments };
@@ -161,6 +169,16 @@ export default function useFeedPosts({ activeTab, status, session }) {
 
   const removePost = useCallback((id) => {
     setPosts(prev => prev.filter(p => p.id !== id));
+  }, []);
+
+  // Clava un post puntual arriba de la lista si todavía no está — lo usa
+  // app/feed/page.js cuando llegás desde la campana de notificaciones
+  // (?post=<id>) y ese post no estaba en la página actual (quedó afuera de
+  // los primeros 20, o es de otra pestaña). Al meterlo en `posts` participa
+  // de la misma maquinaria de reacciones/comentarios que el resto — no es
+  // una tarjeta aparte con su propio estado.
+  const ensurePost = useCallback((post) => {
+    setPosts(prev => prev.some(p => p.id === post.id) ? prev : [post, ...prev]);
   }, []);
 
   const resetNewCount = useCallback(() => setNewCount(0), []);
@@ -231,5 +249,5 @@ export default function useFeedPosts({ activeTab, status, session }) {
     }
   }, []);
 
-  return { posts, loading, newCount, resetNewCount, removePost, toggleReaction, toggleShare, ownImagen, ownFacultad };
+  return { posts, loading, newCount, resetNewCount, removePost, ensurePost, toggleReaction, toggleShare, ownImagen, ownFacultad };
 }

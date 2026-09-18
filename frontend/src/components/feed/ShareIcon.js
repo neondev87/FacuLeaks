@@ -5,10 +5,10 @@ import { motion } from "framer-motion";
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: components/feed/ShareIcon.js — botón de "compartir a mi perfil"
 // ════════════════════════════════════════════════════════════════════════
-// QUÉ HACE: flecha de reenvío estilo TikTok/Instagram (sin el amarillo del
-// LIKE — ese color queda reservado para StarIcon). Mismo contrato
-// "controlado" que StarIcon/MarkerIcon: recibe `active`/`count`, solo avisa
-// el click con `onToggle`, no decide el dato real.
+// QUÉ HACE: flecha de reenvío estilo TikTok/Instagram, en celeste para no
+// pisar el rojo del LIKE ni del DISLIKE. Mismo contrato "controlado" que
+// HeartIcon/DedoMaloIcon: recibe `active`/`count`, solo avisa el click con
+// `onToggle`, no decide el dato real.
 //
 // CON QUÉ SE CONECTA: lo dibuja components/feed/PostCard.js (solo en posts
 // con privacidad:"PUBLICA" — ver posts.controller.js toggleShare). El click

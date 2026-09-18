@@ -12,15 +12,15 @@
 // habría que agregarla acá Y en el enum de Prisma (con su migración).
 //
 // CON QUÉ SE CONECTA:
-//   - components/feed/StarIcon.js y MarkerIcon.js → los íconos configurados
-//     (rediseño Fase 3 — reemplazan a HeartIcon/SkullIcon, el corazón y la
-//     calavera pixel de antes).
-//   - components/feed/PostCard.js → recorre este array para dibujar los
-//     botones de reacción de cada post.
+//   - components/feed/HeartIcon.js y BrokenHeartIcon.js → los íconos
+//     configurados (corazón "doble-tap" estilo Instagram para LIKE,
+//     corazón partido al medio para DISLIKE).
+//   - components/feed/PostCard.js y components/PostCard.js → recorren este
+//     array para dibujar los botones de reacción de cada post.
 // ════════════════════════════════════════════════════════════════════════
-import StarIcon from "./StarIcon";
-import MarkerIcon from "./MarkerIcon";
+import HeartIcon from "./HeartIcon";
+import BrokenHeartIcon from "./BrokenHeartIcon";
 export const REACTIONS = [
-  { key: "LIKE",    Icon: StarIcon },
-  { key: "DISLIKE", Icon: MarkerIcon },
+  { key: "LIKE",    Icon: HeartIcon },
+  { key: "DISLIKE", Icon: BrokenHeartIcon },
 ];

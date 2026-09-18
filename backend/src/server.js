@@ -49,6 +49,7 @@ const uploadRoutes  = require('./modules/upload/upload.routes');
 const spotifyRoutes = require('./modules/spotify/spotify.routes');
 const perfilRoutes  = require('./modules/perfil/perfil.routes');
 const foroRoutes    = require('./modules/foro/foro.routes');
+const notificacionesRoutes = require('./modules/notificaciones/notificaciones.routes');
 const { authMiddleware } = require('./middleware/auth');
 const { serveAudio }     = require('./modules/chat/chat.controller');
 const { registerChatSocketHandlers, socketAuthMiddleware } = require('./modules/chat/chat.socket');
@@ -111,6 +112,7 @@ app.use('/api/amigos',  amigosRoutes);
 app.use('/api/spotify', spotifyRoutes);
 app.use('/api/perfil',  perfilRoutes);
 app.use('/api/foro',    foroRoutes);
+app.use('/api/notificaciones', notificacionesRoutes);
 
 // Presencia: userId (string) → Set de socketIds (una persona puede tener
 // varias pestañas/dispositivos abiertos). La lista de "quién está online"

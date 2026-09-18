@@ -30,3 +30,20 @@ body {
 html, body {
   touch-action: manipulation;
 }
+
+/* Cajas de texto que crecen solas (comentarios, respuestas: el JS les pone
+   `height` a mano con cada tecla, ver autoGrow() en PostComments.js/
+   PostCard.js) — a veces igual quedan 1px más altas que su contenido y el
+   navegador les dibuja una scrollbar nativa. Esa scrollbar NO respeta el
+   border-radius del textarea (limitación real de Chrome/Firefox, no hay
+   forma de "redondearla") y se ve como una línea negra recta atravesando
+   la esquina redondeada (bug reportado 2026-09-17, capturado en pantalla).
+   Se puede seguir scrolleando con el mouse/dedo igual, solo se le saca el
+   trazo visual. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

@@ -36,10 +36,15 @@ import { displayName } from "@/lib/displayName";
 //     backend para reaccionar ni conoce el estado global, eso lo maneja
 //     hooks/useFeedPosts.js en app/feed/page.js.
 // ════════════════════════════════════════════════════════════════════════
-export default function PostCard({ post, currentUserId, onDelete, onReact, onShare, hideComments = false }) {
+export default function PostCard({ post, currentUserId, currentUserImagen, onDelete, onReact, onShare, hideComments = false, highlighted = false }) {
   const [lightbox, setLightbox] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  // Comentario al que hay que abrirle el cuadro de "responder" apenas se
+  // monte el hilo completo — lo dispara "responder" desde la vista previa
+  // (ver más abajo), para no obligar a un primer click "a ciegas" en
+  // "comentar" antes de poder hacer nada con un comentario que ya se ve.
+  const [pendingReplyId, setPendingReplyId] = useState(null);
   const router = useRouter();
 
   const username = displayName(post.autor) || post.user || "unknown";
@@ -83,17 +88,18 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, onSha
   return (
     <>
       {lightbox && post.imagen && <Lightbox src={post.imagen} onClose={() => setLightbox(false)} />}
-      <div style={{
+      <div id={`post-${post.id}`} style={{
         marginBottom: 16, borderRadius:10,
-        border: `1px solid ${HOLO_THEME.hairlineSoft}`,
-        transition: "all .4s ease",
+        border: `1px solid ${highlighted ? "rgba(159,224,255,.6)" : HOLO_THEME.hairlineSoft}`,
+        boxShadow: highlighted ? "0 0 0 3px rgba(159,224,255,.15)" : "none",
+        transition: "border-color .6s ease, box-shadow .6s ease, opacity .4s ease, transform .4s ease",
         animation: "fadeIn .3s ease",
         opacity: removing ? 0 : 1,
         transform: removing ? "translateY(-8px) scale(.98)" : "none",
         background: HOLO_THEME.panel,
       }}
-        onMouseEnter={e => e.currentTarget.style.borderColor = HOLO_THEME.hairline}
-        onMouseLeave={e => e.currentTarget.style.borderColor = HOLO_THEME.hairlineSoft}
+        onMouseEnter={e => { if (!highlighted) e.currentTarget.style.borderColor = HOLO_THEME.hairline; }}
+        onMouseLeave={e => { if (!highlighted) e.currentTarget.style.borderColor = HOLO_THEME.hairlineSoft; }}
       >
         {/* Header — sin línea abajo: el nombre y lo que se posteó son un solo
             bloque, no dos secciones separadas. */}
@@ -180,25 +186,46 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, onSha
             de abajo (barrita + hilo). */}
         {!hideComments && !showComments && post.previewComments?.length > 0 && (
           <div style={{ padding:"4px 18px 14px", borderTop:`1px solid ${HOLO_THEME.hairlineSoft}`, display:"flex", flexDirection:"column", gap:14 }}>
-            {post.previewComments.map((c, i) => (
-              <div key={c.id} style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
-                <AvatarBadge imagen={c.autor?.imagen} size={26} escudoUrl={escudoUrl(c.autor?.facultad)} style={{ marginTop:2 }} />
-                <div style={{ flex:1, minWidth:0, background:HOLO_THEME.panel, border:`1px solid ${HOLO_THEME.hairlineSoft}`, borderRadius:10, padding:"8px 12px" }}>
-                  <div style={{ fontSize:12, color:HOLO_THEME.text, fontWeight:500, fontFamily:"'Inter',sans-serif", marginBottom:3 }}>
-                    {displayName(c.autor) || "unknown"}
-                  </div>
-                  <div style={{
-                    fontSize:13, lineHeight:1.6, fontFamily:"'Inter',sans-serif", color:"rgba(242,240,248,.68)",
-                    whiteSpace:"pre-wrap", wordBreak:"break-word", overflowWrap:"anywhere",
-                    maxHeight: i === 1 ? 72 : "none",
-                    overflowY: i === 1 ? "auto" : "visible",
-                    overflowX: "hidden",
-                  }}>
-                    {c.contenido}
+            {post.previewComments.map((c, i) => {
+              const goToAutor = c.autor?.id ? () => router.push(`/perfil/${c.autor.id}`) : undefined;
+              return (
+                <div key={c.id} style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
+                  <AvatarBadge imagen={c.autor?.imagen} size={26} escudoUrl={escudoUrl(c.autor?.facultad)} style={{ marginTop:2 }} onClick={goToAutor} />
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ background:HOLO_THEME.panel, border:`1px solid ${HOLO_THEME.hairlineSoft}`, borderRadius:10, padding:"8px 12px" }}>
+                      <div
+                        onClick={goToAutor}
+                        style={{ fontSize:12, color:HOLO_THEME.text, fontWeight:500, fontFamily:"'Inter',sans-serif", marginBottom:3, cursor: goToAutor ? "pointer" : "default", width:"fit-content" }}
+                        onMouseEnter={e => { if (goToAutor) e.currentTarget.style.textDecoration = "underline"; }}
+                        onMouseLeave={e => { e.currentTarget.style.textDecoration = "none"; }}
+                      >
+                        {displayName(c.autor) || "unknown"}
+                      </div>
+                      <div style={{
+                        fontSize:13, lineHeight:1.6, fontFamily:"'Inter',sans-serif", color:"rgba(242,240,248,.68)",
+                        whiteSpace:"pre-wrap", wordBreak:"break-word", overflowWrap:"anywhere",
+                        maxHeight: i === 1 ? 72 : "none",
+                        overflowY: i === 1 ? "auto" : "visible",
+                        overflowX: "hidden",
+                      }}>
+                        {c.contenido}
+                      </div>
+                    </div>
+                    {/* "responder" ya funciona ACÁ, sin tener que abrir el hilo
+                        primero — abre el hilo completo con el cuadro de
+                        respuesta de este comentario ya listo (ver
+                        `pendingReplyId` + `initialReplyTo` de PostComments.js). */}
+                    <button
+                      onClick={() => { setPendingReplyId(c.id); setShowComments(true); }}
+                      style={{ background:"none", border:"none", padding:0, marginTop:4, marginLeft:4, cursor:"pointer", fontSize:11, color:HOLO_THEME.textDim, fontFamily:"'Space Mono',monospace", letterSpacing:".04em", transition:"color .15s" }}
+                      onMouseEnter={e => e.currentTarget.style.color = HOLO_THEME.text}
+                      onMouseLeave={e => e.currentTarget.style.color = HOLO_THEME.textDim}>
+                      responder
+                    </button>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -208,7 +235,7 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, onSha
                 chevron + hilo animado. Si el preview ya es todo → trigger quieto
                 para comentar, sin animación de altura. */}
             <div
-              onClick={() => setShowComments(v => !v)}
+              onClick={() => { setPendingReplyId(null); setShowComments(v => !v); }}
               style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, padding:"6px 14px", borderTop:`1px solid ${HOLO_THEME.hairlineSoft}`, cursor:"pointer", transition:"background .15s" }}
               onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.03)"}
               onMouseLeave={e => e.currentTarget.style.background = "none"}
@@ -238,12 +265,12 @@ export default function PostCard({ post, currentUserId, onDelete, onReact, onSha
                     transition={{ duration: .3, ease: "easeInOut" }}
                     style={{ overflow: "hidden" }}
                   >
-                    <PostComments postId={post.id} currentUserId={currentUserId} />
+                    <PostComments postId={post.id} currentUserId={currentUserId} currentUserImagen={currentUserImagen} initialReplyTo={pendingReplyId} />
                   </motion.div>
                 )}
               </AnimatePresence>
             ) : (
-              showComments && <PostComments postId={post.id} currentUserId={currentUserId} />
+              showComments && <PostComments postId={post.id} currentUserId={currentUserId} currentUserImagen={currentUserImagen} initialReplyTo={pendingReplyId} />
             )}
           </>
         )}

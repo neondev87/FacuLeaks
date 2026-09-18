@@ -22,7 +22,7 @@ import { cloneElement } from "react";
 
 // Un trazo simple por red — no son los logos oficiales pixel-perfect, son
 // glifos reconocibles con el mismo estilo lineal que el resto de los íconos
-// de la app (ver components/feed/ShareIcon.js, StarIcon.js).
+// de la app (ver components/feed/ShareIcon.js).
 const ICONS = {
   instagram: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

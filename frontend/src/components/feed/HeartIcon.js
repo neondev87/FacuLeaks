@@ -4,18 +4,22 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ════════════════════════════════════════════════════════════════════════
-// MÓDULO: components/feed/StarIcon.js — botón de reacción LIKE (Fase 3)
+// MÓDULO: components/feed/HeartIcon.js — botón de reacción LIKE
 // ════════════════════════════════════════════════════════════════════════
-// QUÉ HACE: estrella de marcador/grafiti — se llena de dorado y estalla un
-// resplandor radial cuando pasa a estar activa. Mismo contrato "controlado"
-// que HeartIcon.js (al que reemplaza): recibe `active`/`count` como props y
-// solo avisa el click con `onToggle`, no decide el dato real.
+// QUÉ HACE: corazón estilo "doble-tap" de Instagram — pop elástico al
+// activarse y tres mini-corazones que flotan hacia arriba y se desvanecen.
+// Mismo contrato controlado que el resto de los íconos de reacción: recibe
+// `active`/`count`/`disabled` y solo avisa el click con `onToggle`, no
+// decide el dato real.
 //
 // CON QUÉ SE CONECTA: components/feed/reactions.js lo enchufa como ícono de
-// LIKE; lo dibuja components/feed/PostCard.js. El click termina en
-// `toggleReaction()` de hooks/useFeedPosts.js.
+// LIKE; lo dibuja components/feed/PostCard.js y components/PostCard.js.
+// El click termina en toggleReaction() de hooks/useFeedPosts.js.
 // ════════════════════════════════════════════════════════════════════════
-export default function StarIcon({ active = false, count = 0, disabled = false, onToggle }) {
+
+const HEART_PATH = "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z";
+
+export default function HeartIcon({ active = false, count = 0, disabled = false, onToggle }) {
   const [burstKey, setBurstKey] = useState(0);
 
   const trigger = () => {
@@ -31,27 +35,30 @@ export default function StarIcon({ active = false, count = 0, disabled = false, 
       onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
     >
       <div style={{ position:"relative", width:14, height:14, display:"flex", alignItems:"center", justifyContent:"center" }}>
+        {/* mini-corazones que flotan al activarse */}
         <AnimatePresence>
-          {burstKey > 0 && (
+          {burstKey > 0 && [...Array(3)].map((_, i) => (
             <motion.span
-              key={burstKey}
-              initial={{ opacity: 1, scale: .3 }}
-              animate={{ opacity: 0, scale: 1.9 }}
-              transition={{ duration: .45, ease: "easeOut" }}
-              style={{ position:"absolute", inset:-9, borderRadius:"50%", background:"radial-gradient(circle, rgba(255,210,61,.55), transparent 65%)", pointerEvents:"none" }}
-            />
-          )}
+              key={`${burstKey}-${i}`}
+              initial={{ opacity: 1, x: (i - 1) * 6, y: 0, scale: .6 }}
+              animate={{ opacity: 0, y: -20 - i * 3, scale: 1 }}
+              transition={{ duration: .7, delay: i * .08, ease: "easeOut" }}
+              style={{ position:"absolute", fontSize:9, color:"#ff5252", pointerEvents:"none" }}
+            >❤</motion.span>
+          ))}
         </AnimatePresence>
         <motion.svg
           width="14" height="14" viewBox="0 0 24 24"
-          animate={active ? { scale: [1, 1.3, .92, 1] } : { scale: 1 }}
-          transition={{ duration: .38, ease: "easeOut" }}
-          style={{ stroke: active ? "#ffd23d" : "rgba(255,255,255,.35)", fill: active ? "#ffd23d" : "none", strokeWidth: 1.4 }}
+          animate={active ? { scale: [1, 1.32, .88, 1.08, 1] } : { scale: 1 }}
+          transition={{ duration: .55, ease: "easeOut" }}
         >
-          <path d="M12 2l2.4 6.8L21 10l-5.5 4.3L17 21l-5-3.8L7 21l1.5-6.7L3 10l6.6-1.2z" />
+          <path
+            d={HEART_PATH}
+            style={{ fill: active ? "#ff5252" : "rgba(255,255,255,.12)", stroke: active ? "#ff5252" : "rgba(255,255,255,.28)", strokeWidth: 1, transition: "fill .2s, stroke .2s" }}
+          />
         </motion.svg>
       </div>
-      <span style={{ fontSize:10, fontFamily:"'Space Mono',monospace", color: active ? "#ffd23d" : "#444", letterSpacing:".1em", transition:"color .3s" }}>
+      <span style={{ fontSize:10, fontFamily:"'Space Mono',monospace", color: active ? "#ff5252" : "#444", letterSpacing:".1em", transition:"color .3s" }}>
         {count}
       </span>
     </button>

@@ -21,10 +21,15 @@
 //
 // CON QUÉ SE CONECTA:
 //   - config/db.js (Prisma) → tabla amistades.
+//   - lib/notificaciones.js → crearNotificacion() al mandar una solicitud
+//     (SOLICITUD_AMISTAD) y al aceptarla (AMISTAD_ACEPTADA), 2026-09-17.
 //   - Frontend: app/amigos/page.js llama a estos endpoints directo (sin hook
-//     propio, es de los pocos que quedó sin extraer a un hook en Fase 2).
+//     propio, es de los pocos que quedó sin extraer a un hook en Fase 2); el
+//     botón "agregar amigo" del perfil ajeno (components/perfil/
+//     FriendRequestButton.js) los llama también, vía hooks/usePublicProfile.js.
 // ════════════════════════════════════════════════════════════════════════
 const prisma = require('../../config/db');
+const { crearNotificacion } = require('../../lib/notificaciones');
 
 const getAmigos = async (req, res) => {
   try {
@@ -129,6 +134,10 @@ const enviarSolicitud = async (req, res) => {
     const amistad = await prisma.amistades.create({
       data: { solicitanteId, receptorId }
     });
+    crearNotificacion(req.io, {
+      usuarioId: receptorId, generadorId: solicitanteId,
+      tipo: 'SOLICITUD_AMISTAD', entidadId: amistad.id, entidadTipo: 'amistad',
+    });
     res.status(201).json({ amistad });
   } catch (err) {
     console.error(err);
@@ -148,6 +157,10 @@ const aceptarSolicitud = async (req, res) => {
     const updated = await prisma.amistades.update({
       where: { id: amistadId },
       data:  { estado: 'ACEPTADO' }
+    });
+    crearNotificacion(req.io, {
+      usuarioId: amistad.solicitanteId, generadorId: userId,
+      tipo: 'AMISTAD_ACEPTADA', entidadId: amistadId, entidadTipo: 'amistad',
     });
     res.json({ amistad: updated });
   } catch (err) {

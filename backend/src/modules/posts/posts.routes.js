@@ -12,8 +12,8 @@
 const express = require('express');
 const router = express.Router();
 const {
-  feedRecientes, feedTrending, feedSiguiendo, nuevoPost, deletePost,
-  toggleReaction, toggleShare, listComments, createComment, deleteComment,
+  feedRecientes, feedTrending, feedSiguiendo, getPost, nuevoPost, deletePost,
+  toggleReaction, toggleShare, listComments, createComment, deleteComment, toggleCommentLike,
 } = require('./posts.controller');
 const { authMiddleware } = require('../../middleware/auth');
 
@@ -21,6 +21,8 @@ router.get('/feed/recientes',  authMiddleware, feedRecientes);
 router.get('/feed/trending',   authMiddleware, feedTrending);
 router.get('/feed/siguiendo',  authMiddleware, feedSiguiendo);
 router.post('/',               authMiddleware, nuevoPost);
+// Post suelto por id (campana de notificaciones → ver getPost en el controller).
+router.get('/:id',             authMiddleware, getPost);
 router.delete('/:id',          authMiddleware, deletePost);
 
 // B2 · reacciones
@@ -33,5 +35,6 @@ router.post('/:id/share',      authMiddleware, toggleShare);
 router.get('/:id/comments',                 authMiddleware, listComments);
 router.post('/:id/comments',                authMiddleware, createComment);
 router.delete('/:postId/comments/:commentId', authMiddleware, deleteComment);
+router.post('/:postId/comments/:commentId/like', authMiddleware, toggleCommentLike);
 
 module.exports = router;

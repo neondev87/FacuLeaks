@@ -5,9 +5,16 @@
 // ════════════════════════════════════════════════════════════════════════
 // QUÉ HACE: recibe un `postId` y un `enabled` (true cuando el usuario abrió
 // ese hilo de comentarios). Mientras está abierto: carga los comentarios,
-// permite agregar/borrar, y abre un socket para enterarse en vivo si otro
-// usuario comenta o borra un comentario de ESE post. Al cerrarse, corta el
-// socket (no tiene sentido escuchar algo que no se está mostrando).
+// permite agregar/borrar/likear, y abre un socket para enterarse en vivo si
+// otro usuario comenta, borra o likea un comentario de ESE post. Al
+// cerrarse, corta el socket (no tiene sentido escuchar algo que no se está
+// mostrando).
+//
+// `comments` queda FLAT (cada uno con `parentId`, `totalLikes`, `myLiked`)
+// — `add(contenido, parentId)` manda `parentId` cuando es una RESPUESTA a un
+// comentario específico (sub-comentario), no cuando es de primer nivel. Es
+// el componente que dibuja el hilo el que arma el árbol (ver
+// lib/commentTree.js) — el hook no sabe de anidamiento, solo guarda la lista.
 //
 // PARA QUÉ SIRVE: es un hook COMPARTIDO — tanto la PostCard del feed
 // (components/feed/PostCard.js) como la del perfil (components/PostCard.js)
@@ -15,8 +22,9 @@
 // haya dos diseños distintos de tarjeta.
 //
 // CON QUÉ SE CONECTA:
-//   - backend: GET/POST/DELETE /api/posts/:id/comments (posts.controller.js).
-//   - Socket.io: post:comment / post:comment:deleted.
+//   - backend: GET/POST/DELETE /api/posts/:id/comments +
+//     POST /api/posts/:postId/comments/:commentId/like (posts.controller.js).
+//   - Socket.io: post:comment / post:comment:deleted / post:comment:like.
 //   - Lo consumen: components/feed/PostComments.js y components/PostCard.js.
 // ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback } from "react";
@@ -57,13 +65,26 @@ export default function usePostComments(postId, enabled) {
     socket.on("post:comment", ({ postId: pid, comment }) => {
       if (pid === postId && comment) upsert(comment);
     });
-    socket.on("post:comment:deleted", ({ postId: pid, commentId }) => {
-      if (pid === postId) setComments(prev => prev.filter(c => c.id !== commentId));
+    // El borrado de un comentario con respuestas cae en cascada en la base
+    // (parentId → ON DELETE CASCADE) — el backend junta todos los ids
+    // afectados en `commentIds` para que acá se saquen todos de una, no
+    // solo el que se clickeó (si no, las respuestas quedaban huérfanas en
+    // la UI hasta recargar).
+    socket.on("post:comment:deleted", ({ postId: pid, commentId, commentIds }) => {
+      if (pid !== postId) return;
+      const ids = commentIds || [commentId];
+      setComments(prev => prev.filter(c => !ids.includes(c.id)));
+    });
+    socket.on("post:comment:like", ({ postId: pid, commentId, totalLikes }) => {
+      if (pid !== postId) return;
+      setComments(prev => prev.map(c => c.id === commentId ? { ...c, totalLikes } : c));
     });
     return () => { socket.disconnect(); };
   }, [enabled, postId, upsert]);
 
-  const add = useCallback(async (contenido) => {
+  // `parentId`: si viene, este comentario es una RESPUESTA a ese comentario
+  // específico (sub-comentario) en vez de uno de primer nivel.
+  const add = useCallback(async (contenido, parentId) => {
     const texto = String(contenido || "").trim();
     if (!texto || sending) return;
     setSending(true);
@@ -72,7 +93,7 @@ export default function usePostComments(postId, enabled) {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contenido: texto }),
+        body: JSON.stringify({ contenido: texto, parentId: parentId ?? null }),
       });
       if (!res.ok) throw new Error();
       const data = await res.json();
@@ -86,7 +107,15 @@ export default function usePostComments(postId, enabled) {
   }, [postId, sending, upsert]);
 
   const remove = useCallback(async (commentId) => {
-    setComments(prev => prev.filter(c => c.id !== commentId)); // optimista
+    // Optimista, y se lleva también cualquier respuesta que ya tuviera
+    // cargada localmente — mismo criterio que la cascada del backend.
+    const descendants = new Set();
+    const collect = (id) => {
+      comments.forEach(c => { if (c.parentId === id && !descendants.has(c.id)) { descendants.add(c.id); collect(c.id); } });
+    };
+    collect(commentId);
+    const ids = [commentId, ...descendants];
+    setComments(prev => prev.filter(c => !ids.includes(c.id)));
     try {
       const res = await fetch(`${API}/api/posts/${postId}/comments/${commentId}`, {
         method: "DELETE",
@@ -101,7 +130,31 @@ export default function usePostComments(postId, enabled) {
     } catch {
       load(); // revertir con el estado real del servidor
     }
-  }, [postId, load]);
+  }, [postId, load, comments]);
 
-  return { comments, loading, sending, add, remove, reload: load };
+  // Like/unlike de un comentario o sub-comentario — optimista (revierte solo
+  // si el backend lo rechaza), mismo patrón que toggleReaction de posts pero
+  // sin dislike: acá alcanza con un booleano.
+  const toggleLike = useCallback(async (commentId) => {
+    let prevState = null;
+    setComments(prev => prev.map(c => {
+      if (c.id !== commentId) return c;
+      prevState = { myLiked: c.myLiked, totalLikes: c.totalLikes };
+      const myLiked = !c.myLiked;
+      return { ...c, myLiked, totalLikes: Math.max(0, (c.totalLikes || 0) + (myLiked ? 1 : -1)) };
+    }));
+    try {
+      const res = await fetch(`${API}/api/posts/${postId}/comments/${commentId}/like`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setComments(prev => prev.map(c => c.id === commentId ? { ...c, myLiked: data.liked, totalLikes: data.totalLikes } : c));
+    } catch {
+      if (prevState) setComments(prev => prev.map(c => c.id === commentId ? { ...c, ...prevState } : c));
+    }
+  }, [postId]);
+
+  return { comments, loading, sending, add, remove, toggleLike, reload: load };
 }

@@ -34,17 +34,35 @@ model backgrounds {
 }
 
 model comments {
-  id        Int      @id @default(autoincrement())
-  postId    Int
-  autorId   Int
-  contenido String   @db.VarChar(500)
-  editado   Boolean  @default(false)
-  creadoEn  DateTime @default(now()) @db.DateTime(0)
-  posts     posts    @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "comments_ibfk_1")
-  users     users    @relation(fields: [autorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "comments_ibfk_2")
+  id            Int             @id @default(autoincrement())
+  postId        Int
+  autorId       Int
+  parentId      Int?
+  contenido     String          @db.VarChar(500)
+  editado       Boolean         @default(false)
+  creadoEn      DateTime        @default(now()) @db.DateTime(0)
+  posts         posts           @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "comments_ibfk_1")
+  users         users           @relation(fields: [autorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "comments_ibfk_2")
+  parent        comments?       @relation("comments_replies", fields: [parentId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "comments_ibfk_3")
+  replies       comments[]      @relation("comments_replies")
+  comment_likes comment_likes[]
 
   @@index([autorId], map: "autorId")
   @@index([postId], map: "idx_comments_postId")
+  @@index([parentId], map: "idx_comments_parentId")
+}
+
+model comment_likes {
+  id        Int      @id @default(autoincrement())
+  commentId Int
+  userId    Int
+  creadoEn  DateTime @default(now()) @db.DateTime(0)
+  comments  comments @relation(fields: [commentId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "comment_likes_ibfk_1")
+  users     users    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "comment_likes_ibfk_2")
+
+  @@unique([commentId, userId], map: "uk_comment_like")
+  @@index([commentId], map: "idx_comment_likes_commentId")
+  @@index([userId], map: "userId")
 }
 
 model messages {
@@ -230,6 +248,7 @@ model users {
   amistades_amistades_solicitanteIdTousers         amistades[]      @relation("amistades_solicitanteIdTousers")
   amistades_amistades_receptorIdTousers            amistades[]      @relation("amistades_receptorIdTousers")
   comments                                         comments[]
+  comment_likes                                    comment_likes[]
   follows_follows_seguidorIdTousers                follows[]        @relation("follows_seguidorIdTousers")
   follows_follows_seguidoIdTousers                 follows[]        @relation("follows_seguidoIdTousers")
   messages_messages_emisorIdTousers                messages[]       @relation("messages_emisorIdTousers")
@@ -286,6 +305,7 @@ enum notifications_tipo {
   AMISTAD_ACEPTADA
   LIKE_POST
   COMENTARIO_POST
+  POST_COMPARTIDO
   MENSAJE_NUEVO
   VISITA_PERFIL
   MENCION
