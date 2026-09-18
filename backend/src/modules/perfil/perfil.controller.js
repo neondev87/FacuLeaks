@@ -5,8 +5,11 @@
 //   - getPerfil(): tus propios datos completos (bio, stats, tus últimos
 //     posts, tus fotos) para la página /perfil.
 //   - getPerfilPublico(): el perfil de OTRO usuario (solo lo público) y,
-//     de paso, registra la visita (tabla profile_visits) y le avisa por
-//     socket en vivo al dueño ("alguien visitó tu perfil").
+//     de paso, registra la visita (tabla profile_visits), le avisa por
+//     socket en vivo al dueño ("alguien visitó tu perfil"), y devuelve el
+//     estado de amistad con el visitante (`estadoAmistad`/`amistadId`/
+//     `esSolicitante`, 2026-09-16) para pintar el botón de
+//     components/perfil/FriendRequestButton.js.
 //   - updatePerfil(): editar bio, intereses, links, etc. Si cambia `nombre` o
 //     `mostrarNombreCompleto`, avisa en vivo por socket (`user:nombre`,
 //     broadcast) para que el Muro y los perfiles públicos ya abiertos
@@ -63,13 +66,18 @@ const getFotos = (userId) =>
 // mirando el perfil, no necesariamente su dueño) — mismo criterio que
 // mapPost() en posts.controller.js, para que el perfil pueda usar el mismo
 // botón de LIKE/DISLIKE que ya existe en el muro.
+// `totalComentarios` sale de `_count.comments` (conteo real, mismo patrón
+// que posts.controller.js) — sin esto el contador de PostCard.js quedaba
+// siempre en 0/undefined y el post entraba en su modo "sin comentarios"
+// hasta que alguien abría el hilo a mano (bug reportado 2026-09-17).
 const conReacciones = (post, viewerId) => {
-  const { post_likes, totalLikes, totalDislikes, ...rest } = post;
+  const { post_likes, totalLikes, totalDislikes, _count, ...rest } = post;
   return {
     ...rest,
-    totalLikes:    totalLikes ?? 0,
-    totalDislikes: totalDislikes ?? 0,
-    myReaction:    viewerId ? (post_likes?.[0]?.tipo || null) : null,
+    totalLikes:      totalLikes ?? 0,
+    totalDislikes:   totalDislikes ?? 0,
+    totalComentarios: _count?.comments ?? 0,
+    myReaction:      viewerId ? (post_likes?.[0]?.tipo || null) : null,
   };
 };
 
@@ -88,6 +96,7 @@ const getPostsConAutor = (userId, privacidadFiltro, viewerId) =>
       totalLikes: true, totalDislikes: true,
       users: { select: AUTHOR_SELECT },
       post_likes: viewerId ? { where: { userId: viewerId }, select: { tipo: true } } : false,
+      _count: { select: { comments: true } },
     },
   }).then(rows => rows.map(({ users, ...p }) => conReacciones({ ...p, autor: flattenAuthor(users) }, viewerId)));
 
@@ -108,6 +117,7 @@ const getSharedPosts = (userId, onlyPublicOriginal, viewerId) =>
           totalLikes: true, totalDislikes: true,
           users: { select: AUTHOR_SELECT },
           post_likes: viewerId ? { where: { userId: viewerId }, select: { tipo: true } } : false,
+          _count: { select: { comments: true } },
         },
       },
     },
@@ -191,6 +201,21 @@ const getPerfilPublico = async (req, res) => {
     });
     const vlogs = await prisma.posts.count({ where:{ autorId:profileUserId } });
 
+    // Estado de amistad con el visitante — mismo criterio que
+    // amigos.controller.js/buscarUsuarios(), para pintar el ícono de
+    // "agregar amigo" en el header del perfil público.
+    let amistad = null;
+    if (visitorId !== profileUserId) {
+      amistad = await prisma.amistades.findFirst({
+        where: {
+          OR: [
+            { solicitanteId: visitorId, receptorId: profileUserId },
+            { solicitanteId: profileUserId, receptorId: visitorId },
+          ]
+        }
+      });
+    }
+
     const posts = await getPostsYCompartidos(profileUserId, 'PUBLICA', true, visitorId);
 
     let visitas = 0;
@@ -211,7 +236,13 @@ const getPerfilPublico = async (req, res) => {
       photos = await getFotos(profileUserId);
     } catch (e) { console.error('[PHOTOS] error:', e.message); }
 
-    res.json({ user, profile:profile||{}, stats:{ amigos, vlogs, visitas }, posts, photos, isOwnProfile: visitorId===profileUserId });
+    res.json({
+      user, profile:profile||{}, stats:{ amigos, vlogs, visitas }, posts, photos,
+      isOwnProfile: visitorId===profileUserId,
+      estadoAmistad: amistad?.estado || null,
+      amistadId: amistad?.id || null,
+      esSolicitante: amistad?.solicitanteId === visitorId,
+    });
   } catch (err) {
     console.error('getPerfilPublico error:', err.message);
     res.status(500).json({ error:'Error al obtener perfil' });

@@ -60,9 +60,16 @@ export const profileStyles = `
         .profile-wrap { padding:90px 16px 32px; }
         /* El nombre + Spotify ya no entran cómodos en una sola fila angosta:
            Spotify se acorta (230 → 132) y el nombre baja un poco de tamaño
-           para no chocar con él. */
+           para no chocar con él. !important en font-size por el mismo
+           motivo que .profile-avatar-box unas líneas abajo: el div del
+           nombre trae fontSize:30 como STYLE INLINE en page.js, y un
+           style inline le gana a cualquier clase externa (con o sin
+           @media) salvo que esa clase use !important — sin él, esta regla
+           quedaba escrita pero nunca se aplicaba en celular (bug
+           encontrado 2026-09-17 al portar este mismo patrón al perfil
+           ajeno, ver publicStyles.js). */
         .profile-header { gap:12px; }
-        .profile-name { font-size:24px; }
+        .profile-name { font-size:24px !important; }
         .profile-spotify-box { width:132px; }
         .profile-social-icons { display:none; }
         /* El avatar gana un poco de tamaño (165 → 196): en celular la

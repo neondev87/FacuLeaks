@@ -21,11 +21,14 @@
 //   - Lo consume: app/perfil/page.js y app/perfil/[id]/page.js.
 // ════════════════════════════════════════════════════════════════════════
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import usePostComments from '@/hooks/usePostComments';
+import { buildCommentTree } from '@/lib/commentTree';
 import { API } from '@/lib/api';
 import { HOLO_THEME } from '@/lib/theme';
 import { REACTIONS } from '@/components/feed/reactions';
+import HeartIcon from '@/components/feed/HeartIcon';
 import TrashGlyph from '@/components/TrashGlyph';
 import { escudoUrl, siglasFacultad } from '@/lib/facultades';
 import { displayName } from '@/lib/displayName';
@@ -69,15 +72,139 @@ function TrashBtn({ onDelete }) {
   );
 }
 
+// Fecha relativa reutilizada por cada fila de comentario — misma lógica que
+// `formatDate` de más abajo, pero a nivel de módulo porque CommentRow es un
+// componente aparte (recursivo: una respuesta puede tener sus propias
+// respuestas).
+const formatCommentDate = (dateString) => {
+  const date = new Date(dateString);
+  const diff = new Date() - date;
+  const minutes = Math.floor(diff / 60000);
+  const hours   = Math.floor(diff / 3600000);
+  const days    = Math.floor(diff / 86400000);
+  if (minutes < 1) return 'ahora';
+  if (minutes < 60) return `${minutes}m`;
+  if (hours < 24) return `${hours}h`;
+  if (days < 7) return `${days}d`;
+  return date.toLocaleDateString("es-MX", { month: "short", day: "numeric" });
+};
+
+// Un comentario + sus respuestas ("sub-comentarios", 2026-09-17) — recursivo,
+// con like (mismo HeartIcon pixel-art que las reacciones del post, para que
+// se vea como una sola familia) y el cuadro de "responder" de a uno por vez
+// (`replyingTo`, estado que vive en PostCard y se pasa para abajo).
+function CommentRow({ comment, depth, uid, replyingTo, setReplyingTo, onReply, onDelete, onLike, sending }) {
+  const router = useRouter();
+  const autor = comment.autor || comment.users || {};
+  const avatar = autor.imagen;
+  const mine = uid != null && Number(autor.id) === Number(uid);
+  const isReplying = replyingTo === comment.id;
+  const [replyText, setReplyText] = useState("");
+  const goToAutor = autor.id ? () => router.push(`/perfil/${autor.id}`) : undefined;
+
+  const submitReply = async () => {
+    const ok = await onReply(replyText, comment.id);
+    if (ok) { setReplyText(""); setReplyingTo(null); }
+  };
+
+  return (
+    <div style={{ display: "flex", gap: 8, fontSize: 13 }}>
+      <div style={{ position: 'relative', flexShrink: 0 }}>
+        <div onClick={goToAutor} style={{
+          width: depth === 0 ? 32 : 26, height: depth === 0 ? 32 : 26, borderRadius: "50%",
+          backgroundColor: "rgba(255,255,255,.1)",
+          backgroundImage: avatar ? `url(${avatar.startsWith('http') ? avatar : `${API}${avatar}`})` : "none",
+          backgroundSize: "100% 100%", backgroundPosition: "center",
+          border: "1px solid rgba(255,255,255,.08)", cursor: autor.id ? "pointer" : "default",
+        }} />
+        <Escudo url={escudoUrl(autor.facultad)} size={13} />
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "8px 12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+            <span onClick={goToAutor} style={{ fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,.8)", cursor: autor.id ? "pointer" : "default" }}>
+              {displayName(autor) || "unknown"}
+            </span>
+            {mine && (
+              <button
+                onClick={() => onDelete(comment.id)}
+                title="Eliminar comentario"
+                style={{ marginLeft: "auto", background: "none", border: "none", padding: 2, cursor: "pointer", color: "rgba(255,255,255,.25)", display: "flex", transition: "color .15s" }}
+                onMouseEnter={e => e.currentTarget.style.color = "rgba(255,90,90,.85)"}
+                onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,.25)"}
+              ><TrashGlyph size={13} /></button>
+            )}
+          </div>
+          <div style={{ fontSize: 13, color: "rgba(232,228,217,.7)", lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word", overflowWrap: "anywhere" }}>
+            {comment.contenido}
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4, marginLeft: 12 }}>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,.25)" }}>{formatCommentDate(comment.creadoEn)}</span>
+          <HeartIcon active={!!comment.myLiked} count={comment.totalLikes || 0} onToggle={() => onLike(comment.id)} />
+          <button onClick={() => { setReplyingTo(isReplying ? null : comment.id); setReplyText(""); }}
+            style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 11, color: isReplying ? "rgba(255,255,255,.8)" : "rgba(255,255,255,.35)", fontFamily: "'Inter',sans-serif", transition: "color .15s" }}>
+            responder
+          </button>
+        </div>
+
+        {isReplying && (
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-end", marginTop: 6 }}>
+            <textarea
+              autoFocus
+              value={replyText}
+              onChange={e => setReplyText(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitReply(); } }}
+              placeholder={`responder a ${displayName(autor) || "este comentario"}...`}
+              rows={1}
+              maxLength={500}
+              style={{
+                flex: 1, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)",
+                borderRadius: 14, padding: "6px 12px", fontSize: 16, color: "rgba(255,255,255,.85)",
+                fontFamily: "'Inter',sans-serif", outline: "none", resize: "none", lineHeight: 1.5,
+              }}
+            />
+            {replyText.trim() && (
+              <button onClick={submitReply} disabled={sending}
+                style={{
+                  background: "rgba(255,255,255,.12)", border: "1px solid rgba(255,255,255,.2)",
+                  borderRadius: 14, padding: "6px 12px", fontSize: 11, fontWeight: 500,
+                  color: "rgba(255,255,255,.9)", cursor: sending ? "default" : "pointer", fontFamily: "'Inter',sans-serif",
+                }}>{sending ? "..." : "enviar"}</button>
+            )}
+          </div>
+        )}
+
+        {comment.replies?.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10, paddingLeft: 12, borderLeft: "1px solid rgba(255,255,255,.06)" }}>
+            {comment.replies.map(r => (
+              <CommentRow key={r.id} comment={r} depth={depth + 1} uid={uid}
+                replyingTo={replyingTo} setReplyingTo={setReplyingTo}
+                onReply={onReply} onDelete={onDelete} onLike={onLike} sending={sending} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Componente PostCard ──
-export default function PostCard({ post, currentUser, viewerId, canDelete = false, onDelete, onImageClick, onReact }) {
+export default function PostCard({ post, currentUser, viewerId, viewerImagen, viewerFacultad, canDelete = false, onDelete, onImageClick, onReact }) {
   // viewerId = id del usuario logueado (para "es mío"). En el perfil público
   // `currentUser` es el DUEÑO del perfil, no el que mira — por eso va aparte.
+  // Mismo motivo para viewerImagen/viewerFacultad: son SIEMPRE tu propio
+  // avatar/facultad (el de quien está comentando), nunca los de currentUser
+  // — antes el composer de "Escribe un comentario..." usaba currentUser.imagen
+  // a secas, así que en el perfil de otra persona mostraba SU foto en vez de
+  // la tuya (bug reportado 2026-09-17).
   const uid = viewerId ?? currentUser?.id;
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [replyingTo, setReplyingTo] = useState(null);
   const commentRef = useRef(null);
-  const { comments, add, remove } = usePostComments(post.id, showComments);
+  const { comments, add, remove, toggleLike, sending } = usePostComments(post.id, showComments);
+  const commentTree = buildCommentTree(comments);
   const totalComs = post.totalComentarios ?? comments.length ?? 0;
   // Si no hay comentarios, la barra es solo un trigger para escribir uno
   // (sin cuenta ni chevron ni animación de altura, que ahí no revela nada).
@@ -115,51 +242,13 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
   // altura si hay comentarios, o directo (sin animación) si no hay.
   const commentsBody = (
     <div style={{ marginTop: 12 }}>
-      {comments.length > 0 && (
+      {commentTree.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
-          {comments.map(comment => {
-            const autor = comment.autor || comment.users || {};
-            const avatar = autor.imagen;
-            const mine = uid != null && Number(autor.id) === Number(uid);
-            return (
-              <div key={comment.id} style={{ display: "flex", gap: 8, fontSize: 13 }}>
-                <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <div style={{
-                    width: 32, height: 32, borderRadius: "50%",
-                    backgroundColor: "rgba(255,255,255,.1)",
-                    backgroundImage: avatar ? `url(${avatar.startsWith('http') ? avatar : `${API}${avatar}`})` : "none",
-                    backgroundSize: "100% 100%", backgroundPosition: "center",
-                    border: "1px solid rgba(255,255,255,.08)"
-                  }} />
-                  <Escudo url={escudoUrl(autor.facultad)} size={13} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "8px 12px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                      <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,.8)" }}>
-                        {displayName(autor) || "unknown"}
-                      </span>
-                      {mine && (
-                        <button
-                          onClick={() => remove(comment.id)}
-                          title="Eliminar comentario"
-                          style={{ marginLeft: "auto", background: "none", border: "none", padding: 2, cursor: "pointer", color: "rgba(255,255,255,.25)", display: "flex", transition: "color .15s" }}
-                          onMouseEnter={e => e.currentTarget.style.color = "rgba(255,90,90,.85)"}
-                          onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,.25)"}
-                        ><TrashGlyph size={13} /></button>
-                      )}
-                    </div>
-                    <div style={{ fontSize: 13, color: "rgba(232,228,217,.7)", lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word", overflowWrap: "anywhere" }}>
-                      {comment.contenido}
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,.25)", marginTop: 4, marginLeft: 12 }}>
-                    {formatDate(comment.creadoEn)}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {commentTree.map(comment => (
+            <CommentRow key={comment.id} comment={comment} depth={0} uid={uid}
+              replyingTo={replyingTo} setReplyingTo={setReplyingTo}
+              onReply={add} onDelete={remove} onLike={toggleLike} sending={sending} />
+          ))}
         </div>
       )}
 
@@ -168,15 +257,16 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
           <div style={{
             width: 32, height: 32, borderRadius: "50%",
             backgroundColor: "rgba(255,255,255,.1)",
-            backgroundImage: currentUser.imagen ? `url(${currentUser.imagen.startsWith('http') ? currentUser.imagen : `${API}${currentUser.imagen}`})` : "none",
+            backgroundImage: viewerImagen ? `url(${viewerImagen.startsWith('http') ? viewerImagen : `${API}${viewerImagen}`})` : "none",
             backgroundSize: "100% 100%", backgroundPosition: "center",
             border: "1px solid rgba(255,255,255,.08)"
           }} />
-          <Escudo url={escudoUrl(currentUser.facultad)} size={13} />
+          <Escudo url={escudoUrl(viewerFacultad)} size={13} />
         </div>
         <div style={{ flex: 1, display: "flex", gap: 8, alignItems: "flex-end" }}>
           <textarea
             ref={commentRef}
+            className="no-scrollbar"
             value={commentText}
             onChange={e => { setCommentText(e.target.value); autoGrowComment(e.target); }}
             onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleComment(); } }}
@@ -184,7 +274,7 @@ export default function PostCard({ post, currentUser, viewerId, canDelete = fals
             rows={1}
             style={{
               flex: 1, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)",
-              borderRadius: 18, padding: "8px 14px", fontSize: 13, color: "rgba(255,255,255,.85)",
+              borderRadius: 18, padding: "8px 14px", fontSize: 16, color: "rgba(255,255,255,.85)",
               fontFamily: "'Inter',sans-serif", outline: "none", resize: "none",
               overflowY: "auto", maxHeight: 120, lineHeight: 1.5, transition: "all .15s"
             }}

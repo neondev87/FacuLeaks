@@ -17,10 +17,15 @@
 // CON QUÉ SE CONECTA:
 //   - backend: GET/PUT /api/perfil, DELETE /api/posts/:id.
 //   - app/api/auth/sync-backend/route.js → a donde redirige si hay 401.
+//   - Socket.io: post:comment / post:comment:deleted (contador de
+//     comentarios en vivo, mismo evento que escuchan el muro y
+//     usePublicProfile.js — sin esto tus propios posts se quedaban en modo
+//     "sin comentarios" hasta abrir el hilo a mano; bug reportado 2026-09-17).
 //   - Lo consume: app/perfil/page.js.
 // ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect } from "react";
 import { API } from "@/lib/api";
+import { createAuthedSocket } from "@/lib/socket";
 export default function useOwnProfile({ status, session }) {
   const [perfil,      setPerfil]      = useState(null);
   const [loading,     setLoading]     = useState(true);
@@ -62,6 +67,21 @@ export default function useOwnProfile({ status, session }) {
   useEffect(() => {
     if (status === "authenticated") fetchPerfil();
   }, [status, session]);
+
+  // Contador de comentarios en vivo — mismo evento y misma forma que
+  // hooks/useFeedPosts.js y usePublicProfile.js (post:comment /
+  // post:comment:deleted traen `totalComentarios` recalculado por el
+  // backend).
+  useEffect(() => {
+    if (!session?.user?.dbId) return;
+    const socket = createAuthedSocket();
+    const applyCommentCount = ({ postId, totalComentarios }) => {
+      setLocalPosts(prev => prev ? prev.map(p => p.id === postId ? { ...p, totalComentarios } : p) : prev);
+    };
+    socket.on("post:comment", applyCommentCount);
+    socket.on("post:comment:deleted", applyCommentCount);
+    return () => socket.disconnect();
+  }, [session?.user?.dbId]);
 
   const handleSave = async fields => {
     try {

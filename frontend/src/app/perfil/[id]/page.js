@@ -15,6 +15,7 @@ import { publicStyles } from "./publicStyles";
 import { escudoUrl } from "@/lib/facultades";
 import SocialLinks from "@/components/perfil/SocialLinks";
 import FacultadTag from "@/components/perfil/FacultadTag";
+import FriendRequestButton from "@/components/perfil/FriendRequestButton";
 
 // ════════════════════════════════════════════════════════════════════════
 // MÓDULO: app/perfil/[id]/page.js — perfil de OTRO usuario (público)
@@ -38,6 +39,7 @@ export default function PerfilPublicoPage() {
   const {
     perfil, loading, notFound, photos,
     lightboxSrc, setLightboxSrc, toggleReaction,
+    enviarSolicitud, aceptarSolicitud, viewerImagen, viewerFacultad,
   } = usePublicProfile({ userId, status, session, router });
 
   // El "Sobre mí" ya no es una tarjeta propia — vive plegado adentro de
@@ -80,7 +82,7 @@ export default function PerfilPublicoPage() {
 
   if (!perfil) return null;
 
-  const { user, profile, stats, posts, isOwnProfile } = perfil;
+  const { user, profile, stats, posts, isOwnProfile, estadoAmistad, esSolicitante } = perfil;
 
   const links = Array.isArray(profile.links) ? profile.links
     : profile.links ? Object.values(profile.links) : [];
@@ -105,11 +107,23 @@ export default function PerfilPublicoPage() {
 
       <div className="pub-wrap">
 
+        {/* Volver — al lado opuesto de las acciones (mandar solicitud / ir a
+            mi perfil), arriba a la izquierda, en vez de compartir fila con
+            ellas (pedido explícito de Erick, 2026-09-16). */}
+        <div style={{ marginBottom:10 }}>
+          <button onClick={() => router.back()}
+            style={{ background:"none", border:"none", color:"rgba(255,255,255,.2)", fontFamily:"'Inter',sans-serif", fontSize:11, cursor:"pointer", transition:"color .2s" }}
+            onMouseEnter={e => e.currentTarget.style.color = "#e8e4d9"}
+            onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,.2)"}>
+            ← volver
+          </button>
+        </div>
+
         {/* Header */}
-        <div style={{ borderBottom:"1px solid rgba(255,255,255,.06)", paddingBottom:18, marginBottom:24, display:"flex", justifyContent:"space-between", alignItems:"flex-end" }}>
-          <div>
+        <div className="profile-header" style={{ borderBottom:"1px solid rgba(255,255,255,.06)", paddingBottom:18, marginBottom:24, display:"flex", justifyContent:"space-between", alignItems:"flex-end" }}>
+          <div style={{ minWidth:0 }}>
             <div style={{ display:"flex", alignItems:"baseline", gap:12 }}>
-              <div style={{ fontFamily:"'Cinzel',serif", fontSize:30, color:"#e8e4d9", letterSpacing:".06em", lineHeight:1.1 }}>
+              <div className="profile-name" style={{ fontFamily:"'Cinzel',serif", fontSize:30, color:"#e8e4d9", letterSpacing:".06em", lineHeight:1.1 }}>
                 {displayName}
               </div>
               {mostrarCompleto && (
@@ -132,6 +146,14 @@ export default function PerfilPublicoPage() {
             )}
           </div>
           <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+            {!isOwnProfile && (
+              <FriendRequestButton
+                estadoAmistad={estadoAmistad}
+                esSolicitante={esSolicitante}
+                onEnviar={enviarSolicitud}
+                onAceptar={aceptarSolicitud}
+              />
+            )}
             {isOwnProfile && (
               <button onClick={() => router.push("/perfil")}
                 style={{ background:"none", border:"1px solid rgba(255,255,255,.08)", color:"rgba(255,255,255,.3)", fontFamily:"'Inter',sans-serif", fontSize:11, padding:"6px 14px", cursor:"pointer", transition:"all .2s", borderRadius:4 }}
@@ -140,12 +162,6 @@ export default function PerfilPublicoPage() {
                 ir a mi perfil
               </button>
             )}
-            <button onClick={() => router.back()}
-              style={{ background:"none", border:"none", color:"rgba(255,255,255,.2)", fontFamily:"'Inter',sans-serif", fontSize:11, cursor:"pointer", transition:"color .2s" }}
-              onMouseEnter={e => e.currentTarget.style.color = "#e8e4d9"}
-              onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,.2)"}>
-              ← volver
-            </button>
           </div>
         </div>
 
@@ -163,6 +179,7 @@ export default function PerfilPublicoPage() {
                 display:none, ahí viven arriba en el header. */}
             <div className="profile-avatar-row">
               <AvatarMenu
+                className="profile-avatar-box"
                 currentAvatar={user.imagen}
                 escudoUrl={escudoUrl(user.facultad)}
                 canEdit={false}
@@ -267,6 +284,8 @@ export default function PerfilPublicoPage() {
                     post={p}
                     currentUser={{ ...perfil.user, mostrarNombreCompleto: profile.mostrarNombreCompleto }}
                     viewerId={session?.user?.dbId}
+                    viewerImagen={viewerImagen}
+                    viewerFacultad={viewerFacultad}
                     canDelete={false}
                     onImageClick={(src) => setLightboxSrc(src)}
                     onReact={toggleReaction}

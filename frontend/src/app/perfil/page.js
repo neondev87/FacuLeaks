@@ -232,6 +232,8 @@ export default function ProfilePage() {
                       post={p}
                       currentUser={{ ...user, mostrarNombreCompleto: profile.mostrarNombreCompleto }}
                       viewerId={session?.user?.dbId}
+                      viewerImagen={user.imagen}
+                      viewerFacultad={user.facultad}
                       canDelete={true}
                       onDelete={() => p.isShared ? handleUnshare(p.id) : handleDeletePost(p.id)}
                       onImageClick={(src) => setLightboxSrc(src)}
