@@ -6,7 +6,8 @@
 // decorativo, no tiene estado ni lógica.
 //
 // CON QUÉ SE CONECTA: nada — es una hoja suelta. Se usa en
-// app/feed/page.js, app/chat/page.js, app/amigos/page.js y app/foro/page.js.
+// app/chat/page.js, app/amigos/page.js y app/foro/page.js (el Muro la sacó
+// de su fondo, 2026-09-17 — ver app/feed/page.js).
 // ════════════════════════════════════════════════════════════════════════
 import bgCross from "@/assets/backgrounds/bg-cross.png";
 

@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Uploader from "@/components/Uploader";
 import DownloadBar from "@/components/DownloadBar";
-import BgCross from "@/components/BgCross";
 import AvatarMenu from "@/components/AvatarMenu";
 import { API } from "@/lib/api";
 import useInjectedStyles from "@/hooks/useInjectedStyles";
@@ -37,16 +36,74 @@ import { escudoUrl } from "@/lib/facultades";
 // proxy.js (redirige a /auth si no hay sesión).
 // ════════════════════════════════════════════════════════════════════════
 
+// useSearchParams() (?post=<id> de la campana de notificaciones) obliga en
+// Next a envolver en <Suspense> al componente que lo usa — si no, `next
+// build` tira error de prerender. FeedPage de acá abajo es solo ese wrapper;
+// toda la lógica real sigue en FeedPageContent.
 export default function FeedPage() {
+  return (
+    <Suspense fallback={null}>
+      <FeedPageContent />
+    </Suspense>
+  );
+}
+
+function FeedPageContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [activeTab,  setActiveTab]  = useState("RECIENTES");
   const [dlTrigger,  setDlTrigger]  = useState(0);
   const [dlFilename, setDlFilename] = useState("");
+  const [highlightId, setHighlightId] = useState(null);
+  // Evita procesar el mismo ?post= dos veces (ensurePost dispara un
+  // re-render que re-corre el efecto antes de que el setTimeout de abajo
+  // llegue a limpiar la URL).
+  const handledPostRef = useRef(null);
 
-  const { posts, loading, newCount, resetNewCount, removePost, toggleReaction, toggleShare, ownImagen, ownFacultad } =
+  const { posts, loading, newCount, resetNewCount, removePost, ensurePost, toggleReaction, toggleShare, ownImagen, ownFacultad } =
     useFeedPosts({ activeTab, status, session });
+
+  // Deep link desde la campana de notificaciones (Navbar.js → ?post=<id>):
+  // si el post ya está en la página cargada, solo hace scroll + resalta. Si
+  // no (quedó afuera de los primeros 20, o es AMIGOS/SOLO_YO y no aparece en
+  // ningún feed), lo pide suelto a GET /api/posts/:id y lo clava arriba con
+  // ensurePost — de ahí en más es un post más de la lista (reacciona/
+  // comenta igual que cualquier otro).
+  useEffect(() => {
+    const postIdParam = searchParams.get("post");
+    if (!postIdParam || loading) return;
+    const postId = parseInt(postIdParam);
+    if (!Number.isInteger(postId) || handledPostRef.current === postId) return;
+    handledPostRef.current = postId;
+
+    const irAlPost = () => {
+      setHighlightId(postId);
+      requestAnimationFrame(() => {
+        document.getElementById(`post-${postId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+      setTimeout(() => setHighlightId(null), 2500);
+      router.replace("/feed", { scroll: false });
+    };
+
+    if (posts.some(p => p.id === postId)) { irAlPost(); return; }
+
+    (async () => {
+      try {
+        const res = await fetch(`${API}/api/posts/${postId}`, { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          ensurePost(data.post);
+          setTimeout(irAlPost, 50);
+        } else {
+          router.replace("/feed", { scroll: false });
+        }
+      } catch {
+        router.replace("/feed", { scroll: false });
+      }
+    })();
+  }, [searchParams, loading, posts, ensurePost, router]);
 
   const {
     postContent, postTitle, setPostTitle,
@@ -67,7 +124,6 @@ export default function FeedPage() {
   return (
     <>
       <Navbar />
-      <BgCross />
       <div className="feed-page">
 
       {/* Recuadro de tu perfil — EXACTAMENTE el mismo AvatarMenu y tamaño (165)
@@ -149,10 +205,12 @@ export default function FeedPage() {
               key={p.id || i}
               post={p}
               currentUserId={session?.user?.dbId}
+              currentUserImagen={session?.user?.imagen}
               onDelete={removePost}
               onReact={toggleReaction}
               onShare={toggleShare}
               hideComments={activeTab === "TRENDING"}
+              highlighted={highlightId === p.id}
             />
           ))
         )}
