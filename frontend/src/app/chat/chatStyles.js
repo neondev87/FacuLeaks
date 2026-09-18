@@ -20,7 +20,7 @@
 // (.empty-bg / .empty-fig*, las dibuja
 // components/chat/EmptyStateBg.js).
 import { FONT_IMPORT_MAIN, KF, HOLO_THEME } from "@/lib/theme";
-import girlImg from "@/assets/shared/girl.png";
+import chatFigAngel from "@/assets/chat/chat-fig-angel.png";
 import chatFigAscii from "@/assets/chat/chat-fig-ascii.png";
 import bgCelular from "@/assets/chat/bg-celular.jpg";
 
@@ -187,17 +187,20 @@ export const chatStyles = `
       /* ── "Mensajes" sin chat abierto ──────────────────────────────────
          .chat-landing = toda la pantalla (fondo + tarjeta centrada).
          .empty-bg / .empty-fig* = las 2 figuras grandes de fondo, las
-         dibuja components/chat/EmptyStateBg.js. Son PNG RGBA ya teñidos
-         del rojo del tema (alpha por luminancia, sin blend mode). Se
-         funden hacia arriba con un mask-image. .chat-landing-card flota
-         encima (mayor z-index) con el título, el buscador y las listas.
-         En celular (media query más abajo) se reemplaza por
-         assets/chat/bg-celular.jpg estirada a pantalla completa. */
+         dibuja components/chat/EmptyStateBg.js: chat-fig-angel.png
+         (ángel con la cruz, izquierda) y chat-fig-ascii.png (derecha).
+         Son PNG RGBA con alpha por luminancia (sin blend mode), mismo
+         peso/opacidad/fundido en ambas ("balance parejo", elegido entre
+         4 variantes armadas en un Artifact — 2026-09-17). Se funden hacia
+         arriba con un mask-image. .chat-landing-card flota encima (mayor
+         z-index) con el título, el buscador y las listas. En celular
+         (media query más abajo) se reemplaza por assets/chat/bg-celular.jpg
+         (foto del Paseo Santa Lucía) estirada a pantalla completa. */
       .chat-landing { flex:1; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; padding:24px; background:radial-gradient(130% 90% at 50% 100%, rgba(192,82,74,.4), transparent 65%), linear-gradient(180deg, #2a0a0c, #1a0506); }
       .empty-bg { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
-      .empty-fig { position:absolute; bottom:0; background-repeat:no-repeat; background-size:contain; -webkit-mask-image:linear-gradient(to top,#000 66%,transparent 100%); mask-image:linear-gradient(to top,#000 66%,transparent 100%); }
-      .empty-fig-girl { left:-2%; width:64%; height:100%; opacity:.85; background-image:url(${girlImg.src}); background-position:bottom left; }
-      .empty-fig-ascii { right:-2%; width:62%; height:100%; opacity:.95; z-index:1; background-image:url(${chatFigAscii.src}); background-position:bottom right; }
+      .empty-fig { position:absolute; bottom:0; background-repeat:no-repeat; background-size:contain; }
+      .empty-fig-angel { left:-2%; width:56%; height:100%; opacity:.68; background-image:url(${chatFigAngel.src}); background-position:bottom left; -webkit-mask-image:linear-gradient(to top,#000 56%,transparent 100%); mask-image:linear-gradient(to top,#000 56%,transparent 100%); }
+      .empty-fig-ascii { right:-2%; width:56%; height:100%; opacity:.72; z-index:1; background-image:url(${chatFigAscii.src}); background-position:bottom right; -webkit-mask-image:linear-gradient(to top,#000 56%,transparent 100%); mask-image:linear-gradient(to top,#000 56%,transparent 100%); }
 
       .chat-landing-card { position:relative; z-index:5; width:100%; max-width:560px; height:min(660px, 84vh); display:flex; flex-direction:column; background:rgba(12,12,14,.06); border:1px solid ${HOLO_THEME.hairlineSoft}; border-radius:18px; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,.5); }
       /* Con la tarjeta casi transparente el texto necesita más contraste
@@ -210,8 +213,8 @@ export const chatStyles = `
       .chat-landing-lists { flex:1; display:flex; flex-direction:column; min-height:0; }
 
       @media (max-width:820px) {
-        .empty-fig-girl { width:80%; }
-        .empty-fig-ascii { width:76%; }
+        .empty-fig-angel { width:70%; }
+        .empty-fig-ascii { width:70%; }
       }
       @media (max-width:600px) {
         /* Más padding arriba que a los costados: la tarjeta flota centrada
@@ -223,7 +226,7 @@ export const chatStyles = `
         .chat-landing-card { height:min(660px, 90dvh); }
         /* En celular el fondo ya es una imagen completa (arriba) — las 2
            figuras recortadas quedan de más y se esconden. */
-        .empty-fig-girl, .empty-fig-ascii { display:none; }
+        .empty-fig-angel, .empty-fig-ascii { display:none; }
       }
 
       /* ── Celular: con una conversación abierta, la lista angosta (.chat-side,
@@ -252,5 +255,11 @@ export const chatStyles = `
         .bubble-img { max-width:78vw; max-height:320px; }
         .composer-bar { padding:8px 10px 10px; gap:3px; }
         .date-pill { margin:12px 0 12px; }
+        /* Safari/iOS hace zoom de toda la página al enfocar un input con
+           font-size menor a 16px — .chat-input estaba en 15px y .buscar-input
+           en 14px, así que escribir un mensaje o buscar en celular disparaba
+           el zoom (mismo bug reportado en el composer del foro y del muro,
+           2026-09-17). En celular van a 16px. */
+        .chat-input, .buscar-input { font-size:16px; }
       }
     `;

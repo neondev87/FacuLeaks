@@ -6,16 +6,17 @@
 // ════════════════════════════════════════════════════════════════════════
 // QUÉ HACE: dibuja el fondo grande detrás de la tarjeta "chat-landing"
 // (ver app/chat/page.js) cuando no hay ninguna conversación abierta. Dos
-// figuras, ancladas cada una a un costado, bien grandes:
-//   - `.empty-fig-girl` — assets/shared/girl.png, la misma ilustración
-//     estilo anime que usa la pantalla de login (components/auth/*).
-//   - `.empty-fig-ascii` — assets/chat/chat-fig-ascii.png (2026-09-10,
-//     reemplaza al ángel con la cruz que había antes): una figura
-//     encapuchada armada con dígitos binarios ("la chica ascii"). Viene de
-//     una foto que pasó Erick (`Desktop/derecha.jpg`) — se le sacó el alpha
-//     por luminancia con PIL (negro del jpg → transparente, los unos/ceros
-//     brillantes quedan opacos), mismo tratamiento que ya se usaba en las
-//     otras figuras de esta pantalla.
+// figuras, ancladas cada una a un costado, mismo peso/opacidad ("balance
+// parejo", 2026-09-17):
+//   - `.empty-fig-angel` — assets/chat/chat-fig-angel.png: un ángel con
+//     una cruz, estatua en foto halftone/punteada. Reemplaza a girl.png
+//     (la ilustración anime que comparte /auth, ESA no se tocó). Mismo
+//     tratamiento de alpha por luminancia que la otra figura.
+//   - `.empty-fig-ascii` — assets/chat/chat-fig-ascii.png (2026-09-10):
+//     una figura encapuchada armada con dígitos binarios ("la chica
+//     ascii"). Viene de una foto que pasó Erick (`Desktop/derecha.jpg`) —
+//     se le sacó el alpha por luminancia con PIL (negro del jpg →
+//     transparente, los unos/ceros brillantes quedan opacos).
 // Ambas se funden hacia arriba con un `mask-image`.
 //
 // En celular ambas se esconden y `.chat-landing` usa en su lugar
@@ -35,7 +36,7 @@
 export default function EmptyStateBg() {
   return (
     <div className="empty-bg" aria-hidden="true">
-      <div className="empty-fig empty-fig-girl" />
+      <div className="empty-fig empty-fig-angel" />
       <div className="empty-fig empty-fig-ascii" />
     </div>
   );
