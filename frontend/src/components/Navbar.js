@@ -12,12 +12,11 @@
 // PARA QUÉ SIRVE: es el único componente de navegación de la app — no hay
 // un router de tabs ni nada más, cada página lo importa y lo pone arriba.
 //
-// OJO — el logout ya NO está en la barra de escritorio (a pedido explícito,
-// 2026-09-10): ahora vive solo al fondo del panel "Secciones" de celular
-// (nav-mobile-panel, debajo de los 5 links). En escritorio ancho no hay,
-// todavía, ningún botón para cerrar sesión — la idea a futuro es que viva
-// en un menú de cuenta/ajustes (el engranaje que se mockeó en el rediseño
-// del dashboard), que todavía no existe en código.
+// OJO — el logout vive en DOS lugares: en escritorio, el botón "salir" de
+// la esquina superior derecha (.nav-logout, agregado 2026-09-18 — antes no
+// había ninguno en PC); en celular, al fondo del panel "Secciones"
+// (nav-mobile-panel, debajo de los 5 links). Un menú de cuenta/ajustes con
+// engranaje se mockeó en el rediseño pero sigue sin existir en código.
 //
 // CON QUÉ SE CONECTA:
 //   - next-auth/react (useSession, signOut) → sabe quién sos y cierra sesión.
@@ -300,6 +299,10 @@ export default function Navbar() {
         .nav-burger.open svg { transform:rotate(180deg); }
         .nav-mobile-panel { position:fixed; top:58px; left:0; right:0; background:rgba(0,0,0,.98); border-bottom:1px solid rgba(255,255,255,.07); backdrop-filter:blur(6px); display:flex; flex-direction:column; padding:6px 20px 14px; z-index:199; animation:navPanelIn .16s ease; }
         .notif-mobile { display:none; }
+        /* Cerrar sesión de escritorio: esquina superior derecha. En celular se
+           esconde — ahí el logout vive al fondo del panel "Secciones". */
+        .nav-logout { display:flex; align-items:center; gap:7px; flex-shrink:0; background:none; border:none; cursor:pointer; padding:6px 8px; border-radius:8px; color:rgba(255,255,255,.3); font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.14em; text-transform:uppercase; transition:color .15s, background .15s; }
+        .nav-logout:hover { color:#e8e4d9; background:rgba(255,255,255,.06); }
         @keyframes navPanelIn { from{opacity:0; transform:translateY(-6px);} to{opacity:1; transform:translateY(0);} }
         .nav-link-m { display:block; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid rgba(255,255,255,.06); color:#777; font-family:'Space Mono',monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; padding:13px 2px; cursor:pointer; }
         .nav-link-m.active { color:#fff; }
@@ -313,6 +316,7 @@ export default function Navbar() {
           .nav-burger-label { display:block; }
           .nav-burger { display:flex; }
           .notif-mobile { display:flex; align-items:center; }
+          .nav-logout { display:none; }
         }
       `}</style>
 
@@ -359,6 +363,16 @@ export default function Navbar() {
         {/* Campana de celular: oculta en escritorio (la de arriba ya se ve
             junto a AMIGOS), visible solo bajo los 760px, a la derecha del todo. */}
         <div className="notif-mobile">{notifWidget}</div>
+
+        <button className="nav-logout" title="Cerrar sesión" aria-label="Cerrar sesión"
+          onClick={() => signOut({ callbackUrl:"/auth" })}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          <span>salir</span>
+        </button>
 
         {mobileOpen && (
           <div className="nav-mobile-panel">
