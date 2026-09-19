@@ -43,6 +43,7 @@
 //   Ninguno de los dos lo llama el browser directo, nunca.
 // ════════════════════════════════════════════════════════════════════════
 const { registerUser, findUserByGoogleId } = require('./auth.service');
+const prisma = require('../../config/db');
 const { users_facultad } = require('@prisma/client');
 const jwt    = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -147,8 +148,16 @@ const login = async (req, res) => {
     const user = await findUserByGoogleId(googleId);
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
+    // Volvió antes de que venciera el día de gracia de "Eliminar cuenta"
+    // (lib/cuentas.js) → la cuenta se salva.
+    let eliminacionCancelada = false;
+    if (user.eliminarEn) {
+      await prisma.users.update({ where: { id: user.id }, data: { eliminarEn: null } });
+      eliminacionCancelada = true;
+    }
+
     setAuthCookie(res, user);
-    return res.json({ ok: true, user: { id: user.id, username: user.username } });
+    return res.json({ ok: true, eliminacionCancelada, user: { id: user.id, username: user.username } });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Error interno del servidor' });

@@ -245,7 +245,8 @@ model users {
   actualizadoEn                                    DateTime         @default(now()) @db.DateTime(0)
   imagen                                           String?          @db.VarChar(300)
   facultad                                         users_facultad?
-  amistades_amistades_solicitanteIdTousers         amistades[]      @relation("amistades_solicitanteIdTousers")
+  eliminarEn                                       DateTime?        @db.DateTime(0)
+  amistades_amistades_solicitanteIdTousers        amistades[]      @relation("amistades_solicitanteIdTousers")
   amistades_amistades_receptorIdTousers            amistades[]      @relation("amistades_receptorIdTousers")
   comments                                         comments[]
   comment_likes                                    comment_likes[]

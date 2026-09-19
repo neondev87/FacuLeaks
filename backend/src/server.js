@@ -53,6 +53,7 @@ const notificacionesRoutes = require('./modules/notificaciones/notificaciones.ro
 const { authMiddleware } = require('./middleware/auth');
 const { serveAudio }     = require('./modules/chat/chat.controller');
 const { registerChatSocketHandlers, socketAuthMiddleware } = require('./modules/chat/chat.socket');
+const { iniciarPurgaDeCuentas } = require('./lib/cuentas');
 
 // ── Asegurar carpetas de uploads antes de aceptar peticiones ──
 ['uploads/tmp', 'uploads/imagenes', 'uploads/documentos', 'uploads/audios'].forEach(dir => {
@@ -162,6 +163,10 @@ const PORT = process.env.PORT || 4000;
 // exportá HOST=0.0.0.0 explícitamente.
 const HOST = process.env.HOST || '127.0.0.1';
 server.listen(PORT, HOST, () => console.log(`Server corriendo en ${HOST}:${PORT}`));
+
+// Borra las cuentas que pidieron eliminarse y ya cumplieron su día de
+// gracia (una vez al arrancar y luego cada hora) — ver lib/cuentas.js.
+iniciarPurgaDeCuentas();
 
 // Red de seguridad: sin esto, un error async que se escapa de algún
 // try/catch tira abajo TODO el proceso (y con él, a todos los usuarios

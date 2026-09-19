@@ -24,6 +24,7 @@
 //   - Lo consume: app/perfil/page.js.
 // ════════════════════════════════════════════════════════════════════════
 import { useState, useEffect } from "react";
+import { signOut } from "next-auth/react";
 import { API } from "@/lib/api";
 import { createAuthedSocket } from "@/lib/socket";
 export default function useOwnProfile({ status, session }) {
@@ -83,6 +84,8 @@ export default function useOwnProfile({ status, session }) {
     return () => socket.disconnect();
   }, [session?.user?.dbId]);
 
+  // Devuelve { ok, error } — el EditModal muestra `error` (por ejemplo "Ese
+  // usuario ya está en uso") y se queda abierto en vez de fingir "Guardado ✓".
   const handleSave = async fields => {
     try {
       const res  = await fetch(`${API}/api/perfil`, {
@@ -90,9 +93,33 @@ export default function useOwnProfile({ status, session }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(fields),
       });
-      const data = await res.json();
-      if (data.ok) { await fetchPerfil(); setShowEdit(false); toast("Perfil guardado"); }
-    } catch {}
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) return { ok: false, error: data.error || "No se pudo guardar el perfil" };
+      await fetchPerfil();
+      toast("Perfil guardado");
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "No se pudo conectar con el servidor" };
+    }
+  };
+
+  // Pide eliminar TU cuenta (el backend la borra de verdad a las 24 h, salvo
+  // que vuelvas a iniciar sesión antes). `confirmar` = tu @usuario, escrito a
+  // mano en el modal. Si sale bien, cierra la sesión de NextAuth y vuelve a /auth.
+  const handleDeleteAccount = async confirmar => {
+    try {
+      const res  = await fetch(`${API}/api/perfil`, {
+        method: "DELETE", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmar }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) return { ok: false, error: data.error || "No se pudo eliminar la cuenta" };
+      await signOut({ callbackUrl: "/auth" });
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "No se pudo conectar con el servidor" };
+    }
   };
 
   const handleDeletePost = async postId => {
@@ -155,7 +182,7 @@ export default function useOwnProfile({ status, session }) {
     posts,
     lightboxSrc, setLightboxSrc,
     photos,
-    handleSave, handleDeletePost, handleUnshare, toggleReaction,
+    handleSave, handleDeleteAccount, handleDeletePost, handleUnshare, toggleReaction,
     fetchPerfil,
   };
 }

@@ -51,6 +51,9 @@ const { users_facultad } = require('@prisma/client');
 const { AUTHOR_SELECT, flattenAuthor } = require('../../lib/author');
 
 const FACULTADES_VALIDAS = new Set(Object.values(users_facultad));
+const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
+// Plazo entre "Eliminar cuenta" y el borrado real — ver lib/cuentas.js.
+const GRACIA_ELIMINACION_MS = 24 * 60 * 60 * 1000;
 
 // profile_visits y user_photos están modeladas en Prisma: se usan por el client,
 // NO por SQL crudo. Helper para no repetir el mapeo photoUrl -> url.
@@ -276,6 +279,11 @@ const interesesValidos = (intereses) => {
 // PUT /api/perfil — actualizar datos
 const updatePerfil = async (req, res) => {
   const { nombre, mostrarNombreCompleto, mostrarSituacion, facultad } = req.body;
+  // @usuario nuevo (opcional) — mismas reglas que el registro
+  // (hooks/useRegister.js → validateUsername): 3-20, letras/números/_.
+  const username = typeof req.body.username === 'string' ? req.body.username.trim() : undefined;
+  if (username !== undefined && !USERNAME_RE.test(username))
+    return res.status(400).json({ error: 'El usuario debe tener 3-20 caracteres: letras, números o _' });
   const bio        = req.body.bio != null ? String(req.body.bio).slice(0, 500) : req.body.bio;
   // Tope 80 alineado con el VarChar(80) de la columna — sin esto, un
   // statusText más largo no se "recortaba", directamente tiraba un 500
@@ -291,21 +299,35 @@ const updatePerfil = async (req, res) => {
   if (facultad !== undefined && !FACULTADES_VALIDAS.has(facultad))
     return res.status(400).json({ error: 'Facultad inválida' });
   try {
+    // El @usuario es único: si otra cuenta ya lo tiene, se rechaza ANTES de
+    // tocar nada más (así un guardado que falla no deja cambios a medias).
+    // Se compara contra las demás cuentas, no contra la propia — guardar el
+    // mismo @usuario (o solo cambiarle mayúsculas) tiene que pasar.
+    let usernameCambio = false;
+    if (username !== undefined) {
+      const actual = await prisma.users.findUnique({ where:{ id:req.userId }, select:{ username:true } });
+      if (actual && actual.username !== username) {
+        const ocupado = await prisma.users.findFirst({ where:{ username, id:{ not:req.userId } }, select:{ id:true } });
+        if (ocupado) return res.status(409).json({ error: 'Ese usuario ya está en uso' });
+        usernameCambio = true;
+      }
+    }
     const profile = await prisma.user_profiles.upsert({
       where:  { userId:req.userId },
       update: { bio, statusText, intereses, links, ...nombreField, ...situacionField },
       create: { userId:req.userId, bio, statusText, intereses, links, ...nombreField, ...situacionField }
     });
     if (nombre) await prisma.users.update({ where:{ id:req.userId }, data:{ nombre } });
+    if (usernameCambio) await prisma.users.update({ where:{ id:req.userId }, data:{ username } });
     if (facultad) await prisma.users.update({ where:{ id:req.userId }, data:{ facultad } });
 
     // Aviso en vivo (mismo patrón que `user:avatar`) — el nombre a mostrar o
     // el nombre completo pueden haber cambiado, y hay que reflejarlo sin
     // recargar en cualquier Muro/perfil público que ya esté abierto con
     // posts de esta persona.
-    if (nombre || typeof mostrarNombreCompleto === 'boolean') {
-      const u = await prisma.users.findUnique({ where:{ id:req.userId }, select:{ nombre:true } });
-      req.io?.emit('user:nombre', { userId: req.userId, nombre: u?.nombre, mostrarNombreCompleto: profile.mostrarNombreCompleto });
+    if (nombre || usernameCambio || typeof mostrarNombreCompleto === 'boolean') {
+      const u = await prisma.users.findUnique({ where:{ id:req.userId }, select:{ nombre:true, username:true } });
+      req.io?.emit('user:nombre', { userId: req.userId, nombre: u?.nombre, username: u?.username, mostrarNombreCompleto: profile.mostrarNombreCompleto });
     }
 
     res.json({ ok:true, profile });
@@ -488,6 +510,39 @@ const deletePhoto = async (req, res) => {
   }
 };
 
+// DELETE /api/perfil — pedir la eliminación de TU cuenta.
+// No borra nada al instante: marca `eliminarEn` = ahora + 24 h y lib/cuentas.js
+// hace el borrado real cuando pasa ese plazo. Si la persona vuelve a iniciar
+// sesión antes, auth.controller.js (login) cancela la eliminación.
+// Body: { confirmar: "<tu username>" } — obliga a escribirlo, para que no sea
+// un click de más.
+const solicitarEliminacion = async (req, res) => {
+  try {
+    const user = await prisma.users.findUnique({ where:{ id:req.userId }, select:{ username:true } });
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    if (String(req.body?.confirmar ?? '').trim() !== user.username)
+      return res.status(400).json({ error: 'Escribí tu usuario exactamente para confirmar' });
+
+    const eliminarEn = new Date(Date.now() + GRACIA_ELIMINACION_MS);
+    await prisma.users.update({ where:{ id:req.userId }, data:{ eliminarEn } });
+
+    // Cerrar TODAS sus conexiones de socket abiertas (varias pestañas /
+    // dispositivos) y la cookie de este navegador. Mismas opciones que
+    // setAuthCookie (auth.controller.js) — si no coinciden, el navegador no
+    // la borra.
+    req.io?.in(`user:${req.userId}`).disconnectSockets(true);
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    });
+    res.json({ ok:true, eliminarEn });
+  } catch (err) {
+    console.error('solicitarEliminacion error:', err.message);
+    res.status(500).json({ error:'Error al eliminar la cuenta' });
+  }
+};
+
 module.exports = {
   getPerfil,
   getPerfilPublico,
@@ -496,5 +551,6 @@ module.exports = {
   updateAvatar,
   deleteAvatar,
   uploadPhotos,
-  deletePhoto
+  deletePhoto,
+  solicitarEliminacion
 };

@@ -24,7 +24,7 @@ const findUserByGoogleId = async (googleId) => {
   if (!googleId || typeof googleId !== 'string') return null;
   return prisma.users.findFirst({
     where: { googleId },
-    select: { id: true, username: true, email: true, nombre: true, imagen: true, facultad: true, rol: true }
+    select: { id: true, username: true, email: true, nombre: true, imagen: true, facultad: true, rol: true, eliminarEn: true }
   });
 };
 

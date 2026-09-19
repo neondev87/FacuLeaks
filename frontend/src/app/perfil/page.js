@@ -50,7 +50,7 @@ export default function ProfilePage() {
 
   const {
     perfil, setPerfil, loading, showEdit, setShowEdit, saveMsg,
-    posts, lightboxSrc, setLightboxSrc, photos, handleSave, handleDeletePost, handleUnshare, toggleReaction,
+    posts, lightboxSrc, setLightboxSrc, photos, handleSave, handleDeleteAccount, handleDeletePost, handleUnshare, toggleReaction,
     fetchPerfil,
   } = useOwnProfile({ status, session });
 
@@ -86,7 +86,7 @@ export default function ProfilePage() {
       <Navbar />
 
       {/* Modal de editar perfil */}
-      {showEdit && <EditModal profile={profile} user={user} onClose={() => setShowEdit(false)} onSave={handleSave} />}
+      {showEdit && <EditModal profile={profile} user={user} onClose={() => setShowEdit(false)} onSave={handleSave} onDeleteAccount={handleDeleteAccount} />}
 
       {/* Modal de amigos — abre desde el contador "amigos" de Información */}
       {showFriends && <FriendsModal onClose={() => setShowFriends(false)} />}

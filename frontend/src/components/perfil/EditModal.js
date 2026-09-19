@@ -30,10 +30,25 @@ const SITUACIONES = ["Soltero", "En una relación", "Casado"];
 //   - `onSave` → en app/perfil/page.js es `handleSave` de
 //     hooks/useOwnProfile.js, que ahí sí hace el PUT /api/perfil real.
 // ════════════════════════════════════════════════════════════════════════
-export default function EditModal({ profile, user, onClose, onSave }) {
+// Mismas reglas que el registro (hooks/useRegister.js → validateUsername) y
+// que el backend (perfil.controller.js → USERNAME_RE).
+const validarUsername = v => {
+  if (v.length < 3)  return "El usuario necesita mínimo 3 caracteres";
+  if (v.length > 20) return "El usuario admite máximo 20 caracteres";
+  if (!/^[a-zA-Z0-9_]+$/.test(v)) return "El usuario solo admite letras, números y _";
+  return null;
+};
+
+export default function EditModal({ profile, user, onClose, onSave, onDeleteAccount }) {
   const [tab,    setTab]    = useState("perfil");
   const [saved,  setSaved]  = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  // Eliminar cuenta: confirmación propia (escribir el @usuario), no confirm().
+  const [showDelete,  setShowDelete]  = useState(false);
+  const [deleteText,  setDeleteText]  = useState("");
+  const [deleting,    setDeleting]    = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   // Estado del formulario
   const [username,   setUsername]   = useState(user.username || "");
@@ -75,15 +90,33 @@ export default function EditModal({ profile, user, onClose, onSave }) {
   };
 
   const handleSave = async () => {
+    const usernameLimpio = username.trim();
+    const errUser = validarUsername(usernameLimpio);
+    if (errUser) { setSaveError(errUser); setTab("perfil"); return; }
+    setSaveError("");
     setSaving(true);
     const linksArr = links.filter(l=>l.url).map(l=>({ label:l.plat, url:l.url }));
-    await onSave({
+    const result = await onSave({
+      username: usernameLimpio,
       bio, statusText:situacion, links:linksArr, facultad: facultad || undefined,
       mostrarNombreCompleto: nombreDisplay === "Nombre completo",
       mostrarSituacion,
     });
+    if (!result?.ok) {
+      setSaveError(result?.error || "No se pudo guardar el perfil");
+      setSaving(false);
+      return;
+    }
     setSaved(true);
     setTimeout(() => { setSaved(false); setSaving(false); onClose(); }, 1200);
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true); setDeleteError("");
+    const result = await onDeleteAccount(deleteText);
+    // Si salió bien, signOut ya está redirigiendo a /auth — no hay nada más
+    // que hacer acá. Si falló, se queda abierto mostrando el motivo.
+    if (!result?.ok) { setDeleteError(result?.error || "No se pudo eliminar la cuenta"); setDeleting(false); }
   };
 
   return (
@@ -126,7 +159,7 @@ export default function EditModal({ profile, user, onClose, onSave }) {
               {/* 2) Nombre o usuario */}
               <PDivider/>
               <PField label="Usuario" hint="@">
-                <PInput value={username} onChange={e=>setUsername(e.target.value)} placeholder="usuario"/>
+                <PInput value={username} onChange={e=>{ setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g,"").slice(0,20)); setSaveError(""); }} placeholder="usuario"/>
               </PField>
               <PField label="Nombre a mostrar">
                 <PPills options={["Nombre completo","Usuario"]} value={nombreDisplay} onChange={setNombreDisplay}/>
@@ -197,9 +230,9 @@ export default function EditModal({ profile, user, onClose, onSave }) {
               <div style={{ padding:"12px 14px", background:"rgba(255,50,50,.05)", border:"1px solid rgba(255,50,50,.1)", borderRadius:8, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <div>
                   <div style={{ fontSize:13, color:"rgba(255,140,140,.8)", fontFamily:INTER, fontWeight:500, marginBottom:3 }}>Eliminar cuenta</div>
-                  <div style={{ fontSize:11, color:"rgba(255,100,100,.4)", fontFamily:INTER }}>Tu cuenta entrará en período de eliminación de 7 días</div>
+                  <div style={{ fontSize:11, color:"rgba(255,100,100,.4)", fontFamily:INTER }}>Se borra a las 24 horas. Si vuelves a iniciar sesión antes, se cancela</div>
                 </div>
-                <button style={{ background:"transparent", border:"1px solid rgba(255,80,80,.25)", borderRadius:6, color:"rgba(255,100,100,.6)", fontFamily:INTER, fontSize:12, padding:"6px 14px", cursor:"pointer", transition:"all .15s" }}
+                <button onClick={()=>{ setDeleteText(""); setDeleteError(""); setShowDelete(true); }} style={{ background:"transparent", border:"1px solid rgba(255,80,80,.25)", borderRadius:6, color:"rgba(255,100,100,.6)", fontFamily:INTER, fontSize:12, padding:"6px 14px", cursor:"pointer", transition:"all .15s" }}
                   onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,50,50,.08)";e.currentTarget.style.color="rgba(255,120,120,.9)";}}
                   onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="rgba(255,100,100,.6)";}}>
                   Eliminar
@@ -210,7 +243,10 @@ export default function EditModal({ profile, user, onClose, onSave }) {
         </div>
 
         {/* Footer */}
-        <div style={{ padding:"14px 24px 20px", borderTop:"1px solid rgba(255,255,255,.07)", display:"flex", justifyContent:"flex-end", gap:10, flexShrink:0 }}>
+        <div style={{ padding:"14px 24px 20px", borderTop:"1px solid rgba(255,255,255,.07)", display:"flex", justifyContent:"flex-end", alignItems:"center", gap:10, flexShrink:0, flexWrap:"wrap" }}>
+          {saveError && (
+            <div role="alert" style={{ flex:"1 1 200px", fontFamily:INTER, fontSize:12, color:"rgba(255,120,120,.9)" }}>{saveError}</div>
+          )}
           <button onClick={onClose} style={{ background:"transparent", border:"1px solid rgba(255,255,255,.1)", borderRadius:7, color:"rgba(255,255,255,.45)", fontFamily:INTER, fontSize:13, padding:"9px 18px", cursor:"pointer", transition:"all .15s" }}
             onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,.05)";e.currentTarget.style.color="rgba(255,255,255,.7)";}}
             onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="rgba(255,255,255,.45)";}}>
@@ -223,6 +259,35 @@ export default function EditModal({ profile, user, onClose, onSave }) {
           </button>
         </div>
       </div>
+
+      {showDelete && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.6)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1100, padding:24 }}
+          onClick={e=>{ e.stopPropagation(); if (!deleting) setShowDelete(false); }}>
+          <div style={{ background:"#1a1a1a", borderRadius:12, border:"1px solid rgba(255,80,80,.25)", width:"100%", maxWidth:420, padding:"22px 22px 18px", boxShadow:"0 24px 64px rgba(0,0,0,.7)" }}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{ fontFamily:INTER, fontSize:16, fontWeight:600, color:"rgba(255,140,140,.95)", marginBottom:8 }}>¿Eliminar tu cuenta?</div>
+            <div style={{ fontFamily:INTER, fontSize:13, lineHeight:1.55, color:"rgba(255,255,255,.55)", marginBottom:16 }}>
+              Se borrarán tu perfil, publicaciones, fotos, comentarios y mensajes. Pasadas 24 horas ya no se puede recuperar.
+              Si vuelves a iniciar sesión antes, se cancela.
+            </div>
+            <div style={{ fontFamily:INTER, fontSize:12, color:"rgba(255,255,255,.4)", marginBottom:6 }}>
+              Escribe <span style={{ color:"rgba(255,255,255,.8)", fontWeight:600 }}>{user.username}</span> para confirmar
+            </div>
+            <PInput value={deleteText} onChange={e=>{ setDeleteText(e.target.value); setDeleteError(""); }} placeholder={user.username} />
+            {deleteError && <div role="alert" style={{ marginTop:8, fontFamily:INTER, fontSize:12, color:"rgba(255,120,120,.9)" }}>{deleteError}</div>}
+            <div style={{ display:"flex", justifyContent:"flex-end", gap:10, marginTop:18 }}>
+              <button onClick={()=>setShowDelete(false)} disabled={deleting}
+                style={{ background:"transparent", border:"1px solid rgba(255,255,255,.1)", borderRadius:7, color:"rgba(255,255,255,.55)", fontFamily:INTER, fontSize:13, padding:"9px 18px", cursor:deleting?"not-allowed":"pointer" }}>
+                Cancelar
+              </button>
+              <button onClick={handleDelete} disabled={deleting || deleteText.trim() !== user.username}
+                style={{ background:"rgba(255,60,60,.18)", border:"1px solid rgba(255,80,80,.4)", borderRadius:7, color:"rgba(255,140,140,.95)", fontFamily:INTER, fontSize:13, fontWeight:500, padding:"9px 18px", cursor:(deleting || deleteText.trim() !== user.username)?"not-allowed":"pointer", opacity:(deleting || deleteText.trim() !== user.username)?.45:1 }}>
+                {deleting ? "Eliminando…" : "Eliminar cuenta"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

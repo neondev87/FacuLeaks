@@ -22,7 +22,8 @@ const {
   updateAvatar,
   deleteAvatar,
   uploadPhotos,
-  deletePhoto
+  deletePhoto,
+  solicitarEliminacion
 } = require('./perfil.controller');
 const { authMiddleware } = require('../../middleware/auth');
 
@@ -47,6 +48,7 @@ router.get('/',              authMiddleware, getPerfil);
 router.get('/avatar',        authMiddleware, getAvatar);
 router.get('/:userId',       authMiddleware, getPerfilPublico);
 router.put('/',              authMiddleware, updatePerfil);
+router.delete('/',           authMiddleware, solicitarEliminacion);
 router.put('/avatar',        authMiddleware, upload.single('file'), updateAvatar);
 router.delete('/avatar',     authMiddleware, deleteAvatar);
 router.post('/fotos',        authMiddleware, upload.array('photos', 10), uploadPhotos);

@@ -100,9 +100,9 @@ export default function useFeedPosts({ activeTab, status, session }) {
     // Alguien cambió su "nombre a mostrar" (nombre completo / @usuario) o su
     // nombre — actualizar autores de posts Y de los comentarios de preview
     // sin recargar (mismo patrón que user:avatar).
-    feedSocket.on("user:nombre", ({ userId, nombre, mostrarNombreCompleto }) => {
+    feedSocket.on("user:nombre", ({ userId, nombre, username, mostrarNombreCompleto }) => {
       setPosts(prev => prev.map(p => {
-        const patch = a => Number(a?.id) === Number(userId) ? { ...a, nombre, mostrarNombreCompleto } : a;
+        const patch = a => Number(a?.id) === Number(userId) ? { ...a, nombre, ...(username ? { username } : {}), mostrarNombreCompleto } : a;
         if (Number(p.autor?.id) !== Number(userId) && !(p.previewComments || []).some(c => Number(c.autor?.id) === Number(userId))) return p;
         return {
           ...p,

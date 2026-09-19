@@ -102,15 +102,15 @@ export default function usePublicProfile({ userId, status, session, router }) {
     });
     // El dueño de este perfil cambió su nombre o su "nombre a mostrar" —
     // reflejarlo en el header Y en sus posts (el autor siempre es él mismo acá).
-    socket.on("user:nombre", ({ userId, nombre, mostrarNombreCompleto }) => {
+    socket.on("user:nombre", ({ userId, nombre, username, mostrarNombreCompleto }) => {
       setPerfil(prev => {
         if (!prev || Number(prev.user?.id) !== Number(userId)) return prev;
         return {
           ...prev,
-          user: { ...prev.user, nombre },
+          user: { ...prev.user, nombre, ...(username ? { username } : {}) },
           profile: { ...prev.profile, mostrarNombreCompleto },
           posts: (prev.posts || []).map(p =>
-            p.autor ? { ...p, autor: { ...p.autor, nombre, mostrarNombreCompleto } } : p
+            p.autor ? { ...p, autor: { ...p.autor, nombre, ...(username ? { username } : {}), mostrarNombreCompleto } } : p
           ),
         };
       });
